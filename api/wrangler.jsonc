@@ -1,0 +1,69 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nz-accredited-employer-api-dev",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-04",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "ENVIRONMENT": "development",
+    "SERVICE_VERSION": "0.5.0"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nz-accredited-employer-prod",
+      "database_id": "74c5826f-75ba-4575-a0d8-51c6f7046297",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "CLIENT_RATE_LIMITER",
+      "namespace_id": "26080401",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "SUBMISSION_RATE_LIMITER",
+      "namespace_id": "26080402",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "env": {
+    "production": {
+      "name": "nz-accredited-employer-api",
+      "workers_dev": true,
+      "vars": {
+        "ENVIRONMENT": "production",
+        "SERVICE_VERSION": "0.5.0"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "nz-accredited-employer-prod",
+          "database_id": "74c5826f-75ba-4575-a0d8-51c6f7046297",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "ratelimits": [
+        {
+          "name": "CLIENT_RATE_LIMITER",
+          "namespace_id": "26080401",
+          "simple": { "limit": 30, "period": 60 }
+        },
+        {
+          "name": "SUBMISSION_RATE_LIMITER",
+          "namespace_id": "26080402",
+          "simple": { "limit": 10, "period": 60 }
+        }
+      ],
+      "observability": {
+        "enabled": true,
+        "head_sampling_rate": 1
+      }
+    }
+  }
+}

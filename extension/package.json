@@ -1,0 +1,25 @@
+{
+  "name": "nz-accredited-employer-inspector-extension",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "wxt -b chrome",
+    "preview": "vite --host 127.0.0.1",
+    "build": "wxt build -b chrome",
+    "zip": "wxt zip -b chrome",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test && npm run build",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.2.0",
+    "vitest": "4.1.10",
+    "wxt": "0.21.3"
+  }
+}

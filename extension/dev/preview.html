@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LinkedIn company adapter preview</title>
+    <style>
+      :root {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #191919;
+        background: #f4f2ee;
+      }
+      body {
+        margin: 0;
+        padding: 80px 24px;
+      }
+      .card {
+        max-width: 940px;
+        min-height: 390px;
+        margin: 0 auto;
+        overflow: visible;
+        border: 1px solid #d6d3cf;
+        border-radius: 10px;
+        background: white;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
+      }
+      .cover {
+        height: 150px;
+        border-radius: 9px 9px 0 0;
+        background: linear-gradient(120deg, #173d37, #69c7a4 52%, #d4efe4);
+      }
+      .content {
+        padding: 34px 38px 32px;
+      }
+      .title-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      h1 {
+        display: inline;
+        margin: 0;
+        font-size: 31px;
+        letter-spacing: -0.025em;
+      }
+      .verified {
+        display: inline-grid;
+        width: 20px;
+        height: 20px;
+        place-items: center;
+        border: 2px solid #64716e;
+        border-radius: 50%;
+        color: #64716e;
+        font-size: 12px;
+        font-weight: 800;
+      }
+      p {
+        margin: 10px 0 0;
+        color: #545454;
+        font-size: 17px;
+      }
+      .meta {
+        font-size: 15px;
+      }
+      #widget-host {
+        display: inline-block;
+        position: relative;
+        z-index: 20;
+        margin-inline-start: 8px;
+        vertical-align: middle;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="cover"></div>
+      <section class="content">
+        <div class="title-row">
+          <h1>One New Zealand</h1>
+          <span class="verified" aria-label="Verified">✓</span>
+          <span id="widget-host"></span>
+        </div>
+        <p>The ONE and only official One New Zealand company page.</p>
+        <p class="meta">Telecommunications · Auckland · 1K–5K employees</p>
+      </section>
+    </main>
+    <script type="module" src="./preview.ts"></script>
+  </body>
+</html>

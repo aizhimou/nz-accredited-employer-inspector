@@ -1,0 +1,33 @@
+{
+  "name": "nz-accredited-employer-api",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "undici": "7.29.0"
+  },
+  "scripts": {
+    "dev": "wrangler dev --local",
+    "typegen": "wrangler types",
+    "typegen:check": "wrangler types --check",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "npm run typegen:check && npm run typecheck && npm test",
+    "d1:migrate:local": "wrangler d1 migrations apply DB --local",
+    "d1:migrate:prod": "wrangler d1 migrations apply nz-accredited-employer-prod --remote",
+    "deploy:dry-run": "wrangler deploy --env production --dry-run",
+    "deploy:prod": "wrangler deploy --env production",
+    "startup:check": "wrangler check startup --env production"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.20.1",
+    "@types/node": "^26.1.2",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10",
+    "wrangler": "4.118.0"
+  }
+}
