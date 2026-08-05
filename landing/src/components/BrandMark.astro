@@ -1,0 +1,93 @@
+---
+import logo from "../assets/logo-no-bg-mark.png";
+
+interface Props {
+  compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+---
+
+<span class:list={["brand", { compact }]} aria-label="NZ Accredited Employer Inspector">
+  <span class="brand-mark" aria-hidden="true">
+    <img src={logo.src} alt="" width={logo.width} height={logo.height} />
+  </span>
+  {!compact && (
+    <span class="brand-copy">
+      <strong>NZ Accredited Employer Inspector</strong>
+      <small>Aotearoa New Zealand</small>
+    </span>
+  )}
+</span>
+
+<style>
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.7rem;
+    color: var(--harbour);
+  }
+
+  .brand-mark {
+    position: relative;
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    flex: none;
+    overflow: hidden;
+    border-radius: 0.7rem;
+  }
+
+  .brand-mark img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .brand.compact .brand-mark {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .brand-copy {
+    display: grid;
+    line-height: 1.05;
+  }
+
+  strong {
+    font-family: var(--font-display);
+    font-size: 0.86rem;
+    letter-spacing: -0.015em;
+  }
+
+  small {
+    margin-top: 0.27rem;
+    color: var(--slate);
+    font-family: var(--font-utility);
+    font-size: 0.57rem;
+    font-weight: 700;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 520px) {
+    .brand {
+      gap: 0.45rem;
+    }
+
+    .brand-mark {
+      width: 2.15rem;
+      height: 2.15rem;
+      border-radius: 0.55rem;
+    }
+
+    strong {
+      font-size: 0.67rem;
+    }
+
+    small {
+      margin-top: 0.2rem;
+      font-size: 0.43rem;
+    }
+  }
+</style>
