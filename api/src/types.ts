@@ -68,8 +68,14 @@ export type ResolutionState =
   | "no_published_inz_match"
   | "inz_lookup_required";
 
+export type MatchMethod =
+  | "platform_association"
+  | "exact_employer_name";
+
 export interface EmployerResolutionResponse {
   state: ResolutionState;
+  /** How selectedEmployer was resolved; null when no employer is selected. */
+  matchMethod: MatchMethod | null;
   selectedEmployer: AccreditedEmployer | null;
   candidates: AccreditedEmployer[];
   association: EmployerAssociation | null;

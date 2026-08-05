@@ -252,9 +252,19 @@
 }
 
 .provenance-value,
-.provenance-warning {
+.provenance-warning,
+.provenance-note {
   color: var(--nz-muted);
   font-size: var(--nz-text-sm);
+}
+
+.exact-match-provenance {
+  border-left: 3px solid var(--nz-blue);
+  background: #f3f8fd;
+}
+
+.provenance-note {
+  line-height: 1.45;
 }
 
 .no-match-provenance {

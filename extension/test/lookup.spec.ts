@@ -52,6 +52,7 @@ function resolution(
   if (state === "associated" || state === "refresh_required") {
     return {
       state,
+      matchMethod: "platform_association",
       selectedEmployer: employer,
       candidates: [employer],
       association: {
@@ -69,6 +70,7 @@ function resolution(
   if (state === "confirmation_required") {
     return {
       state,
+      matchMethod: null,
       selectedEmployer: null,
       candidates: [employer],
       association: null,
@@ -79,6 +81,7 @@ function resolution(
   if (state === "no_published_inz_match") {
     return {
       state,
+      matchMethod: null,
       selectedEmployer: null,
       candidates: [],
       association: null,
@@ -92,6 +95,7 @@ function resolution(
   }
   return {
     state,
+    matchMethod: null,
     selectedEmployer: null,
     candidates: [],
     association: null,
@@ -120,6 +124,31 @@ describe("employer lookup orchestration", () => {
       ok: true,
       liveLookupStatus: "not_needed",
       data: { state: "associated" },
+    });
+    expect(calls).toEqual([`${API_BASE_URL}/v1/employers/resolve`]);
+  });
+
+  it("returns an automatic exact-name match without calling INZ", async () => {
+    const calls: string[] = [];
+    const fetchFn: FetchLike = async (input) => {
+      calls.push(String(input));
+      return apiResult({
+        ...resolution("associated"),
+        matchMethod: "exact_employer_name",
+        association: null,
+      });
+    };
+
+    const result = await lookupEmployer(identity, CLIENT_ID, fetchFn);
+
+    expect(result).toMatchObject({
+      ok: true,
+      liveLookupStatus: "not_needed",
+      data: {
+        state: "associated",
+        matchMethod: "exact_employer_name",
+        association: null,
+      },
     });
     expect(calls).toEqual([`${API_BASE_URL}/v1/employers/resolve`]);
   });

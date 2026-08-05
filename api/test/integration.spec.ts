@@ -33,7 +33,7 @@ function createTestEnv(
     CLIENT_RATE_LIMITER: overrides.CLIENT_RATE_LIMITER ?? allowRateLimit(),
     SUBMISSION_RATE_LIMITER: overrides.SUBMISSION_RATE_LIMITER ?? allowRateLimit(),
     ENVIRONMENT: "development",
-    SERVICE_VERSION: "0.5.0",
+    SERVICE_VERSION: "0.6.0",
   };
 }
 
@@ -95,7 +95,7 @@ describe("HTTP routing and controls", () => {
       createExecutionContext(),
     );
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ version: "0.5.0", status: "ok" });
+    expect(await response.json()).toMatchObject({ version: "0.6.0", status: "ok" });
     expect(limiter.limit).not.toHaveBeenCalled();
   });
 
@@ -187,6 +187,7 @@ describe("canonical employers and resolution", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       state: "inz_lookup_required",
+      matchMethod: null,
       selectedEmployer: null,
       candidates: [],
       association: null,
@@ -242,6 +243,119 @@ describe("canonical employers and resolution", () => {
     expect(await response.json()).toMatchObject({
       state: "confirmation_required",
       candidates: [{ nzbn: "9429034908822", tradingName: "One New Zealand" }],
+    });
+  });
+
+  it("automatically resolves one normalized exact official-name candidate", async () => {
+    await call("/v1/employers/ingest", ingestBody());
+    const exactIdentity = {
+      ...linkedinIdentity,
+      externalKey: "company:one-nz-group",
+      displayName: "one   new zealand group limited",
+      publicUrl: "https://www.linkedin.com/company/one-nz-group/",
+    };
+
+    const response = await call("/v1/employers/resolve", { identity: exactIdentity });
+    expect(await response.json()).toMatchObject({
+      state: "associated",
+      matchMethod: "exact_employer_name",
+      selectedEmployer: { nzbn: "9429034908822" },
+      association: null,
+    });
+
+    const confirmations = await env.DB.prepare(
+      "SELECT COUNT(*) AS count FROM platform_employer_confirmations",
+    ).first<{ count: number }>();
+    expect(confirmations?.count).toBe(0);
+    const entity = await env.DB.prepare(
+      "SELECT id FROM platform_entities WHERE platform = 'linkedin' AND external_key = 'company:one-nz-group'",
+    ).first();
+    expect(entity).toBeNull();
+  });
+
+  it("does not auto-select a trading-name match, fuzzy match, or multiple candidates", async () => {
+    await call("/v1/employers/ingest", ingestBody([
+      {
+        employerName: "ONE NEW ZEALAND",
+        tradingName: "One NZ",
+        nzbn: "9429034908822",
+        expiryDateOfAccreditation: "2027-08-04T00:00:00",
+      },
+      {
+        employerName: "ONE NEW ZEALAND RETAIL LIMITED",
+        tradingName: "Retail",
+        nzbn: "9429000000002",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+      },
+    ]));
+
+    const multiple = await call("/v1/employers/resolve", {
+      identity: { ...linkedinIdentity, displayName: "One New Zealand" },
+    });
+    expect(await multiple.json()).toMatchObject({
+      state: "confirmation_required",
+      matchMethod: null,
+      selectedEmployer: null,
+    });
+
+    const tradingName = await call("/v1/employers/resolve", {
+      identity: {
+        ...linkedinIdentity,
+        externalKey: "company:one-nz",
+        displayName: "One NZ",
+        publicUrl: "https://www.linkedin.com/company/one-nz/",
+      },
+    });
+    expect(await tradingName.json()).toMatchObject({
+      state: "confirmation_required",
+      matchMethod: null,
+      selectedEmployer: null,
+    });
+  });
+
+  it("requires INZ totalResults to be one for an immediate live exact match", async () => {
+    const exactEmployer = [{
+      employerName: "ONE NEW ZEALAND",
+      nzbn: "9429034908822",
+      expiryDateOfAccreditation: "2027-08-04T00:00:00",
+    }];
+    const response = await call("/v1/employers/ingest", {
+      ...ingestBody(exactEmployer),
+      inzResponse: createInzResponse(exactEmployer, {
+        current: 1,
+        totalPages: 2,
+        totalResults: 2,
+      }),
+    });
+    expect(await response.json()).toMatchObject({
+      state: "confirmation_required",
+      matchMethod: null,
+      selectedEmployer: null,
+    });
+  });
+
+  it("refreshes a stale exact-name match by NZBN", async () => {
+    const ingested = await call("/v1/employers/ingest", ingestBody([{
+      employerName: "ONE NEW ZEALAND",
+      nzbn: "9429034908822",
+      expiryDateOfAccreditation: "2027-08-04T00:00:00",
+    }]));
+    expect(await ingested.json()).toMatchObject({
+      state: "associated",
+      matchMethod: "exact_employer_name",
+      association: null,
+    });
+    await env.DB.prepare(
+      "UPDATE employers SET last_verified_at = ?1 WHERE nzbn = '9429034908822'",
+    ).bind(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60).run();
+
+    const response = await call("/v1/employers/resolve", { identity: linkedinIdentity });
+    expect(await response.json()).toMatchObject({
+      state: "refresh_required",
+      matchMethod: "exact_employer_name",
+      association: null,
+      selectedEmployer: { nzbn: "9429034908822" },
+      inzQuery: "9429034908822",
     });
   });
 
@@ -412,6 +526,40 @@ describe("platform no-match observations", () => {
 });
 
 describe("platform confirmations", () => {
+  it("gives a manual association precedence over an automatic exact-name match", async () => {
+    const exactIdentity = {
+      ...linkedinIdentity,
+      displayName: "ONE NEW ZEALAND GROUP LIMITED",
+    };
+    await call("/v1/employers/ingest", {
+      ...ingestBody([
+        {
+          employerName: "ONE NEW ZEALAND GROUP LIMITED",
+          nzbn: "9429034908822",
+          expiryDateOfAccreditation: "2027-08-04T00:00:00",
+        },
+        {
+          employerName: "ONE NEW ZEALAND RETAIL LIMITED",
+          nzbn: "9429000000002",
+          expiryDateOfAccreditation: "2027-08-04T00:00:00",
+        },
+      ]),
+      identity: exactIdentity,
+      query: exactIdentity.displayName,
+    });
+
+    const response = await call("/v1/employers/associate", {
+      identity: exactIdentity,
+      nzbn: "9429000000002",
+    });
+    expect(await response.json()).toMatchObject({
+      state: "associated",
+      matchMethod: "platform_association",
+      selectedEmployer: { nzbn: "9429000000002" },
+      association: { source: "self" },
+    });
+  });
+
   it("stores a self confirmation and allows the same client to change it", async () => {
     await call("/v1/employers/ingest", ingestBody([
       {
@@ -432,6 +580,7 @@ describe("platform confirmations", () => {
     });
     expect(await first.json()).toMatchObject({
       state: "associated",
+      matchMethod: "platform_association",
       selectedEmployer: { nzbn: "9429034908822" },
       association: { source: "self", confirmationCount: 1 },
     });

@@ -4,19 +4,31 @@ import {
   startCompanyPageAdapter,
 } from "../../lib/company-page-adapter";
 import type { PlatformIdentity } from "../../lib/contracts";
+import { isSeekJobSurface } from "../../lib/seek-routes";
 
-const JOB_DETAIL_PATH = /^\/job\/\d+\/?$/u;
+const JOB_TITLE_SELECTOR = '[data-automation="job-detail-title"]';
 const ADVERTISER_SELECTOR = '[data-automation="advertiser-name"]';
 const MOUNT_ANCHOR_ATTRIBUTE = "data-nz-aei-seek-job-anchor";
 const MOUNT_ANCHOR_SELECTOR = `[${MOUNT_ANCHOR_ATTRIBUTE}]`;
 
-function isSeekJobDetail(url: URL): boolean {
-  return url.hostname === "nz.seek.com" && JOB_DETAIL_PATH.test(url.pathname);
+interface EmployerHeader {
+  advertiser: HTMLElement;
+  employerRow: HTMLElement;
 }
 
-function findAdvertiserName(): HTMLElement | null {
-  const advertiser = document.querySelector<HTMLElement>(ADVERTISER_SELECTOR);
-  return advertiser?.textContent?.trim() ? advertiser : null;
+function findEmployerHeader(): EmployerHeader | null {
+  const jobTitle = document.querySelector<HTMLElement>(JOB_TITLE_SELECTOR);
+  const advertiser = jobTitle?.parentElement?.querySelector<HTMLElement>(ADVERTISER_SELECTOR);
+  if (!advertiser?.textContent?.trim()) {
+    return null;
+  }
+
+  const advertiserControl = advertiser.closest<HTMLElement>("button") ?? advertiser;
+  const employerRow = advertiserControl.parentElement;
+  if (employerRow === null || employerRow.parentElement !== jobTitle?.parentElement) {
+    return null;
+  }
+  return { advertiser, employerRow };
 }
 
 function normalizeName(value: string): string {
@@ -24,7 +36,7 @@ function normalizeName(value: string): string {
 }
 
 function readIdentity(): PlatformIdentity | null {
-  const advertiser = findAdvertiserName();
+  const advertiser = findEmployerHeader()?.advertiser;
   const displayName = advertiser?.textContent?.trim();
   if (!advertiser || !displayName) {
     return null;
@@ -59,26 +71,33 @@ function readIdentity(): PlatformIdentity | null {
 
 function ensureMountAnchor(): HTMLElement | null {
   const existing = document.querySelector<HTMLElement>(MOUNT_ANCHOR_SELECTOR);
-  if (existing?.isConnected) {
-    return existing;
-  }
-
-  const advertiser = findAdvertiserName();
-  if (advertiser === null) {
+  const header = findEmployerHeader();
+  if (header === null) {
     return null;
   }
 
-  const advertiserControl = advertiser.closest("button") ?? advertiser;
-  const anchor = document.createElement("span");
+  if (
+    existing?.isConnected &&
+    existing.tagName === "DIV" &&
+    existing.previousElementSibling === header.employerRow &&
+    existing.parentElement === header.employerRow.parentElement
+  ) {
+    return existing;
+  }
+  existing?.remove();
+
+  const anchor = document.createElement("div");
   anchor.setAttribute(MOUNT_ANCHOR_ATTRIBUTE, "");
-  advertiserControl.insertAdjacentElement("afterend", anchor);
+  anchor.style.alignSelf = "flex-start";
+  header.employerRow.insertAdjacentElement("afterend", anchor);
   return anchor;
 }
 
 const adapter: CompanyPageAdapter = {
   id: "seek-job",
+  mountLayout: "stacked",
   mountAnchorSelector: MOUNT_ANCHOR_SELECTOR,
-  isSupportedPage: isSeekJobDetail,
+  isSupportedPage: isSeekJobSurface,
   getIdentity: readIdentity,
   ensureMountAnchor,
   removeMountAnchor() {
@@ -87,7 +106,7 @@ const adapter: CompanyPageAdapter = {
 };
 
 export default defineContentScript({
-  matches: ["https://nz.seek.com/job/*"],
+  matches: ["https://nz.seek.com/*"],
   runAt: "document_idle",
   cssInjectionMode: "ui",
 

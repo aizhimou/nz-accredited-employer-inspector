@@ -1,6 +1,6 @@
 # NZ Accredited Employer Inspector extension
 
-WXT-powered Chrome extension with page adapters for LinkedIn company homepages and SEEK New Zealand job detail pages.
+WXT-powered Chrome extension with page adapters for LinkedIn company homepages and SEEK New Zealand job details, search-result detail panes, homepage recommendations, and company profiles.
 
 The extension follows [`../docs/extension-api-ssot.md`](../docs/extension-api-ssot.md) for platform identity, API orchestration, candidate confirmation, provenance, and fields.
 
@@ -33,3 +33,4 @@ Adapter contracts and manual test steps:
 
 - [`docs/linkedin-company-adapter.md`](docs/linkedin-company-adapter.md)
 - [`docs/seek-job-adapter.md`](docs/seek-job-adapter.md)
+- [`docs/seek-company-adapter.md`](docs/seek-company-adapter.md)

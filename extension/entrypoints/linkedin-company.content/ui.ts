@@ -162,6 +162,7 @@ export function mountCompanyWidget(
   const renderEmployer = (
     employer: AccreditedEmployer,
     selectedNzbn: string | null,
+    selectedLabel: string,
     onSelect: (nzbn: string) => void,
   ): HTMLElement => {
     const selected = employer.nzbn === selectedNzbn;
@@ -176,7 +177,7 @@ export function mountCompanyWidget(
     const titleLine = createElement("div", "employer-title-line");
     titleLine.append(createElement("strong", "employer-name", employer.employerName));
     if (selected) {
-      titleLine.append(createElement("span", "selected-label", "Associated"));
+      titleLine.append(createElement("span", "selected-label", selectedLabel));
     }
     content.append(titleLine);
     if (employer.tradingName !== null) {
@@ -232,6 +233,7 @@ export function mountCompanyWidget(
 
   const renderSuccess = (response: LookupSuccess): void => {
     const selected = response.data.selectedEmployer;
+    const exactNameMatch = response.data.matchMethod === "exact_employer_name";
     const noPublished =
       response.liveLookupStatus === "no_published_inz_match" ||
       response.data.state === "no_published_inz_match";
@@ -279,7 +281,9 @@ export function mountCompanyWidget(
         "source-badge",
         noPublished && response.data.noMatch !== null
           ? "24h INZ check"
-          : response.liveLookupStatus === "updated"
+          : exactNameMatch
+            ? "Exact INZ name"
+            : response.liveLookupStatus === "updated"
             ? "Live INZ"
             : "Shared data",
       ),
@@ -307,6 +311,20 @@ export function mountCompanyWidget(
           createElement("span", "provenance-warning", "Other users selected a different NZBN."),
         );
       }
+      panel.append(provenance);
+    }
+
+    if (exactNameMatch) {
+      const provenance = createElement("div", "provenance exact-match-provenance");
+      provenance.append(
+        createElement("strong", "provenance-label", "Employer match"),
+        createElement("span", "provenance-value", "Automatic exact official-name match"),
+        createElement(
+          "span",
+          "provenance-note",
+          "The company name on this page exactly matches the official INZ Employer Name. This match is not community-confirmed.",
+        ),
+      );
       panel.append(provenance);
     }
 
@@ -343,8 +361,8 @@ export function mountCompanyWidget(
           "p",
           "warning",
           response.liveLookupStatus === "verification_required"
-            ? "INZ returned no published match when refreshing the associated NZBN. The older record below was not deleted or silently treated as current."
-            : "The live response did not verify the associated NZBN. Review the dated record and confirm it on the official INZ list.",
+            ? `INZ returned no published match when refreshing the ${exactNameMatch ? "exact-name matched" : "associated"} NZBN. The older record below was not deleted or silently treated as current.`
+            : `The live response did not verify the ${exactNameMatch ? "exact-name matched" : "associated"} NZBN. Review the dated record and confirm it on the official INZ list.`,
         ),
       );
     } else if (needsConfirmation) {
@@ -362,9 +380,14 @@ export function mountCompanyWidget(
       const list = createElement("ul", "result-list");
       for (const employer of visibleCandidates) {
         list.append(
-          renderEmployer(employer, selected?.nzbn ?? null, (nzbn) => {
-            void runAssociation(nzbn);
-          }),
+          renderEmployer(
+            employer,
+            selected?.nzbn ?? null,
+            exactNameMatch ? "Exact match" : "Associated",
+            (nzbn) => {
+              void runAssociation(nzbn);
+            },
+          ),
         );
       }
       panel.append(list);
@@ -372,7 +395,13 @@ export function mountCompanyWidget(
 
     const footer = createElement("footer", "panel-footer");
     footer.append(
-      createElement("span", "footer-note", "Official accreditation data · Community association"),
+      createElement(
+        "span",
+        "footer-note",
+        exactNameMatch
+          ? "Official accreditation data · Automatic name match"
+          : "Official accreditation data · Community association",
+      ),
       createOfficialLink(),
     );
     panel.append(footer);

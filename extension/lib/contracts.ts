@@ -45,6 +45,7 @@ export interface EmployerResolutionResponse {
     | "confirmation_required"
     | "no_published_inz_match"
     | "inz_lookup_required";
+  matchMethod: "platform_association" | "exact_employer_name" | null;
   selectedEmployer: AccreditedEmployer | null;
   candidates: AccreditedEmployer[];
   association: EmployerAssociation | null;
@@ -170,19 +171,32 @@ export function isEmployerResolutionResponse(
   if (!isRecord(value)) {
     return false;
   }
-  return (
+  const structurallyValid =
     (value.state === "associated" ||
       value.state === "refresh_required" ||
       value.state === "confirmation_required" ||
       value.state === "no_published_inz_match" ||
       value.state === "inz_lookup_required") &&
+    (value.matchMethod === null ||
+      value.matchMethod === "platform_association" ||
+      value.matchMethod === "exact_employer_name") &&
     (value.selectedEmployer === null || isAccreditedEmployer(value.selectedEmployer)) &&
     Array.isArray(value.candidates) &&
     value.candidates.every(isAccreditedEmployer) &&
     (value.association === null || isEmployerAssociation(value.association)) &&
     (value.noMatch === null || isNoMatchObservation(value.noMatch)) &&
-    (value.inzQuery === null || typeof value.inzQuery === "string")
-  );
+    (value.inzQuery === null || typeof value.inzQuery === "string");
+  if (!structurallyValid) {
+    return false;
+  }
+
+  if (value.selectedEmployer === null) {
+    return value.matchMethod === null;
+  }
+  if (value.matchMethod === "platform_association") {
+    return value.association !== null;
+  }
+  return value.matchMethod === "exact_employer_name" && value.association === null;
 }
 
 export function isLookupResponse(value: unknown): value is LookupResponse {

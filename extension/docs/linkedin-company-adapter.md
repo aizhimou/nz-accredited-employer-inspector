@@ -35,12 +35,12 @@ LinkedIn may render the company header after `document_idle`. The adapter theref
 1. `Check NZ accreditation`: no network call has happened.
 2. `Checking INZ…`: background orchestration is active.
 3. `Confirm employer match`: D1 or live INZ returned official employer candidates, but no platform association can be assumed.
-4. `Accredited in NZ` / `Accreditation expired`: the associated employer's official expiry evaluation.
+4. `Accredited in NZ` / `Accreditation expired`: the selected employer's official expiry evaluation. Selection may be a stored platform association or a unique exact official-name match.
 5. `No published INZ match`: recognised live INZ `400 No Results`; the exact platform identity/query observation is reused for 24 hours and its check/expiry times are shown.
 6. `Live verification needs review`: an associated NZBN could not be republished by INZ; the old row is only dated context.
 7. `Try again`: API, INZ, or extension background failure.
 
-The result panel shows the associated employer and all API candidates (up to 50), with legal name, optional trading name, NZBN, accreditation expiry, INZ verification date, association provenance, and explicit `Use this employer` controls.
+The result panel shows the selected employer and all API candidates (up to 50), with legal name, optional trading name, NZBN, accreditation expiry, INZ verification date, match provenance, and explicit `Use this employer` controls. Automatic exact-name matches are labelled `Exact match` and `Not community-confirmed`; they are never presented as a community association.
 
 ## Manual verification
 
@@ -54,7 +54,7 @@ The result panel shows the associated employer and all API candidates (up to 50)
 8. If the response is `inz_lookup_required` or `refresh_required`, confirm exactly one background INZ request is followed by `POST /v1/employers/ingest` only for a positive payload.
 9. For a recognised display-name `400 No Results`, confirm one `POST /v1/employers/no-match`; a repeat check within 24 hours should stop after `/resolve` and make no INZ request.
 10. If candidates need confirmation, select one and confirm one `POST /v1/employers/associate` request.
-11. Confirm accreditation, association, and no-match provenance are labelled separately and the official INZ link opens in a new tab.
+11. Confirm accreditation, automatic exact-name match, association, and no-match provenance are labelled separately and the official INZ link opens in a new tab.
 12. Navigate to `/company/onenz/about/`; confirm the control is removed.
 13. Navigate back through LinkedIn SPA navigation; confirm exactly one control is mounted.
 

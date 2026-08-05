@@ -15,6 +15,7 @@ const previewResponse: LookupResponse = {
   requestId: "preview-request",
   data: {
     state: "associated",
+    matchMethod: "platform_association",
     selectedEmployer: {
       employerName: "ONE NEW ZEALAND GROUP LIMITED",
       tradingName: "One New Zealand",

@@ -270,6 +270,7 @@ export async function resolveEmployer(
   clientIdHash: string,
   preferredNzbns: readonly string[] = [],
   nowMilliseconds = Date.now(),
+  allowExactNameMatch = true,
 ): Promise<EmployerResolutionResponse> {
   const association = await readAssociation(db, identity, clientIdHash);
   const [preferred, confirmed, local, selectedEmployer] = await Promise.all([
@@ -291,6 +292,7 @@ export async function resolveEmployer(
     const fresh = isRecentlyVerified(lastVerifiedAtSeconds, nowMilliseconds);
     return {
       state: fresh ? "associated" : "refresh_required",
+      matchMethod: "platform_association",
       selectedEmployer,
       candidates,
       association: association.association,
@@ -299,9 +301,33 @@ export async function resolveEmployer(
     };
   }
 
+  const exactNameEmployer =
+    allowExactNameMatch &&
+    candidates.length === 1 &&
+    normalizeName(candidates[0]?.employerName ?? "") ===
+      normalizeName(identity.displayName)
+      ? candidates[0]
+      : undefined;
+  if (exactNameEmployer !== undefined) {
+    const lastVerifiedAtSeconds = Math.floor(
+      Date.parse(exactNameEmployer.lastVerifiedAt) / 1000,
+    );
+    const fresh = isRecentlyVerified(lastVerifiedAtSeconds, nowMilliseconds);
+    return {
+      state: fresh ? "associated" : "refresh_required",
+      matchMethod: "exact_employer_name",
+      selectedEmployer: exactNameEmployer,
+      candidates,
+      association: null,
+      noMatch: null,
+      inzQuery: fresh ? null : exactNameEmployer.nzbn,
+    };
+  }
+
   if (candidates.length > 0) {
     return {
       state: "confirmation_required",
+      matchMethod: null,
       selectedEmployer: null,
       candidates,
       association: association.association,
@@ -314,6 +340,7 @@ export async function resolveEmployer(
   if (noMatch !== null) {
     return {
       state: "no_published_inz_match",
+      matchMethod: null,
       selectedEmployer: null,
       candidates: [],
       association: association.association,
@@ -324,6 +351,7 @@ export async function resolveEmployer(
 
   return {
     state: "inz_lookup_required",
+    matchMethod: null,
     selectedEmployer: null,
     candidates: [],
     association: association.association,
@@ -431,6 +459,7 @@ export async function ingestEmployers(
     clientIdHash,
     parsed.results.map((employer) => employer.nzbn),
     nowMilliseconds,
+    parsed.totalResults === 1,
   );
 }
 

@@ -7,6 +7,7 @@ import type { PlatformIdentity } from "./contracts";
 
 export interface CompanyPageAdapter {
   id: string;
+  mountLayout?: "inline" | "stacked";
   mountAnchorSelector: string;
   isSupportedPage(url: URL): boolean;
   getIdentity(): PlatformIdentity | null;
@@ -43,17 +44,23 @@ function waitForMountAnchor(
   });
 }
 
+function identitySignature(identity: PlatformIdentity | null): string | null {
+  return identity === null ? null : JSON.stringify(identity);
+}
+
 export function startCompanyPageAdapter(
   ctx: ContentScriptContext,
   adapter: CompanyPageAdapter,
 ): void {
   let removeActiveUi: (() => void) | undefined;
   let activeSync: AbortController | undefined;
+  let mountedIdentitySignature: string | null = null;
 
   const syncUi = async (url: URL): Promise<void> => {
     activeSync?.abort();
     activeSync = new AbortController();
     const { signal } = activeSync;
+    mountedIdentitySignature = null;
     removeActiveUi?.();
     removeActiveUi = undefined;
     adapter.removeMountAnchor();
@@ -73,15 +80,19 @@ export function startCompanyPageAdapter(
       append: "last",
       isolateEvents: true,
       onMount(container, _shadow, shadowHost) {
+        const stacked = adapter.mountLayout === "stacked";
         shadowHost.style.setProperty("display", "inline-block", "important");
-        shadowHost.style.setProperty("margin-inline-start", "0.8rem", "important");
+        shadowHost.style.setProperty(
+          "margin-inline-start",
+          stacked ? "0" : "0.8rem",
+          "important",
+        );
         shadowHost.style.setProperty("position", "relative", "important");
         shadowHost.style.setProperty("vertical-align", "middle", "important");
         shadowHost.style.setProperty("z-index", "20", "important");
-        return mountCompanyWidget(
-          container,
-          adapter.getIdentity(),
-        );
+        const identity = adapter.getIdentity();
+        mountedIdentitySignature = identitySignature(identity);
+        return mountCompanyWidget(container, identity);
       },
       onRemove(controller) {
         controller?.destroy();
@@ -98,7 +109,16 @@ export function startCompanyPageAdapter(
         !signal.aborted &&
         adapter.isSupportedPage(new URL(location.href))
       ) {
-        adapter.ensureMountAnchor();
+        const anchor = adapter.ensureMountAnchor();
+        const currentIdentitySignature = identitySignature(adapter.getIdentity());
+        if (
+          anchor !== null &&
+          mountedIdentitySignature !== null &&
+          currentIdentitySignature !== null &&
+          currentIdentitySignature !== mountedIdentitySignature
+        ) {
+          runSync(new URL(location.href));
+        }
       }
     });
     anchorObserver.observe(document.documentElement, { childList: true, subtree: true });
