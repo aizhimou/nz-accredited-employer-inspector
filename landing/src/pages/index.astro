@@ -1,0 +1,1182 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import linkedInLogo from "../assets/LI-Logo.png";
+import seekLogo from "../assets/Seek_Limited-logo.svg";
+
+const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
+const chromeExtensionUrl =
+  import.meta.env.PUBLIC_CHROME_EXTENSION_URL ?? "https://chromewebstore.google.com/";
+const sourceModel = [
+  {
+    label: "Official fact",
+    title: "Accreditation",
+    copy: "Employer name, NZBN, expiry date and verification time come from Immigration New Zealand.",
+    source: "Source · INZ",
+    tone: "official",
+  },
+  {
+    label: "Derived match",
+    title: "Exact legal name",
+    copy: "A sole official employer can be selected only when its normalised legal name exactly matches the page.",
+    source: "Source · Worker-derived",
+    tone: "derived",
+  },
+  {
+    label: "Community context",
+    title: "Platform association",
+    copy: "People can confirm which NZBN belongs to a LinkedIn company or SEEK advertiser—and change it later.",
+    source: "Source · Extension users",
+    tone: "community",
+  },
+  {
+    label: "Time-bound evidence",
+    title: "No published match",
+    copy: "A name lookup with no result is kept for 24 hours. It is never presented as proof of non-accreditation.",
+    source: "Source · INZ lookup",
+    tone: "caution",
+  },
+];
+
+const agentResources = [
+  ["/llms.txt", "Short machine-readable site map"],
+  ["/llms-full.txt", "Complete product context in Markdown"],
+  ["/index.md", "Landing page without presentation markup"],
+  ["/.well-known/api-catalog", "RFC 9727 API discovery"],
+  ["/api/openapi.json", "OpenAPI 3.1 service description"],
+  ["/sitemap.xml", "Canonical crawl map"],
+];
+---
+
+<BaseLayout>
+  <section class="hero" aria-labelledby="hero-title">
+    <svg class="contours" viewBox="0 0 1600 760" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-90 650C233 460 405 747 740 540S1224 370 1690 102"></path>
+      <path d="M-110 709C240 505 430 784 772 581S1260 405 1710 153"></path>
+      <path d="M-130 770C255 553 460 820 806 623S1288 448 1730 205"></path>
+    </svg>
+    <div class="shell hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">A clearer job search in Aotearoa</p>
+        <h1 id="hero-title">Know who’s accredited. <em>Before you apply.</em></h1>
+        <p class="hero-lede">
+          A small Chrome extension that checks employers on LinkedIn and SEEK against Immigration New Zealand data—right where you’re job hunting.
+        </p>
+        <div class="button-row">
+          <a class="button button-primary" href={chromeExtensionUrl}>
+            Download for Chrome
+            <span aria-hidden="true">↗</span>
+          </a>
+          <a class="button button-secondary" href="#how-it-works">
+            See how it works
+            <span aria-hidden="true">↓</span>
+          </a>
+        </div>
+        <ul class="hero-notes" aria-label="Product characteristics">
+          <li>Open source</li>
+          <li>Human-triggered</li>
+          <li>No account access</li>
+        </ul>
+      </div>
+
+      <figure class="inspector-demo" aria-label="Example accreditation result shown inside a job page">
+        <figcaption>Illustrative result</figcaption>
+        <div class="browser-bar" aria-hidden="true">
+          <span></span><span></span><span></span>
+          <div>nz.seek.com / job</div>
+        </div>
+        <div class="job-card">
+          <div class="job-meta">Software engineering · Auckland</div>
+          <h2>Senior Platform Engineer</h2>
+          <div class="company-line">
+            <span class="company-avatar" aria-hidden="true">K</span>
+            <div>
+              <strong>Koru Digital Limited</strong>
+              <small>Tāmaki Makaurau</small>
+            </div>
+          </div>
+          <div class="widget">
+            <div class="widget-trigger">
+              <span class="status-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="m6.5 12.3 3.4 3.4 7.6-8"></path></svg>
+              </span>
+              <strong>Accredited in NZ</strong>
+              <span class="chevron" aria-hidden="true">⌄</span>
+            </div>
+            <div class="result-panel">
+              <div class="result-heading">
+                <div>
+                  <small>NZ accredited employer</small>
+                  <strong>Koru Digital Limited</strong>
+                </div>
+                <span>Official INZ data</span>
+              </div>
+              <div class="provenance-row">
+                <span>Employer match</span>
+                <strong>Community-confirmed association</strong>
+              </div>
+              <div class="employer-row">
+                <span class="result-dot"></span>
+                <div>
+                  <strong>Koru Digital Limited</strong>
+                  <dl>
+                    <div><dt>NZBN</dt><dd>94•••••••••••</dd></div>
+                    <div><dt>Accredited until</dt><dd>18 Mar 2027</dd></div>
+                    <div><dt>Verified with INZ</dt><dd>Today</dd></div>
+                  </dl>
+                </div>
+              </div>
+              <div class="result-footer">
+                <span>Official facts · Community association</span>
+                <span>View INZ list ↗</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="evidence-path" aria-label="Data provenance path">
+          <span><b>01</b> SEEK / LinkedIn</span>
+          <i aria-hidden="true"></i>
+          <span><b>02</b> Inspector</span>
+          <i aria-hidden="true"></i>
+          <span><b>03</b> INZ</span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <aside class="support-strip" aria-label="Supported job platforms">
+    <div class="shell support-inner">
+      <div class="platforms">
+        <img src={linkedInLogo.src} alt="LinkedIn" width={linkedInLogo.width} height={linkedInLogo.height} />
+        <img src={seekLogo.src} alt="SEEK NZ" />
+      </div>
+    </div>
+  </aside>
+
+  <section class="demo section" id="demo" aria-labelledby="demo-title">
+    <div class="shell">
+      <div class="demo-heading">
+        <div class="section-heading">
+          <p class="eyebrow">Product walkthrough</p>
+          <h2 id="demo-title">See the Inspector in action.</h2>
+        </div>
+        <div class="demo-intro">
+          <p>Watch a quick check on a supported job page—from the first click to the evidence behind the result.</p>
+          <span>Placeholder video · Final walkthrough coming soon</span>
+        </div>
+      </div>
+      <div class="video-shell">
+        <iframe
+          src="https://www.youtube-nocookie.com/embed/cE0wfjsybIQ?rel=0&modestbranding=1"
+          title="NZ Accredited Employer Inspector demo video placeholder"
+          loading="lazy"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>
+  </section>
+
+  <section class="how section" id="how-it-works" aria-labelledby="how-title">
+    <div class="shell">
+      <div class="section-heading how-heading">
+        <p class="eyebrow">One deliberate check</p>
+        <h2 id="how-title">Useful evidence, without leaving the job page.</h2>
+        <p>The extension waits for you. No background scraping, bulk lookup or automatic call happens on page load.</p>
+      </div>
+      <ol class="steps">
+        <li>
+          <span class="step-marker">On the page</span>
+          <h3>Find a role or company</h3>
+          <p>Browse supported LinkedIn company and job pages, or SEEK NZ jobs and company profiles as usual.</p>
+        </li>
+        <li>
+          <span class="step-marker">Your choice</span>
+          <h3>Click one clear control</h3>
+          <p>Select “Check NZ accreditation”. A check may make at most one live request to INZ.</p>
+        </li>
+        <li>
+          <span class="step-marker">In context</span>
+          <h3>Read the result and its source</h3>
+          <p>See the legal employer, NZBN, expiry, last verification and how the page was matched.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="coverage section" aria-labelledby="coverage-title">
+    <div class="shell coverage-grid">
+      <div class="coverage-copy">
+        <p class="eyebrow">Built for the messy middle</p>
+        <h2 id="coverage-title">Company names rarely line up perfectly.</h2>
+        <p>
+          A trading name on a job ad can differ from the legal employer published by INZ. The Inspector keeps plausible candidates visible and asks you to confirm rather than silently guessing.
+        </p>
+        <ul class="feature-list">
+          <li><span aria-hidden="true">✓</span> Exact legal-name matches are labelled as automatic</li>
+          <li><span aria-hidden="true">✓</span> Fuzzy candidates always require a person’s choice</li>
+          <li><span aria-hidden="true">✓</span> Every alternative stays available to inspect or select</li>
+        </ul>
+      </div>
+      <div class="match-sheet" aria-label="Example of matching a platform name to official employer candidates">
+        <div class="sheet-header">
+          <span>Employer match</span>
+          <small>Review required</small>
+        </div>
+        <div class="platform-name">
+          <small>Name shown on SEEK</small>
+          <strong>Koru Digital</strong>
+        </div>
+        <div class="connector" aria-hidden="true"><span></span></div>
+        <div class="candidate selected">
+          <span class="radio"></span>
+          <div><strong>Koru Digital Limited</strong><small>NZBN 94••••••••••• · Accredited</small></div>
+          <span class="selection">Your choice</span>
+        </div>
+        <div class="candidate">
+          <span class="radio"></span>
+          <div><strong>Koru Digital Services Limited</strong><small>NZBN 94••••••••••• · Accredited</small></div>
+          <span class="choose">Use this employer</span>
+        </div>
+        <p>Legal employer records are official INZ data. This platform association is community data.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="trust section" id="trust" aria-labelledby="trust-title">
+    <div class="shell">
+      <div class="section-heading trust-heading">
+        <p class="eyebrow">Provenance over promises</p>
+        <h2 id="trust-title">Four kinds of evidence. Never blurred together.</h2>
+        <p>Accreditation and identity matching answer different questions. The interface keeps their source and confidence visible.</p>
+      </div>
+      <div class="source-grid">
+        {sourceModel.map((item) => (
+          <article class:list={["source-card", item.tone]}>
+            <span class="source-label">{item.label}</span>
+            <h3>{item.title}</h3>
+            <p>{item.copy}</p>
+            <small>{item.source}</small>
+          </article>
+        ))}
+      </div>
+      <aside class="truth-note">
+        <span aria-hidden="true">!</span>
+        <p><strong>Important:</strong> “No published INZ match” is not proof that an employer is unaccredited. Check the legal name or ask the employer directly.</p>
+      </aside>
+    </div>
+  </section>
+
+  <section class="privacy section" aria-labelledby="privacy-title">
+    <div class="shell privacy-grid">
+      <div class="privacy-statement">
+        <p class="eyebrow">Small by design</p>
+        <h2 id="privacy-title">No account data. No mystery checks.</h2>
+      </div>
+      <div class="privacy-details">
+        <article>
+          <span>01</span>
+          <h3>Explicit user action</h3>
+          <p>INZ is contacted only after a click, never automatically when a page loads.</p>
+        </article>
+        <article>
+          <span>02</span>
+          <h3>Installation identity only</h3>
+          <p>A random UUID is stored locally and hashed by the API. It is not derived from LinkedIn or SEEK account data.</p>
+        </article>
+        <article>
+          <span>03</span>
+          <h3>Open implementation</h3>
+          <p>The extension, Worker, D1 schema, API contract and tests are available in the public repository.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="agents section" id="agents" aria-labelledby="agents-title">
+    <div class="shell agents-grid">
+      <div class="agents-copy">
+        <p class="eyebrow">Readable by people and agents</p>
+        <h2 id="agents-title">The page explains itself without a browser.</h2>
+        <p>
+          Semantic HTML and structured metadata describe the product for search and AI systems. Stable text endpoints expose the same core facts with less markup and fewer tokens.
+        </p>
+        <a class="text-link" href="/llms.txt">Open the agent-readable index <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="agent-terminal" aria-label="Agent-discoverable resources">
+        <div class="terminal-title"><span></span><span></span><span></span><code>agent-discovery</code></div>
+        <div class="terminal-body">
+          <p><span>$</span> GET /robots.txt</p>
+          <p class="terminal-response">200 · crawl policy + sitemap</p>
+          <div class="resource-list">
+            {agentResources.map(([path, purpose]) => (
+              <a href={path}>
+                <code>{path}</code>
+                <span>{purpose}</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq section" aria-labelledby="faq-title">
+    <div class="shell faq-grid">
+      <div class="section-heading">
+        <p class="eyebrow">Good to know</p>
+        <h2 id="faq-title">Straight answers.</h2>
+      </div>
+      <div class="questions">
+        <details>
+          <summary>Does the extension decide whether I can get a visa?</summary>
+          <p>No. It displays published employer accreditation data and matching context. It is not immigration or legal advice.</p>
+        </details>
+        <details>
+          <summary>Where does accreditation data come from?</summary>
+          <p>Employer names, NZBNs and accreditation expiry dates come from Immigration New Zealand. The API records when it accepted that data.</p>
+        </details>
+        <details>
+          <summary>Why can a result require confirmation?</summary>
+          <p>The brand or advertiser name on a platform may map to several legal employers. The extension shows candidates instead of turning a fuzzy match into a fact.</p>
+        </details>
+        <details>
+          <summary>Is this an official Immigration New Zealand product?</summary>
+          <p>No. It is an independent open-source project that links back to the official INZ accredited employer list.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta" aria-labelledby="cta-title">
+    <div class="shell final-cta-inner">
+      <div>
+        <p class="eyebrow">Built in Aotearoa</p>
+        <h2 id="cta-title">Bring clarity to your next application.</h2>
+      </div>
+      <div>
+        <p>Review the implementation, run the extension locally, or help improve platform coverage.</p>
+        <a class="button button-primary" href={repositoryUrl}>Explore on GitHub <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(5rem, 10vw, 9rem) clamp(4.5rem, 8vw, 7rem);
+    background:
+      radial-gradient(circle at 82% 25%, rgb(223 242 235 / 90%), transparent 31rem),
+      linear-gradient(140deg, #f7faf9 0%, #edf5f3 100%);
+  }
+
+  .contours {
+    position: absolute;
+    inset: auto -5% -5rem;
+    width: 110%;
+    height: 80%;
+    fill: none;
+    opacity: 0.75;
+    pointer-events: none;
+    stroke: #c5dcd6;
+    stroke-width: 1.2;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .hero-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(29rem, 0.88fr);
+    align-items: center;
+    gap: clamp(3rem, 7vw, 7.5rem);
+  }
+
+  .hero-copy {
+    display: grid;
+    justify-items: start;
+    gap: 1.8rem;
+  }
+
+  h1 em {
+    color: var(--pounamu);
+    font-style: normal;
+  }
+
+  .hero-lede {
+    max-width: 57ch;
+    color: var(--slate);
+    font-size: clamp(1.08rem, 1.7vw, 1.32rem);
+    line-height: 1.55;
+  }
+
+  .hero-notes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem 1.35rem;
+    padding: 0;
+    color: var(--slate);
+    font-size: 0.78rem;
+    font-weight: 650;
+    list-style: none;
+  }
+
+  .hero-notes li {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .hero-notes li::before {
+    width: 0.38rem;
+    height: 0.38rem;
+    border-radius: 50%;
+    background: var(--pounamu);
+    content: "";
+  }
+
+  .inspector-demo {
+    position: relative;
+    border: 1px solid rgb(187 213 207 / 90%);
+    border-radius: 1.25rem;
+    background: rgb(255 255 255 / 78%);
+    box-shadow: var(--shadow-card);
+    transform: rotate(1.2deg);
+  }
+
+  .inspector-demo > figcaption {
+    position: absolute;
+    top: -2rem;
+    right: 0;
+    color: var(--slate);
+    font-family: var(--font-utility);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--line-light);
+  }
+
+  .browser-bar > span {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #d6e3df;
+  }
+
+  .browser-bar > span:first-child { background: #d8877d; }
+  .browser-bar > span:nth-child(2) { background: #e6bf5c; }
+  .browser-bar > span:nth-child(3) { background: #79b99f; }
+
+  .browser-bar div {
+    min-width: 0;
+    flex: 1;
+    margin-left: 0.5rem;
+    padding: 0.38rem 0.7rem;
+    border-radius: 0.35rem;
+    background: #f2f6f5;
+    color: #758984;
+    font-family: var(--font-utility);
+    font-size: 0.6rem;
+  }
+
+  .job-card {
+    min-height: 27rem;
+    padding: 2rem;
+    border-radius: 0 0 1.25rem 1.25rem;
+    background: white;
+  }
+
+  .job-card > h2 {
+    margin-top: 0.2rem;
+    font-size: 1.75rem;
+    letter-spacing: -0.035em;
+  }
+
+  .job-meta {
+    color: var(--pounamu-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .company-line {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1.3rem;
+  }
+
+  .company-avatar {
+    display: grid;
+    width: 2.5rem;
+    height: 2.5rem;
+    place-items: center;
+    border-radius: 0.55rem;
+    background: var(--mist);
+    color: var(--pounamu-dark);
+    font-family: var(--font-display);
+    font-weight: 750;
+  }
+
+  .company-line div {
+    display: grid;
+  }
+
+  .company-line small {
+    color: var(--slate);
+    font-size: 0.7rem;
+  }
+
+  .widget {
+    position: relative;
+    margin-top: 1rem;
+  }
+
+  .widget-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.65rem 0.25rem 0.3rem;
+    border: 1px solid #9dccbb;
+    border-radius: 999px;
+    background: var(--pounamu-soft);
+    color: var(--pounamu-dark);
+    font-size: 0.74rem;
+  }
+
+  .status-icon {
+    display: grid;
+    width: 1.55rem;
+    height: 1.55rem;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--pounamu);
+  }
+
+  .status-icon svg {
+    width: 1rem;
+    fill: none;
+    stroke: white;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2.5;
+  }
+
+  .chevron { margin-left: 0.25rem; }
+
+  .result-panel {
+    position: absolute;
+    z-index: 3;
+    top: 2.6rem;
+    left: 0;
+    width: min(27rem, calc(100vw - 5.5rem));
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 0.75rem;
+    background: white;
+    box-shadow: 0 18px 42px rgb(5 45 53 / 18%);
+    animation: panel-in 700ms 220ms both cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(0.7rem); }
+  }
+
+  .result-heading {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--line-light);
+  }
+
+  .result-heading > div {
+    display: grid;
+  }
+
+  .result-heading small,
+  .provenance-row > span {
+    color: var(--slate);
+    font-size: 0.54rem;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .result-heading > div > strong {
+    font-size: 0.84rem;
+  }
+
+  .result-heading > span {
+    padding: 0.2rem 0.35rem;
+    border-radius: 0.25rem;
+    background: var(--mist);
+    color: var(--slate);
+    font-size: 0.5rem;
+    font-weight: 750;
+    text-transform: uppercase;
+  }
+
+  .provenance-row {
+    display: grid;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid var(--line-light);
+    border-left: 3px solid var(--pounamu);
+    background: #f4f9f7;
+  }
+
+  .provenance-row strong {
+    color: var(--slate);
+    font-size: 0.65rem;
+  }
+
+  .employer-row {
+    display: grid;
+    grid-template-columns: 0.5rem 1fr;
+    gap: 0.7rem;
+    padding: 0.85rem 1rem;
+  }
+
+  .result-dot {
+    width: 0.47rem;
+    height: 0.47rem;
+    margin-top: 0.35rem;
+    border-radius: 50%;
+    background: var(--pounamu);
+    box-shadow: 0 0 0 3px var(--pounamu-soft);
+  }
+
+  .employer-row > div > strong { font-size: 0.77rem; }
+
+  dl {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin: 0.5rem 0 0;
+  }
+
+  dl div { display: grid; }
+  dt { color: #78908b; font-size: 0.48rem; text-transform: uppercase; }
+  dd { margin: 0; color: var(--slate); font-size: 0.58rem; font-weight: 650; }
+
+  .result-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.55rem 1rem;
+    border-top: 1px solid var(--line-light);
+    color: var(--slate);
+    font-size: 0.51rem;
+  }
+
+  .result-footer span:last-child {
+    color: var(--pounamu-dark);
+    font-weight: 700;
+  }
+
+  .evidence-path {
+    position: absolute;
+    right: -2rem;
+    bottom: -4.3rem;
+    left: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.65rem;
+    color: var(--slate);
+    font-family: var(--font-utility);
+    font-size: 0.58rem;
+    transform: rotate(-1.2deg);
+  }
+
+  .evidence-path span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    white-space: nowrap;
+  }
+
+  .evidence-path b { color: var(--pounamu); }
+
+  .evidence-path i {
+    width: clamp(1rem, 3vw, 3rem);
+    height: 1px;
+    background: var(--line);
+  }
+
+  .support-strip {
+    border-block: 1px solid var(--line);
+    background: white;
+  }
+
+  .support-inner {
+    display: flex;
+    min-height: 5.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+  }
+
+  .platforms {
+    display: flex;
+    align-items: center;
+    gap: clamp(2rem, 6vw, 4.5rem);
+  }
+
+  .platforms img:first-child {
+    width: auto;
+    height: 1.65rem;
+  }
+
+  .platforms img:last-child {
+    width: auto;
+    height: 2rem;
+  }
+
+  .demo {
+    background: var(--mist);
+  }
+
+  .demo-heading {
+    display: grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    align-items: end;
+    gap: clamp(3rem, 8vw, 8rem);
+  }
+
+  .demo-intro {
+    display: grid;
+    gap: 1rem;
+    padding-bottom: 0.25rem;
+  }
+
+  .demo-intro p {
+    color: var(--slate);
+  }
+
+  .demo-intro span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    color: var(--pounamu-dark);
+    font-family: var(--font-utility);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .demo-intro span::before {
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--kōwhai);
+    box-shadow: 0 0 0 0.28rem rgb(229 182 71 / 18%);
+    content: "";
+  }
+
+  .video-shell {
+    position: relative;
+    overflow: hidden;
+    width: min(100%, 64rem);
+    aspect-ratio: 16 / 9;
+    margin: 3.5rem auto 0;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: var(--harbour-deep);
+    box-shadow: var(--shadow-card);
+  }
+
+  .video-shell::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background: linear-gradient(135deg, rgb(8 59 69 / 35%), transparent);
+    content: "";
+    pointer-events: none;
+  }
+
+  .video-shell iframe {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .section { padding-block: clamp(5.5rem, 10vw, 9rem); }
+
+  .how { background: white; }
+
+  .how-heading {
+    grid-template-columns: 0.65fr 1.3fr 0.85fr;
+    align-items: end;
+  }
+
+  .how-heading .eyebrow { align-self: start; }
+
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    margin-top: 5rem;
+    padding: 0;
+    border-block: 1px solid var(--line);
+    list-style: none;
+  }
+
+  .steps li {
+    position: relative;
+    min-height: 18rem;
+    padding: 3rem clamp(1.5rem, 3vw, 2.6rem) 2rem;
+  }
+
+  .steps li + li { border-left: 1px solid var(--line); }
+
+  .step-marker {
+    display: inline-block;
+    margin-bottom: 3.4rem;
+    color: var(--pounamu-dark);
+    font-family: var(--font-utility);
+    font-size: 0.64rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .steps h3 { margin-bottom: 0.8rem; }
+  .steps p { color: var(--slate); font-size: 0.9rem; }
+
+  .steps li::after {
+    position: absolute;
+    top: 3.5rem;
+    right: 1.7rem;
+    width: 0.45rem;
+    height: 0.45rem;
+    border: 1px solid var(--pounamu);
+    border-radius: 50%;
+    background: white;
+    box-shadow: 0 0 0 0.35rem var(--pounamu-soft);
+    content: "";
+  }
+
+  .coverage { overflow: hidden; background: var(--mist); }
+
+  .coverage-grid {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    align-items: center;
+    gap: clamp(3rem, 8vw, 8rem);
+  }
+
+  .coverage-copy { display: grid; gap: 1.5rem; }
+  .coverage-copy > p:not(.eyebrow) { color: var(--slate); }
+
+  .feature-list {
+    display: grid;
+    gap: 0.7rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .feature-list li {
+    display: grid;
+    grid-template-columns: 1.3rem 1fr;
+    gap: 0.5rem;
+    font-size: 0.88rem;
+    font-weight: 650;
+  }
+
+  .feature-list span { color: var(--pounamu); }
+
+  .match-sheet {
+    padding: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: white;
+    box-shadow: var(--shadow-card);
+    transform: rotate(-1deg);
+  }
+
+  .sheet-header,
+  .platform-name,
+  .candidate {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .sheet-header {
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--line-light);
+    color: var(--slate);
+    font-family: var(--font-utility);
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .sheet-header small {
+    padding: 0.2rem 0.45rem;
+    border-radius: 0.25rem;
+    background: #fff3d8;
+    color: #7f5b0b;
+  }
+
+  .platform-name {
+    display: grid;
+    justify-content: start;
+    gap: 0;
+    padding: 1.3rem;
+    border-radius: 0.7rem;
+    background: var(--cloud);
+  }
+
+  .platform-name small,
+  .candidate small { color: var(--slate); font-size: 0.68rem; }
+
+  .connector {
+    position: relative;
+    height: 2.5rem;
+    margin-left: 2rem;
+    border-left: 1px dashed #9bbeb4;
+  }
+
+  .connector span {
+    position: absolute;
+    bottom: 0;
+    left: -0.25rem;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 50%;
+    background: var(--pounamu);
+  }
+
+  .candidate {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    margin-top: 0.55rem;
+    padding: 1rem;
+    border: 1px solid var(--line-light);
+    border-radius: 0.65rem;
+  }
+
+  .candidate.selected {
+    border-color: #8dbfae;
+    background: #f4faf7;
+  }
+
+  .candidate > div { display: grid; }
+
+  .radio {
+    width: 0.85rem;
+    height: 0.85rem;
+    border: 1px solid #91aaa4;
+    border-radius: 50%;
+  }
+
+  .selected .radio {
+    border: 0.25rem solid var(--pounamu);
+  }
+
+  .selection,
+  .choose {
+    color: var(--pounamu-dark);
+    font-size: 0.64rem;
+    font-weight: 750;
+  }
+
+  .selection {
+    padding: 0.2rem 0.4rem;
+    border-radius: 0.25rem;
+    background: var(--pounamu-soft);
+  }
+
+  .match-sheet > p {
+    margin-top: 1rem;
+    color: var(--slate);
+    font-size: 0.68rem;
+  }
+
+  .trust { background: var(--harbour-deep); }
+  .trust :global(h2), .trust :global(h3) { color: white; }
+  .trust .eyebrow { color: #8ed3bd; }
+  .trust-heading { grid-template-columns: 0.6fr 1.4fr 0.8fr; align-items: end; }
+  .trust-heading > p:last-child { color: #b6cbc6; }
+
+  .source-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    margin-top: 5rem;
+    border: 1px solid rgb(187 213 207 / 28%);
+    border-radius: 0.8rem;
+  }
+
+  .source-card {
+    display: grid;
+    min-height: 22rem;
+    align-content: start;
+    padding: 2rem;
+  }
+
+  .source-card + .source-card { border-left: 1px solid rgb(187 213 207 / 28%); }
+  .source-label { margin-bottom: 4rem; color: #8ed3bd; font-family: var(--font-utility); font-size: 0.61rem; font-weight: 700; text-transform: uppercase; }
+  .source-card h3 { margin-bottom: 0.8rem; }
+  .source-card p { color: #b6cbc6; font-size: 0.86rem; }
+  .source-card small { align-self: end; margin-top: 2rem; color: #789993; font-family: var(--font-utility); font-size: 0.58rem; }
+  .source-card.caution { background: rgb(229 182 71 / 7%); }
+  .source-card.caution .source-label { color: var(--kōwhai); }
+
+  .truth-note {
+    display: flex;
+    max-width: 64rem;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem auto 0;
+    padding: 1.2rem 1.5rem;
+    border: 1px solid rgb(229 182 71 / 35%);
+    border-radius: 0.65rem;
+    background: rgb(229 182 71 / 9%);
+    color: #d9e7e3;
+    font-size: 0.82rem;
+  }
+
+  .truth-note > span {
+    display: grid;
+    width: 1.7rem;
+    height: 1.7rem;
+    flex: none;
+    place-items: center;
+    border: 1px solid var(--kōwhai);
+    border-radius: 50%;
+    color: var(--kōwhai);
+    font-weight: 750;
+  }
+
+  .privacy { background: white; }
+
+  .privacy-grid {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: clamp(4rem, 10vw, 10rem);
+  }
+
+  .privacy-statement { display: grid; align-content: start; gap: 1.2rem; }
+  .privacy-details { display: grid; }
+  .privacy-details article { display: grid; grid-template-columns: 2.4rem 1fr; gap: 0.5rem 1.2rem; padding-block: 1.8rem; border-bottom: 1px solid var(--line); }
+  .privacy-details article:first-child { padding-top: 0; }
+  .privacy-details article > span { grid-row: span 2; color: var(--pounamu); font-family: var(--font-utility); font-size: 0.68rem; font-weight: 700; }
+  .privacy-details h3 { font-size: 1.2rem; }
+  .privacy-details p { color: var(--slate); font-size: 0.86rem; }
+
+  .agents { background: var(--mist); }
+
+  .agents-grid {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    align-items: center;
+    gap: clamp(4rem, 9vw, 9rem);
+  }
+
+  .agents-copy { display: grid; justify-items: start; gap: 1.4rem; }
+  .agents-copy > p:not(.eyebrow) { color: var(--slate); }
+  .text-link { color: var(--pounamu-dark); font-weight: 750; }
+
+  .agent-terminal {
+    overflow: hidden;
+    border: 1px solid #244f55;
+    border-radius: 0.8rem;
+    background: var(--harbour-deep);
+    box-shadow: var(--shadow-card);
+    color: white;
+  }
+
+  .terminal-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #28515a;
+  }
+
+  .terminal-title > span { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #6e8e8b; }
+  .terminal-title code { margin-left: 0.5rem; color: #9fbbb5; font-size: 0.62rem; }
+  .terminal-body { padding: 1.5rem; font-family: var(--font-utility); font-size: 0.7rem; }
+  .terminal-body > p span { color: var(--kōwhai); }
+  .terminal-response { margin: 0.2rem 0 1.5rem; color: #7fc9b3; }
+  .resource-list { display: grid; border-top: 1px solid #28515a; }
+  .resource-list a { display: grid; grid-template-columns: minmax(10rem, 0.8fr) 1.2fr; gap: 1rem; padding: 0.85rem 0; border-bottom: 1px solid #28515a; text-decoration: none; }
+  .resource-list a:hover code { color: var(--kōwhai); }
+  .resource-list code { color: #8ed3bd; }
+  .resource-list span { color: #a9c0bb; }
+
+  .faq { background: white; }
+  .faq-grid { display: grid; grid-template-columns: 0.6fr 1.4fr; gap: clamp(3rem, 8vw, 8rem); }
+  .questions { border-top: 1px solid var(--line); }
+  details { border-bottom: 1px solid var(--line); }
+  summary { position: relative; padding: 1.5rem 3rem 1.5rem 0; color: var(--harbour); font-family: var(--font-display); font-size: 1.05rem; font-weight: 680; cursor: pointer; list-style: none; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { position: absolute; top: 1.45rem; right: 0.2rem; color: var(--pounamu); content: "+"; font-size: 1.4rem; font-weight: 400; }
+  details[open] summary::after { content: "−"; }
+  details p { max-width: 65ch; padding: 0 3rem 1.5rem 0; color: var(--slate); font-size: 0.9rem; }
+
+  .final-cta {
+    padding-block: clamp(4rem, 8vw, 7rem);
+    background: var(--kōwhai);
+  }
+
+  .final-cta .eyebrow { color: var(--harbour); }
+  .final-cta-inner { display: grid; grid-template-columns: 1.2fr 0.8fr; align-items: end; gap: 4rem; }
+  .final-cta-inner > div:first-child { display: grid; gap: 1.1rem; }
+  .final-cta-inner > div:last-child { display: grid; justify-items: start; gap: 1.3rem; }
+  .final-cta-inner > div:last-child p { max-width: 40ch; color: #324b48; }
+
+  @media (max-width: 980px) {
+    .hero-grid { grid-template-columns: 1fr; }
+    .hero-copy { max-width: 48rem; }
+    .inspector-demo { width: min(100%, 36rem); margin-inline: auto; }
+    .how-heading, .trust-heading { grid-template-columns: 1fr 1.4fr; }
+    .how-heading > p:last-child, .trust-heading > p:last-child { grid-column: 2; }
+    .source-grid { grid-template-columns: repeat(2, 1fr); }
+    .source-card:nth-child(3) { border-top: 1px solid rgb(187 213 207 / 28%); border-left: 0; }
+    .source-card:nth-child(4) { border-top: 1px solid rgb(187 213 207 / 28%); }
+  }
+
+  @media (max-width: 760px) {
+    .hero { padding-top: 4rem; }
+    h1 { font-size: clamp(2.35rem, 11vw, 3.5rem); }
+    .inspector-demo { margin-top: 2rem; }
+    .job-card { min-height: 25rem; padding: 1.3rem; }
+    .result-panel { width: min(27rem, calc(100vw - 4.25rem)); }
+    .evidence-path { right: 0; bottom: -4.5rem; left: 0; justify-content: center; gap: 0.35rem; font-size: 0.48rem; }
+    .support-inner { flex-wrap: wrap; justify-content: center; padding-block: 1.3rem; }
+    .demo-heading { grid-template-columns: 1fr; gap: 1.5rem; }
+    .video-shell { margin-top: 2.5rem; border-radius: 0.7rem; }
+    .how-heading, .trust-heading { grid-template-columns: 1fr; }
+    .how-heading > p:last-child, .trust-heading > p:last-child { grid-column: auto; }
+    .steps { grid-template-columns: 1fr; margin-top: 3rem; }
+    .steps li { min-height: auto; padding: 2rem 1rem; }
+    .steps li + li { border-top: 1px solid var(--line); border-left: 0; }
+    .step-marker { margin-bottom: 1.8rem; }
+    .coverage-grid, .privacy-grid, .agents-grid, .faq-grid, .final-cta-inner { grid-template-columns: 1fr; }
+    .match-sheet { padding: 1rem; transform: none; }
+    .candidate { grid-template-columns: auto 1fr; }
+    .candidate > span:last-child { grid-column: 2; justify-self: start; }
+    .source-grid { grid-template-columns: 1fr; }
+    .source-card { min-height: auto; }
+    .source-card + .source-card { border-top: 1px solid rgb(187 213 207 / 28%); border-left: 0; }
+    .source-label { margin-bottom: 2.5rem; }
+    .resource-list a { grid-template-columns: 1fr; gap: 0.25rem; }
+    dl { grid-template-columns: 1fr 1fr; }
+    .result-heading > span { display: none; }
+  }
+</style>

@@ -1,0 +1,113 @@
+---
+import BrandMark from "../components/BrandMark.astro";
+import logo from "../assets/logo-no-bg-mark.png";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "NZ Accredited Employer Inspector | Check Employers on SEEK & LinkedIn",
+  description = "Check whether an employer is accredited in New Zealand while browsing LinkedIn and SEEK.",
+} = Astro.props;
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
+const socialImageUrl = new URL("/og-image.svg", Astro.site);
+const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
+const structuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "SoftwareApplication",
+      name: "NZ Accredited Employer Inspector",
+      applicationCategory: "BrowserApplication",
+      operatingSystem: "Chrome",
+      description,
+      url: canonicalUrl.href,
+      codeRepository: repositoryUrl,
+      softwareVersion: "0.6.0",
+      featureList: [
+        "Checks employer accreditation from LinkedIn and SEEK",
+        "Uses Immigration New Zealand data",
+        "Shows accreditation expiry and verification provenance",
+        "Supports user-confirmed platform-to-employer associations",
+      ],
+    },
+    {
+      "@type": "WebSite",
+      name: "NZ Accredited Employer Inspector",
+      url: canonicalUrl.origin,
+      inLanguage: "en-NZ",
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#083b45" />
+    <meta name="robots" content="index, follow" />
+    <link rel="icon" href={logo.src} type="image/png" />
+    <link rel="apple-touch-icon" href={logo.src} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="alternate" href="/index.md" type="text/markdown" title="Markdown version" />
+    <link rel="describedby" href="/llms.txt" type="text/markdown" title="Agent-readable site index" />
+    <link rel="api-catalog" href="/.well-known/api-catalog" type="application/linkset+json" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="en_NZ" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={socialImageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
+    <title>{title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <header class="site-header">
+      <div class="shell nav-shell">
+        <a class="brand-link" href="/" aria-label="NZ Accredited Employer Inspector home">
+          <BrandMark />
+        </a>
+        <nav aria-label="Primary navigation">
+          <a href="#how-it-works">How it works</a>
+          <a href="#demo">Demo</a>
+          <a href="#trust">Trust model</a>
+          <a href="#agents">For agents</a>
+          <a class="nav-cta" href={repositoryUrl}>GitHub <span aria-hidden="true">↗</span></a>
+        </nav>
+      </div>
+    </header>
+    <main id="main-content">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="shell footer-grid">
+        <div>
+          <BrandMark />
+          <p>Open-source clarity for people navigating New Zealand’s job market.</p>
+        </div>
+        <div class="footer-links" aria-label="Project links">
+          <a href={repositoryUrl}>Source code</a>
+          <a href={`${repositoryUrl}/blob/main/docs/extension-api-ssot.md`}>Technical contract</a>
+          <a href="https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/">Official INZ list</a>
+          <a href="/index.md">Read as Markdown</a>
+        </div>
+        <p class="legal">
+          Not immigration or legal advice. Accreditation data is sourced from Immigration New Zealand; platform associations may be community-confirmed.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

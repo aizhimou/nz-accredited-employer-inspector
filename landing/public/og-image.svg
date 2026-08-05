@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#edf5f3"/>
+  <path d="M-80 505C180 390 290 585 560 440s430-18 760-170" fill="none" stroke="#bbd5cf" stroke-width="2"/>
+  <path d="M-80 560C210 435 330 620 595 488s435-30 780-190" fill="none" stroke="#d3e4df" stroke-width="2"/>
+  <g transform="translate(80 80)">
+    <rect width="76" height="76" rx="20" fill="#083b45"/>
+    <path fill="#fff" d="M55 14c-9.5 5-14.8 12-17.6 19-3.2-4.5-7.6-7.9-13.2-10.1 4.1 4.6 7.1 9.5 8.8 14.6-6.2-2.9-12.7-3.4-19.3-1.8 7.6 1.2 13.6 3.8 18.2 7.6-6.3.2-12.1 2.2-17.3 5.9 7.1-1.7 13.3-1.5 18.8.5-4.5 3.3-7.9 7.9-10 13.8 3.9-4.8 8.1-8.1 12.8-10.2-.1 4.5 1 9.4 3.5 14.3-.6-6.8.1-12.7 2.2-17.7 2.6 3.2 6.3 5.7 11.1 7.6-4.4-3.7-7.4-7.6-9-11.8 3.8 1.2 8.2 1.5 13.2.6-5-1.2-9-3-12.2-5.4 3.9-.6 7.8-2.2 11.8-4.9-5.2 1.6-9.8 2-13.5 1 4.1-2.7 8.1-7.1 12-13.7z"/>
+  </g>
+  <text x="80" y="238" fill="#083b45" font-family="Avenir Next, Segoe UI, sans-serif" font-size="65" font-weight="700">Know who’s accredited.</text>
+  <text x="80" y="308" fill="#083b45" font-family="Avenir Next, Segoe UI, sans-serif" font-size="65" font-weight="700">Before you apply.</text>
+  <text x="80" y="382" fill="#47645f" font-family="Segoe UI, sans-serif" font-size="27">Check NZ employer accreditation on LinkedIn and SEEK.</text>
+  <g transform="translate(80 454)">
+    <rect width="340" height="72" rx="36" fill="#fff" stroke="#bdd4ce"/>
+    <circle cx="39" cy="36" r="20" fill="#087a5c"/>
+    <path d="m30 36 6 6 12-13" fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+    <text x="74" y="45" fill="#105c49" font-family="Segoe UI, sans-serif" font-size="24" font-weight="700">Accredited in NZ</text>
+  </g>
+</svg>
