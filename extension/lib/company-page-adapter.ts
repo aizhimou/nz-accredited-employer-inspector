@@ -48,6 +48,23 @@ function identitySignature(identity: PlatformIdentity | null): string | null {
   return identity === null ? null : JSON.stringify(identity);
 }
 
+export function shouldRemountCompanyPageUi(
+  mountedAnchor: HTMLElement,
+  currentAnchor: HTMLElement | null,
+  mountedUiConnected: boolean,
+  mountedIdentitySignature: string | null,
+  currentIdentitySignature: string | null,
+): boolean {
+  return (
+    currentAnchor !== null &&
+    (!mountedUiConnected ||
+      currentAnchor !== mountedAnchor ||
+      (mountedIdentitySignature !== null &&
+        currentIdentitySignature !== null &&
+        currentIdentitySignature !== mountedIdentitySignature))
+  );
+}
+
 export function startCompanyPageAdapter(
   ctx: ContentScriptContext,
   adapter: CompanyPageAdapter,
@@ -69,10 +86,12 @@ export function startCompanyPageAdapter(
       return;
     }
 
-    if (await waitForMountAnchor(adapter, signal) === null || signal.aborted) {
+    const mountedAnchor = await waitForMountAnchor(adapter, signal);
+    if (mountedAnchor === null || signal.aborted) {
       return;
     }
 
+    let mountedShadowHost: HTMLElement | null = null;
     const ui = await createShadowRootUi<WidgetController>(ctx, {
       name: `nz-aei-${adapter.id}`,
       position: "inline",
@@ -80,6 +99,7 @@ export function startCompanyPageAdapter(
       append: "last",
       isolateEvents: true,
       onMount(container, _shadow, shadowHost) {
+        mountedShadowHost = shadowHost;
         const stacked = adapter.mountLayout === "stacked";
         shadowHost.style.setProperty("display", "inline-block", "important");
         shadowHost.style.setProperty(
@@ -112,10 +132,15 @@ export function startCompanyPageAdapter(
         const anchor = adapter.ensureMountAnchor();
         const currentIdentitySignature = identitySignature(adapter.getIdentity());
         if (
-          anchor !== null &&
-          mountedIdentitySignature !== null &&
-          currentIdentitySignature !== null &&
-          currentIdentitySignature !== mountedIdentitySignature
+          shouldRemountCompanyPageUi(
+            mountedAnchor,
+            anchor,
+            mountedShadowHost !== null &&
+              mountedShadowHost.isConnected &&
+              mountedShadowHost.parentElement === anchor,
+            mountedIdentitySignature,
+            currentIdentitySignature,
+          )
         ) {
           runSync(new URL(location.href));
         }

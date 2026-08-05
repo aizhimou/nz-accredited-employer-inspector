@@ -1,4 +1,4 @@
-# LinkedIn company homepage adapter
+# LinkedIn company profile adapter
 
 ## Scope
 
@@ -6,9 +6,11 @@ Supported URLs:
 
 ```text
 https://www.linkedin.com/company/<company-slug>/
+https://www.linkedin.com/company/<company-slug>/about/
+https://www.linkedin.com/company/<company-slug>/{posts|jobs|life|people|insights|product}/...
 ```
 
-The first version intentionally does not inject on `/about`, `/posts`, `/jobs`, `/life`, `/people`, `/insights`, or admin URLs.
+Known public sections may contain additional nested paths, such as `/life/salesandrevenue/`. Query parameters do not affect route recognition. Admin and unknown company sections remain unsupported.
 
 ## Page contract
 
@@ -24,11 +26,11 @@ Fallback company-name selector:
 main h1
 ```
 
-The adapter creates its own inline mount anchor immediately after the company heading and mounts the Shadow DOM UI inside it. This avoids coupling the widget to LinkedIn's tagline class while keeping the control beside the company title. Its strong platform identity is the canonical company slug: `company:<slug>`.
+The adapter creates a block mount anchor after the complete company-title line and before the tagline or company metadata. The company heading and LinkedIn's own verified/about control therefore stay together while the widget occupies a dedicated row. Its strong platform identity is the canonical company slug: `company:<slug>`.
 
 If the primary heading class changes, the adapter falls back to the first non-empty `main h1`. No generated Ember ID or obfuscated LinkedIn class is used.
 
-LinkedIn may render the company header after `document_idle`. The adapter therefore observes the page until the heading exists before creating the WXT UI. WXT `wxt:locationchange` handling removes the UI outside the company homepage and recreates it for SPA navigation to another company homepage. `autoMount()` restores the UI if LinkedIn rerenders the header.
+LinkedIn may render the company header after `document_idle`. The content script therefore starts on every `www.linkedin.com` page and in all frames so it is already present when LinkedIn performs an SPA navigation into a company route. This is required when Jobs keeps the top-level company URL in a shell while rendering the real company page inside the same-origin `/preload/?_bprMode=vanilla` iframe. In that frame the adapter derives the canonical slug from the organization navigation links and waits until both identity and heading exist before creating the UI. WXT `wxt:locationchange` handling removes the UI outside supported top-level company routes and recreates it for SPA navigation. `autoMount()` restores the UI if LinkedIn rerenders the header.
 
 ## UI states
 
@@ -47,7 +49,7 @@ The result panel shows the selected employer and all API candidates (up to 50), 
 1. Run `npm run build` in `extension/`.
 2. Open `chrome://extensions`, enable Developer mode, and load `extension/.output/chrome-mv3`.
 3. Open `https://www.linkedin.com/company/onenz/`.
-4. Confirm one compact control appears beside the company title, before the tagline.
+4. Confirm one compact control appears on its own row below the company-title line and before the tagline.
 5. Click it once.
 6. From `chrome://extensions`, open the extension service worker's DevTools. Background requests do not appear in the LinkedIn tab's Network panel.
 7. Confirm the first call is `POST /v1/employers/resolve`.
@@ -55,7 +57,8 @@ The result panel shows the selected employer and all API candidates (up to 50), 
 9. For a recognised display-name `400 No Results`, confirm one `POST /v1/employers/no-match`; a repeat check within 24 hours should stop after `/resolve` and make no INZ request.
 10. If candidates need confirmation, select one and confirm one `POST /v1/employers/associate` request.
 11. Confirm accreditation, automatic exact-name match, association, and no-match provenance are labelled separately and the official INZ link opens in a new tab.
-12. Navigate to `/company/onenz/about/`; confirm the control is removed.
-13. Navigate back through LinkedIn SPA navigation; confirm exactly one control is mounted.
+12. Navigate to `/company/onenz/about/?viewAsMember=true`; confirm the control remains mounted with the same `company:onenz` identity.
+13. Navigate between supported company tabs through LinkedIn SPA navigation; confirm exactly one control is mounted.
+14. Open LinkedIn Jobs search results, follow the active job's company link, and confirm the control mounts inside LinkedIn's preload frame without refreshing the company page.
 
 The shared API and orchestration contract remains [`../../docs/extension-api-ssot.md`](../../docs/extension-api-ssot.md).
