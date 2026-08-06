@@ -11,7 +11,7 @@ export const GET: APIRoute = () => {
 - Primary audience: People assessing New Zealand job opportunities on LinkedIn and SEEK
 - Primary task: Check whether the legal employer associated with a platform page appears on the Immigration New Zealand accredited employer list
 - Repository: https://github.com/aizhimou/nz-accredited-employer-inspector
-- Production API: https://nz-accredited-employer-api.asimov.workers.dev
+- Production API: https://nzaec.zemo.bio/api
 
 ## Product behaviour
 

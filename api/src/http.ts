@@ -19,6 +19,7 @@ const INGEST_PATH = "/v1/employers/ingest";
 const NO_MATCH_PATH = "/v1/employers/no-match";
 const ASSOCIATE_PATH = "/v1/employers/associate";
 const HEALTH_PATH = "/health";
+const PUBLIC_API_PREFIX = "/api";
 const MAX_SUBMISSION_BYTES = 128 * 1024;
 
 const CORS_HEADERS: Readonly<Record<string, string>> = {
@@ -139,6 +140,9 @@ function logEvent(level: "info" | "error", event: Record<string, unknown>): void
 export async function handleRequest(request: Request, env: Env): Promise<Response> {
   const requestId = crypto.randomUUID();
   const url = new URL(request.url);
+  const pathname = url.pathname.startsWith(`${PUBLIC_API_PREFIX}/`)
+    ? url.pathname.slice(PUBLIC_API_PREFIX.length)
+    : url.pathname;
   const startedAt = Date.now();
 
   if (request.method === "OPTIONS") {
@@ -149,7 +153,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   }
 
   try {
-    if (url.pathname === HEALTH_PATH) {
+    if (pathname === HEALTH_PATH) {
       if (request.method !== "GET") {
         throw new ApiError(405, "method_not_allowed", "Only GET is allowed for this endpoint.");
       }
@@ -166,10 +170,10 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     }
 
     if (
-      url.pathname !== RESOLVE_PATH &&
-      url.pathname !== INGEST_PATH &&
-      url.pathname !== NO_MATCH_PATH &&
-      url.pathname !== ASSOCIATE_PATH
+      pathname !== RESOLVE_PATH &&
+      pathname !== INGEST_PATH &&
+      pathname !== NO_MATCH_PATH &&
+      pathname !== ASSOCIATE_PATH
     ) {
       throw new ApiError(404, "not_found", "The requested endpoint was not found.");
     }
@@ -192,7 +196,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     const body = await readSubmissionJson(request);
     const clientIdHash = await hashClientId(clientId);
 
-    if (url.pathname === RESOLVE_PATH) {
+    if (pathname === RESOLVE_PATH) {
       const input = parseResolveRequest(body);
       const result = await resolveEmployer(env.DB, input.identity, clientIdHash);
       logEvent("info", {
@@ -214,7 +218,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       throw new ApiError(429, "submission_rate_limit_exceeded", "Too many submissions.", 60);
     }
 
-    if (url.pathname === INGEST_PATH) {
+    if (pathname === INGEST_PATH) {
       const input = parseIngestRequest(body);
       const result = await ingestEmployers(env.DB, input, clientIdHash);
       logEvent("info", {
@@ -230,7 +234,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return jsonResponse(result, 200, requestId);
     }
 
-    if (url.pathname === NO_MATCH_PATH) {
+    if (pathname === NO_MATCH_PATH) {
       const input = parseNoMatchRequest(body);
       const result = await storeNoMatchObservation(env.DB, input, clientIdHash);
       logEvent("info", {

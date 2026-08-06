@@ -19,8 +19,12 @@
     "check": "npm run typegen:check && npm run typecheck && npm test",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:prod": "wrangler d1 migrations apply nz-accredited-employer-prod --remote",
+    "d1:official:prepare": "python3 scripts/prepare-official-import.py",
+    "d1:official:import:local": "wrangler d1 execute DB --local --file .generated/official-employer-import.sql",
+    "d1:official:import:prod": "wrangler d1 execute nz-accredited-employer-prod --remote --file .generated/official-employer-import.sql",
     "deploy:dry-run": "wrangler deploy --env production --dry-run",
     "deploy:prod": "wrangler deploy --env production",
+    "release:prod": "npm run d1:migrate:prod && npm run deploy:prod",
     "startup:check": "wrangler check startup --env production"
   },
   "devDependencies": {

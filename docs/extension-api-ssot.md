@@ -3,8 +3,8 @@
 Status: active  
 API version: `v1`  
 Service version: `0.6.0`
-Last updated: 2026-08-05  
-Production base URL: `https://nz-accredited-employer-api.asimov.workers.dev`
+Last updated: 2026-08-06
+Production base URL: `https://nzaec.zemo.bio/api`
 
 This document is the single source of truth (SSOT) for the browser extension and Worker contract. Extension code must not infer behaviour by reading the `api/` implementation.
 
@@ -196,8 +196,8 @@ interface EmployerResolutionResponse {
 
 Rules:
 
-- `associated`: a selected employer exists and `lastVerifiedAt` is less than 7 days old. Do not call INZ. Selection may come from a stored platform association or an automatic exact-name match; inspect `matchMethod`.
-- `refresh_required`: a selected employer exists but was last verified 7 or more days ago. `inzQuery` is the selected employer's NZBN. Selection provenance remains in `matchMethod`.
+- `associated`: a selected employer exists and its official observation is fresh. Live INZ observations are fresh for 7 days; complete MBIE official imports are fresh for 30 days from their source snapshot date. Do not call INZ. Selection may come from a stored platform association or an automatic exact-name match; inspect `matchMethod`.
+- `refresh_required`: a selected employer exists but its source-specific freshness window has elapsed. `inzQuery` is the selected employer's NZBN. Selection provenance remains in `matchMethod`.
 - `confirmation_required`: D1 has one or more plausible candidates but no usable association. The UI lists all candidates and asks the user to confirm; it must not silently pick a fuzzy match.
 - `no_published_inz_match`: there is no association or positive candidate, and this exact platform identity plus normalised display-name query has a no-match observation less than 24 hours old. Do not call INZ.
 - `inz_lookup_required`: neither an association nor a local candidate exists. `inzQuery` is the platform display name.
@@ -261,8 +261,10 @@ Success: `200 EmployerResolutionResponse`.
 This endpoint is read-only. It searches `employers.normalized_employer_name` and `normalized_trading_name` using:
 
 1. exact NZBN/name/trading-name match;
-2. one normalised string containing the other;
+2. for platform display names of at least four characters, the official normalised legal or trading name containing the complete normalised display name;
 3. stable deterministic ordering and a 20-row limit.
+
+Short official names and acronyms are not reverse-matched inside longer platform display names, and display names shorter than four characters do not use containment matching. Exact acronym matches remain supported.
 
 A fuzzy candidate is never automatically written as an association.
 
@@ -435,10 +437,20 @@ One row per NZBN:
 | `normalized_trading_name` | Nullable Worker-normalised search field. |
 | `expiry_date_of_accreditation` | Latest official INZ local datetime string. |
 | `first_seen_at` | Worker Unix seconds for first accepted observation/import. |
-| `last_verified_at` | Worker Unix seconds for latest accepted INZ observation/import. |
+| `last_verified_at` | Worker Unix seconds for the latest live observation, or UTC midnight on the official import's source snapshot date. |
 | `last_verified_source` | `inz_live_lookup` or `inz_official_import`. |
+| `accreditation_type` | Nullable accreditation type from the latest complete official import. |
+| `accreditation_status` | Nullable source status from the latest complete official import. |
+| `sector`, `subsector` | Nullable industry classification from the latest complete official import. |
+| `accreditation_start_date` | Nullable start date from the latest complete official import. |
+| `region`, `city` | Nullable location fields from the latest complete official import. |
+| `official_snapshot_date` | Nullable `YYYY-MM-DD` as-of date of the latest complete import containing the NZBN. |
 
-Future official bulk data is imported directly into this table with `last_verified_source = 'inz_official_import'`. Live user-driven INZ results continuously supplement and update the same rows.
+Official bulk data is staged and validated before one canonical upsert into this table with `last_verified_source = 'inz_official_import'`. Live user-driven INZ results continuously supplement and update the same rows. A newer live observation is never overwritten by an older snapshot.
+
+### `official_employer_imports` and `official_employer_import_rows` — import audit
+
+`official_employer_imports` records source filename, SHA-256, expected/importable/actual counts, snapshot date, and the `loading → validated → ready` lifecycle. `official_employer_import_rows` retains every released spreadsheet row, including rows without an NZBN that cannot enter the canonical NZBN-keyed table. The API never queries a snapshot unless its canonical upsert has completed.
 
 ### `platform_entities` — platform identity metadata
 

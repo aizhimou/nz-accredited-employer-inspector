@@ -1,11 +1,11 @@
 import type { APIRoute } from "astro";
 
-const API_BASE_URL = "https://nz-accredited-employer-api.asimov.workers.dev";
+const API_BASE_URL = "https://nzaec.zemo.bio/api";
 const CONTRACT_URL =
   "https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md";
 
 export const GET: APIRoute = ({ site }) => {
-  const base = site ?? new URL("http://localhost:4321");
+  const base = site ?? new URL("https://nzaec.zemo.bio");
   const catalogUrl = new URL("/.well-known/api-catalog", base).href;
   const body = {
     linkset: [

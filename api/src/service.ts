@@ -16,6 +16,9 @@ import {
 } from "./validation";
 
 const NO_MATCH_TTL_SECONDS = 24 * 60 * 60;
+const OFFICIAL_IMPORT_TTL_SECONDS = 30 * 24 * 60 * 60;
+
+type VerificationSource = "inz_live_lookup" | "inz_official_import";
 
 interface EmployerRow {
   employer_name: string;
@@ -23,6 +26,11 @@ interface EmployerRow {
   nzbn: string;
   expiry_date_of_accreditation: string;
   last_verified_at: number;
+  last_verified_source: VerificationSource;
+}
+
+interface EmployerCandidate extends AccreditedEmployer {
+  verificationSource: VerificationSource;
 }
 
 interface PlatformEntityRow {
@@ -46,7 +54,7 @@ interface AssociationResolution {
   noMatchAt: number | null;
 }
 
-function rowToEmployer(row: EmployerRow, nowMilliseconds: number): AccreditedEmployer {
+function rowToEmployer(row: EmployerRow, nowMilliseconds: number): EmployerCandidate {
   return {
     employerName: row.employer_name,
     tradingName: row.trading_name,
@@ -57,27 +65,48 @@ function rowToEmployer(row: EmployerRow, nowMilliseconds: number): AccreditedEmp
       row.expiry_date_of_accreditation,
       nowMilliseconds,
     ),
+    verificationSource: row.last_verified_source,
   };
+}
+
+function toPublicEmployer(candidate: EmployerCandidate): AccreditedEmployer {
+  const { verificationSource: _, ...employer } = candidate;
+  return employer;
+}
+
+function isCandidateRecentlyVerified(
+  candidate: EmployerCandidate,
+  nowMilliseconds: number,
+): boolean {
+  const lastVerifiedAtSeconds = Math.floor(
+    Date.parse(candidate.lastVerifiedAt) / 1000,
+  );
+  return isRecentlyVerified(
+    lastVerifiedAtSeconds,
+    nowMilliseconds,
+    candidate.verificationSource === "inz_official_import"
+      ? OFFICIAL_IMPORT_TTL_SECONDS
+      : undefined,
+  );
 }
 
 async function findLocalCandidates(
   db: D1Database,
   displayName: string,
   nowMilliseconds: number,
-): Promise<AccreditedEmployer[]> {
+): Promise<EmployerCandidate[]> {
   const normalized = normalizeName(displayName);
   const rows = await db
     .prepare(
       `SELECT employer_name, trading_name, nzbn,
-              expiry_date_of_accreditation, last_verified_at
+              expiry_date_of_accreditation, last_verified_at,
+              last_verified_source
          FROM employers
         WHERE nzbn = ?1
            OR normalized_employer_name = ?2
            OR normalized_trading_name = ?2
-           OR instr(normalized_employer_name, ?2) > 0
-           OR (normalized_trading_name IS NOT NULL AND instr(normalized_trading_name, ?2) > 0)
-           OR instr(?2, normalized_employer_name) > 0
-           OR (normalized_trading_name IS NOT NULL AND instr(?2, normalized_trading_name) > 0)
+           OR (length(?2) >= 4 AND instr(normalized_employer_name, ?2) > 0)
+           OR (length(?2) >= 4 AND normalized_trading_name IS NOT NULL AND instr(normalized_trading_name, ?2) > 0)
         ORDER BY CASE
                    WHEN nzbn = ?1 THEN 0
                    WHEN normalized_employer_name = ?2 THEN 1
@@ -99,11 +128,12 @@ async function findEmployer(
   db: D1Database,
   nzbn: string,
   nowMilliseconds: number,
-): Promise<AccreditedEmployer | null> {
+): Promise<EmployerCandidate | null> {
   const row = await db
     .prepare(
       `SELECT employer_name, trading_name, nzbn,
-              expiry_date_of_accreditation, last_verified_at
+              expiry_date_of_accreditation, last_verified_at,
+              last_verified_source
          FROM employers
         WHERE nzbn = ?1`,
     )
@@ -116,7 +146,7 @@ async function findEmployers(
   db: D1Database,
   nzbns: readonly string[],
   nowMilliseconds: number,
-): Promise<AccreditedEmployer[]> {
+): Promise<EmployerCandidate[]> {
   const uniqueNzbns = [...new Set(nzbns)].slice(0, 50);
   if (uniqueNzbns.length === 0) {
     return [];
@@ -125,7 +155,8 @@ async function findEmployers(
   const rows = await db
     .prepare(
       `SELECT employer_name, trading_name, nzbn,
-              expiry_date_of_accreditation, last_verified_at
+              expiry_date_of_accreditation, last_verified_at,
+              last_verified_source
          FROM employers
         WHERE nzbn IN (${placeholders})`,
     )
@@ -242,10 +273,10 @@ function getFreshNoMatch(
 }
 
 function mergeCandidates(
-  groups: readonly (readonly AccreditedEmployer[])[],
-): AccreditedEmployer[] {
+  groups: readonly (readonly EmployerCandidate[])[],
+): EmployerCandidate[] {
   const seen = new Set<string>();
-  const merged: AccreditedEmployer[] = [];
+  const merged: EmployerCandidate[] = [];
   for (const group of groups) {
     for (const employer of group) {
       if (!seen.has(employer.nzbn) && merged.length < 50) {
@@ -284,17 +315,15 @@ export async function resolveEmployer(
 
   const selected = selectedEmployer === null ? [] : [selectedEmployer];
   const candidates = mergeCandidates([selected, preferred, confirmed, local]);
+  const publicCandidates = candidates.map(toPublicEmployer);
 
   if (selectedEmployer !== null) {
-    const lastVerifiedAtSeconds = Math.floor(
-      Date.parse(selectedEmployer.lastVerifiedAt) / 1000,
-    );
-    const fresh = isRecentlyVerified(lastVerifiedAtSeconds, nowMilliseconds);
+    const fresh = isCandidateRecentlyVerified(selectedEmployer, nowMilliseconds);
     return {
       state: fresh ? "associated" : "refresh_required",
       matchMethod: "platform_association",
-      selectedEmployer,
-      candidates,
+      selectedEmployer: toPublicEmployer(selectedEmployer),
+      candidates: publicCandidates,
       association: association.association,
       noMatch: null,
       inzQuery: fresh ? null : selectedEmployer.nzbn,
@@ -309,15 +338,12 @@ export async function resolveEmployer(
       ? candidates[0]
       : undefined;
   if (exactNameEmployer !== undefined) {
-    const lastVerifiedAtSeconds = Math.floor(
-      Date.parse(exactNameEmployer.lastVerifiedAt) / 1000,
-    );
-    const fresh = isRecentlyVerified(lastVerifiedAtSeconds, nowMilliseconds);
+    const fresh = isCandidateRecentlyVerified(exactNameEmployer, nowMilliseconds);
     return {
       state: fresh ? "associated" : "refresh_required",
       matchMethod: "exact_employer_name",
-      selectedEmployer: exactNameEmployer,
-      candidates,
+      selectedEmployer: toPublicEmployer(exactNameEmployer),
+      candidates: publicCandidates,
       association: null,
       noMatch: null,
       inzQuery: fresh ? null : exactNameEmployer.nzbn,
@@ -329,7 +355,7 @@ export async function resolveEmployer(
       state: "confirmation_required",
       matchMethod: null,
       selectedEmployer: null,
-      candidates,
+      candidates: publicCandidates,
       association: association.association,
       noMatch: null,
       inzQuery: null,

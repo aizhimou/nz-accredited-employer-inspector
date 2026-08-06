@@ -169,5 +169,15 @@ describe("Auckland accreditation and freshness", () => {
     const verified = Math.floor(Date.parse("2026-08-01T00:00:00Z") / 1000);
     expect(isRecentlyVerified(verified, Date.parse("2026-08-07T23:59:59Z"))).toBe(true);
     expect(isRecentlyVerified(verified, Date.parse("2026-08-08T00:00:00Z"))).toBe(false);
+    expect(isRecentlyVerified(
+      verified,
+      Date.parse("2026-08-30T23:59:59Z"),
+      30 * 24 * 60 * 60,
+    )).toBe(true);
+    expect(isRecentlyVerified(
+      verified,
+      Date.parse("2026-08-31T00:00:00Z"),
+      30 * 24 * 60 * 60,
+    )).toBe(false);
   });
 });

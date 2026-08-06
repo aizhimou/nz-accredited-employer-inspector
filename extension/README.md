@@ -2,6 +2,8 @@
 
 WXT-powered Chrome extension with page adapters for LinkedIn company profiles, direct job pages, and job search detail panes, plus SEEK New Zealand job details, search-result detail panes, homepage recommendations, and company profiles.
 
+Production API requests use `https://nzaec.zemo.bio/api`.
+
 The extension follows [`../docs/extension-api-ssot.md`](../docs/extension-api-ssot.md) for platform identity, API orchestration, candidate confirmation, provenance, and fields.
 
 ## Development

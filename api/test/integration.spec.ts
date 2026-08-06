@@ -90,7 +90,7 @@ describe("HTTP routing and controls", () => {
   it("serves health without D1 or rate limiting", async () => {
     const limiter = denyRateLimit();
     const response = await worker.fetch(
-      new IncomingRequest("https://api.example.test/health"),
+      new IncomingRequest("https://api.example.test/api/health"),
       createTestEnv({ CLIENT_RATE_LIMITER: limiter }),
       createExecutionContext(),
     );
@@ -102,7 +102,7 @@ describe("HTTP routing and controls", () => {
   it("handles CORS, missing routes, wrong methods, and client validation", async () => {
     const testEnv = createTestEnv();
     const options = await worker.fetch(
-      new IncomingRequest("https://api.example.test/v1/employers/resolve", { method: "OPTIONS" }),
+      new IncomingRequest("https://api.example.test/api/v1/employers/resolve", { method: "OPTIONS" }),
       testEnv,
       createExecutionContext(),
     );
@@ -117,7 +117,7 @@ describe("HTTP routing and controls", () => {
     expect(missing.status).toBe(404);
 
     const wrongMethod = await worker.fetch(
-      new IncomingRequest("https://api.example.test/v1/employers/resolve", {
+      new IncomingRequest("https://api.example.test/api/v1/employers/resolve", {
         headers: { "X-Client-ID": CLIENT_ID },
       }),
       testEnv,
@@ -126,7 +126,7 @@ describe("HTTP routing and controls", () => {
     expect(wrongMethod.status).toBe(405);
 
     const noClient = await worker.fetch(
-      new IncomingRequest("https://api.example.test/v1/employers/resolve", {
+      new IncomingRequest("https://api.example.test/api/v1/employers/resolve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ identity: linkedinIdentity }),
@@ -229,8 +229,13 @@ describe("canonical employers and resolution", () => {
     expect(count?.count).toBe(2);
   });
 
-  it("finds canonical employers by legal or trading-name containment", async () => {
-    await call("/v1/employers/ingest", ingestBody());
+  it("finds canonical employers when a legal name contains the full page name", async () => {
+    await call("/v1/employers/ingest", ingestBody([{
+      employerName: "ONE NEW ZEALAND GROUP LIMITED",
+      tradingName: "One NZ",
+      nzbn: "9429034908822",
+      expiryDateOfAccreditation: "2027-08-04T00:00:00",
+    }]));
     const seekIdentity = {
       platform: "seek",
       externalKey: "advertiser:one new zealand",
@@ -242,8 +247,64 @@ describe("canonical employers and resolution", () => {
     const response = await call("/v1/employers/resolve", { identity: seekIdentity });
     expect(await response.json()).toMatchObject({
       state: "confirmation_required",
-      candidates: [{ nzbn: "9429034908822", tradingName: "One New Zealand" }],
+      candidates: [{ nzbn: "9429034908822", tradingName: "One NZ" }],
     });
+  });
+
+  it("does not match short trading-name acronyms inside unrelated page words", async () => {
+    const acronymEmployers = [
+      {
+        employerName: "YM MEDIA LIMITED",
+        tradingName: "IF",
+        nzbn: "9429050917952",
+        expiryDateOfAccreditation: "2027-05-27T00:00:00",
+      },
+      {
+        employerName: "ERECT SAFE SOLUTIONS LIMITED",
+        tradingName: "ESS",
+        nzbn: "9429046609663",
+        expiryDateOfAccreditation: "2026-09-19T00:00:00",
+      },
+      {
+        employerName: "INFORMATION TECHNOLOGY SERVICES LIMITED",
+        tradingName: "IT",
+        nzbn: "9429000000003",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+      },
+    ];
+    await call("/v1/employers/ingest", ingestBody(acronymEmployers));
+
+    for (const displayName of ["Pacific Business Trust", "Britomart Holdings"]) {
+      const response = await call("/v1/employers/resolve", {
+        identity: {
+          ...linkedinIdentity,
+          externalKey: `company:${displayName.toLowerCase().replaceAll(" ", "-")}`,
+          displayName,
+          publicUrl: `https://www.linkedin.com/company/${displayName.toLowerCase().replaceAll(" ", "-")}/`,
+        },
+      });
+      expect(await response.json()).toMatchObject({
+        state: "inz_lookup_required",
+        candidates: [],
+        inzQuery: displayName,
+      });
+    }
+
+    for (const employer of acronymEmployers) {
+      const acronym = employer.tradingName;
+      const response = await call("/v1/employers/resolve", {
+        identity: {
+          ...linkedinIdentity,
+          externalKey: `company:${acronym.toLowerCase()}`,
+          displayName: acronym,
+          publicUrl: `https://www.linkedin.com/company/${acronym.toLowerCase()}/`,
+        },
+      });
+      expect(await response.json()).toMatchObject({
+        state: "confirmation_required",
+        candidates: [{ nzbn: employer.nzbn, tradingName: acronym }],
+      });
+    }
   });
 
   it("automatically resolves one normalized exact official-name candidate", async () => {
@@ -356,6 +417,48 @@ describe("canonical employers and resolution", () => {
       association: null,
       selectedEmployer: { nzbn: "9429034908822" },
       inzQuery: "9429034908822",
+    });
+  });
+
+  it("keeps complete official imports fresh for 30 days without exposing internal provenance", async () => {
+    const verifiedAt = Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60;
+    await env.DB.prepare(
+      `INSERT INTO employers (
+         employer_name, normalized_employer_name,
+         trading_name, normalized_trading_name,
+         nzbn, expiry_date_of_accreditation,
+         first_seen_at, last_verified_at, last_verified_source,
+         official_snapshot_date
+       ) VALUES (
+         'ONE NEW ZEALAND', 'one new zealand',
+         NULL, NULL,
+         '9429034908822', '2030-01-01T00:00:00',
+         ?1, ?1, 'inz_official_import',
+         '2026-07-27'
+       )`,
+    ).bind(verifiedAt).run();
+
+    const officialResponse = await call("/v1/employers/resolve", {
+      identity: linkedinIdentity,
+    });
+    const officialBody = await officialResponse.json<Record<string, unknown>>();
+    expect(officialBody).toMatchObject({
+      state: "associated",
+      matchMethod: "exact_employer_name",
+    });
+    expect(JSON.stringify(officialBody)).not.toContain("verificationSource");
+
+    await env.DB.prepare(
+      `UPDATE employers
+          SET last_verified_source = 'inz_live_lookup'
+        WHERE nzbn = '9429034908822'`,
+    ).run();
+    const liveResponse = await call("/v1/employers/resolve", {
+      identity: linkedinIdentity,
+    });
+    expect(await liveResponse.json()).toMatchObject({
+      state: "refresh_required",
+      matchMethod: "exact_employer_name",
     });
   });
 

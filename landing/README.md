@@ -16,15 +16,19 @@ npm run build
 npm run preview
 ```
 
+## Cloudflare Pages
+
+The Pages project builds from the `landing` monorepo root with `npm run build` and publishes `dist`. Cloudflare Git integration automatically builds and deploys pushes to `main`; the one-time dashboard settings and deployment order are documented in [`../docs/cloudflare-deployment.md`](../docs/cloudflare-deployment.md).
+
 ## Production site URL
 
-Set `SITE_URL` to the deployed origin before building. Astro uses it for canonical links, `robots.txt`, `sitemap.xml`, `llms.txt`, the API catalog, and social metadata.
+The production origin defaults to `https://nzaec.zemo.bio`. Astro uses it for canonical links, `robots.txt`, `sitemap.xml`, `llms.txt`, the API catalog, and social metadata. Override `SITE_URL` only when building for another environment.
 
 ```bash
-SITE_URL=https://example.com npm run build
+SITE_URL=https://preview.example.com npm run build
 ```
 
-Without `SITE_URL`, local builds use `http://localhost:4321` so generated URLs remain valid during development.
+Without `SITE_URL`, generated absolute URLs use the production origin.
 
 ## Chrome Web Store URL
 
@@ -32,7 +36,6 @@ Set `PUBLIC_CHROME_EXTENSION_URL` to the published Chrome Web Store listing. Unt
 
 ```bash
 PUBLIC_CHROME_EXTENSION_URL=https://chromewebstore.google.com/detail/your-extension-id \
-SITE_URL=https://example.com \
 npm run build
 ```
 
@@ -54,7 +57,7 @@ npm run build
 This static project publishes explicit Markdown URLs, but Astro static output does not negotiate a second representation for `/` based on `Accept: text/markdown`. If the deployed domain uses Cloudflare, enable **Markdown for Agents** at the zone or matching Configuration Rule to provide network-level content negotiation. Verify it after deployment:
 
 ```bash
-curl -I https://example.com/ -H 'Accept: text/markdown'
+curl -I https://nzaec.zemo.bio/ -H 'Accept: text/markdown'
 ```
 
 The response should use `Content-Type: text/markdown`, include `Vary: Accept`, and return the converted page body.

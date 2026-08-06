@@ -1,6 +1,6 @@
 import { defineConfig } from "astro/config";
 
-const site = process.env.SITE_URL ?? "http://localhost:4321";
+const site = process.env.SITE_URL ?? "https://nzaec.zemo.bio";
 
 export default defineConfig({
   site,

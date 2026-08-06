@@ -64,6 +64,7 @@ export function getAccreditationStatus(
 export function isRecentlyVerified(
   lastVerifiedAtSeconds: number,
   nowMilliseconds = Date.now(),
+  maxAgeSeconds = 7 * 24 * 60 * 60,
 ): boolean {
-  return Math.floor(nowMilliseconds / 1000) - lastVerifiedAtSeconds < 7 * 24 * 60 * 60;
+  return Math.floor(nowMilliseconds / 1000) - lastVerifiedAtSeconds < maxAgeSeconds;
 }

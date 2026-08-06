@@ -35,7 +35,17 @@
   "env": {
     "production": {
       "name": "nz-accredited-employer-api",
-      "workers_dev": true,
+      "workers_dev": false,
+      "routes": [
+        {
+          "pattern": "nzaec.zemo.bio/api/v1/*",
+          "zone_name": "zemo.bio"
+        },
+        {
+          "pattern": "nzaec.zemo.bio/api/health",
+          "zone_name": "zemo.bio"
+        }
+      ],
       "vars": {
         "ENVIRONMENT": "production",
         "SERVICE_VERSION": "0.6.0"
