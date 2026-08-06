@@ -1,8 +1,11 @@
 /*
-  Link: </.well-known/api-catalog>; rel="api-catalog", </index.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"; type="text/markdown"
+  Link: </.well-known/api-catalog>; rel="api-catalog", </privacy/>; rel="privacy-policy", </index.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"; type="text/markdown"
   Content-Signal: ai-train=no, search=yes, ai-input=yes
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+
+/privacy/
+  Link: </.well-known/api-catalog>; rel="api-catalog", </privacy/>; rel="privacy-policy", </privacy.md>; rel="alternate"; type="text/markdown", </llms.txt>; rel="describedby"; type="text/markdown"
 
 /.well-known/api-catalog
   Content-Type: application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"

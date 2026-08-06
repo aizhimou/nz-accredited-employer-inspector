@@ -4,6 +4,8 @@ WXT-powered Chrome extension with page adapters for LinkedIn company profiles, d
 
 Production API requests use `https://nzaei.zemo.bio/api`.
 
+The public extension privacy policy is available at `https://nzaei.zemo.bio/privacy/`. Use this URL in the Chrome Web Store Developer Dashboard privacy policy field.
+
 The extension follows [`../docs/extension-api-ssot.md`](../docs/extension-api-ssot.md) for platform identity, API orchestration, candidate confirmation, provenance, and fields.
 
 ## Development

@@ -2,7 +2,9 @@ import type { APIRoute } from "astro";
 
 const paths = [
   "/",
+  "/privacy/",
   "/index.md",
+  "/privacy.md",
   "/llms.txt",
   "/llms-full.txt",
   "/.well-known/api-catalog",

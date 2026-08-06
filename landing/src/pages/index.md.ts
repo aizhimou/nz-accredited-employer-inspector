@@ -59,12 +59,14 @@ The Chrome Web Store listing is currently under review. Visitors can join the on
 - [Extension source](https://github.com/aizhimou/nz-accredited-employer-inspector/tree/main/extension)
 - [Architecture and API contract](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md)
 - [Official INZ accredited employer list](https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/)
+- [Privacy policy](/privacy/)
 - [Built by Zemo Ai](https://zemo.bio/)
 
 ## Agent resources
 
 - [/llms.txt](/llms.txt): concise discovery index
 - [/llms-full.txt](/llms-full.txt): complete product context
+- [/privacy.md](/privacy.md): privacy policy without presentation markup
 - [/.well-known/api-catalog](/.well-known/api-catalog): RFC 9727 API catalog
 - [/api/openapi.json](/api/openapi.json): OpenAPI 3.1 description
 - [/sitemap.xml](/sitemap.xml): crawl map

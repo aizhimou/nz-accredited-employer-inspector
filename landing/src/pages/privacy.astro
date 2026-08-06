@@ -1,0 +1,540 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const privacyUrl = "https://nzaei.zemo.bio/privacy/";
+const contactEmail = "aizhimoug@gmail.com";
+---
+
+<BaseLayout
+  title="Privacy Policy | NZ Accredited Employer Inspector"
+  description="How NZ Accredited Employer Inspector handles installation identifiers, supported-page employer data, retention, security, and deletion requests."
+  pageKind="privacy"
+  markdownAlternate="/privacy.md"
+>
+  <section class="policy-hero" aria-labelledby="policy-title">
+    <div class="shell policy-hero-grid">
+      <div class="policy-intro">
+        <p class="eyebrow">Privacy policy</p>
+        <h1 id="policy-title">Your data, without the fine print.</h1>
+        <p class="policy-lede">
+          NZ Accredited Employer Inspector reads a small amount of public employer context only when you ask it to run a check. It does not read your LinkedIn or SEEK account identity.
+        </p>
+        <dl class="policy-meta">
+          <div><dt>Effective</dt><dd>6 August 2026</dd></div>
+          <div><dt>Policy URL</dt><dd><a href={privacyUrl}>{privacyUrl}</a></dd></div>
+          <div><dt>Operator</dt><dd><a href="https://zemo.bio/" rel="author">Zemo Ai</a> · Auckland, New Zealand</dd></div>
+        </dl>
+      </div>
+
+      <aside class="data-route" aria-label="Data route for an accreditation check">
+        <span class="route-label">One user-triggered check</span>
+        <ol>
+          <li>
+            <b>Supported page</b>
+            <span>Employer name · public company ID · public URL</span>
+          </li>
+          <li>
+            <b>Extension</b>
+            <span>Random installation UUID stored locally</span>
+          </li>
+          <li>
+            <b>nzaei.zemo.bio</b>
+            <span>HTTPS lookup · rate limit · confirmation</span>
+          </li>
+        </ol>
+        <p>No background crawl. No account identity. No advertising profile.</p>
+      </aside>
+    </div>
+  </section>
+
+  <div class="shell policy-layout">
+    <aside class="policy-nav">
+      <p>On this page</p>
+      <nav aria-label="Privacy policy sections">
+        <a href="#summary">Plain-language summary</a>
+        <a href="#data">Data we process</a>
+        <a href="#use">How we use it</a>
+        <a href="#sharing">Sharing and sale</a>
+        <a href="#retention">Retention</a>
+        <a href="#security">Security</a>
+        <a href="#choices">Deletion and contact</a>
+      </nav>
+    </aside>
+
+    <article class="policy-copy">
+      <section id="summary">
+        <p class="section-number">01 · Summary</p>
+        <h2>Plain-language summary</h2>
+        <div class="summary-grid">
+          <div>
+            <strong>We process</strong>
+            <p>A random installation UUID and the employer identity visible on a supported LinkedIn or SEEK page.</p>
+          </div>
+          <div>
+            <strong>We do not process</strong>
+            <p>Your LinkedIn or SEEK account identity, credentials, messages, applications, contacts, or private profile data.</p>
+          </div>
+          <div>
+            <strong>We use it for</strong>
+            <p>Accreditation lookup, rate limiting, result provenance, and community-confirmed employer associations.</p>
+          </div>
+          <div>
+            <strong>We never use it for</strong>
+            <p>Advertising, behavioural profiling, data brokerage, or selling personal data.</p>
+          </div>
+        </div>
+        <p>
+          The extension waits for an explicit click on <strong>Check NZ accreditation</strong>. It does not automatically send a lookup when a supported page loads and does not collect general browsing history.
+        </p>
+      </section>
+
+      <section id="data">
+        <p class="section-number">02 · Data</p>
+        <h2>Data the extension processes</h2>
+        <div class="data-list">
+          <div>
+            <h3>Random installation identifier</h3>
+            <p>
+              On first use, the extension generates a random UUID and stores it in Chrome’s local extension storage. The UUID is sent in the <code>X-Client-ID</code> request header to <code>nzaei.zemo.bio</code>. It is used to apply rate limits and distinguish one installation’s community confirmation from another.
+            </p>
+            <p>The raw UUID is not derived from a LinkedIn or SEEK account. Before a community confirmation is persisted in the application database, the API stores a SHA-256 hash rather than the raw UUID.</p>
+          </div>
+          <div>
+            <h3>Supported-page employer context</h3>
+            <p>The extension reads only the fields needed to identify the employer shown on the supported page:</p>
+            <ul>
+              <li>the employer or company display name;</li>
+              <li>a public company identifier, such as a LinkedIn company slug, SEEK company path, or normalized SEEK advertiser name;</li>
+              <li>the public company URL, when that page provides one;</li>
+              <li>the platform and page type; and</li>
+              <li>an NZBN selected by you when you confirm an employer association.</li>
+            </ul>
+            <p>These fields are sent to <code>https://nzaei.zemo.bio/api</code> only as part of a user-triggered accreditation check or confirmation.</p>
+          </div>
+          <div>
+            <h3>Official accreditation results</h3>
+            <p>
+              When fresh official data is needed, the extension sends the employer-name or NZBN query directly to Immigration New Zealand’s public lookup service. It may then send the returned employer name, trading name, NZBN, accreditation expiry, and response context to <code>nzaei.zemo.bio</code> for validation and display to extension users.
+            </p>
+          </div>
+          <div>
+            <h3>Optional release-notification email</h3>
+            <p>
+              The landing page—not the extension—offers an optional one-message release waitlist. If you submit an email address, it is used only to tell you when the Chrome Web Store version is ready.
+            </p>
+          </div>
+        </div>
+
+        <aside class="not-collected">
+          <h3>What the extension does not read</h3>
+          <p>
+            It does not read or transmit your LinkedIn or SEEK account identifier, profile email, login credentials, cookies, private messages, saved jobs, job applications, contacts, payment details, or browsing activity outside the supported employer and job pages needed for the feature.
+          </p>
+        </aside>
+      </section>
+
+      <section id="use">
+        <p class="section-number">03 · Purpose</p>
+        <h2>How the data is used</h2>
+        <ul class="purpose-list">
+          <li><strong>Accreditation lookup:</strong> match the employer shown on a supported page with public Immigration New Zealand accreditation records.</li>
+          <li><strong>Rate limiting:</strong> reduce automated abuse and keep the public API available.</li>
+          <li><strong>Community confirmation:</strong> remember which official NZBN an installation selected for a LinkedIn company or SEEK advertiser and aggregate confirmation counts.</li>
+          <li><strong>Result quality:</strong> show where a match came from, when official data was last verified, and whether another confirmation is required.</li>
+          <li><strong>Service operation:</strong> diagnose failures using request IDs and operational events that deliberately omit the raw UUID, employer name, company identifier, and public URL.</li>
+        </ul>
+        <p>Data is not used for any purpose unrelated to these user-facing features.</p>
+      </section>
+
+      <section id="sharing">
+        <p class="section-number">04 · Sharing</p>
+        <h2>Sharing, sale, and advertising</h2>
+        <p>
+          Data sent to <code>nzaei.zemo.bio</code> is processed by the project’s Cloudflare Worker and D1 database. Cloudflare provides the hosting, network security, rate limiting, logging, and database infrastructure needed to operate the service.
+        </p>
+        <p>
+          When a live lookup is required, the extension sends an employer-name or NZBN query directly to Immigration New Zealand’s public lookup service. The project does not send your installation UUID to Immigration New Zealand.
+        </p>
+        <p>
+          Community confirmation totals and employer associations may be returned to other extension users. The raw UUID, stored UUID hash, and an individual installation’s identity are not exposed in API responses.
+        </p>
+        <div class="promise">
+          <strong>No sale. No ads. No data brokerage.</strong>
+          <p>We do not sell data, share it with advertising networks, or use it for targeted advertising, credit decisions, or unrelated profiling.</p>
+        </div>
+      </section>
+
+      <section id="retention">
+        <p class="section-number">05 · Retention</p>
+        <h2>How long data is kept</h2>
+        <div class="retention-table" role="table" aria-label="Data retention periods">
+          <div class="retention-head" role="row">
+            <span role="columnheader">Data</span>
+            <span role="columnheader">Retention</span>
+          </div>
+          <div role="row">
+            <strong role="cell">Local installation UUID</strong>
+            <p role="cell">Stored in Chrome local extension storage until the extension is removed, its storage is cleared, or a replacement UUID is generated because the stored value is missing or invalid.</p>
+          </div>
+          <div role="row">
+            <strong role="cell">Raw UUID in API requests</strong>
+            <p role="cell">Processed during the request for rate limiting and hashing. It is not intentionally written to the application database or application event logs.</p>
+          </div>
+          <div role="row">
+            <strong role="cell">Hashed UUID and community confirmation</strong>
+            <p role="cell">Retained while the community-association feature operates, until the related data is no longer needed, or until a valid deletion request can be matched to it.</p>
+          </div>
+          <div role="row">
+            <strong role="cell">Employer name, company identifier, and public URL</strong>
+            <p role="cell">Retained with the platform identity while the lookup and community-association service operates, or removed earlier when no longer needed or following an applicable deletion request.</p>
+          </div>
+          <div role="row">
+            <strong role="cell">No-published-match observation</strong>
+            <p role="cell">Used for no more than 24 hours. Its stored fields may remain until replaced or cleared, but the API ignores the observation after the 24-hour expiry.</p>
+          </div>
+          <div role="row">
+            <strong role="cell">Official employer records</strong>
+            <p role="cell">Retained while the service operates and updated or replaced as newer Immigration New Zealand data is accepted. These are public business accreditation records.</p>
+          </div>
+          <div role="row">
+            <strong role="cell">Release waitlist email</strong>
+            <p role="cell">Retained until the one release notification is sent or you request deletion, then deleted from the active waitlist within 30 days after the notification campaign ends.</p>
+          </div>
+        </div>
+        <p class="retention-note">
+          Infrastructure providers may temporarily retain network and operational metadata under their security and service-retention settings. Application events are designed not to include the raw UUID or supported-page identity fields listed above.
+        </p>
+      </section>
+
+      <section id="security">
+        <p class="section-number">06 · Security</p>
+        <h2>How data is protected</h2>
+        <ul>
+          <li>Extension requests to <code>nzaei.zemo.bio</code> and Immigration New Zealand use HTTPS.</li>
+          <li>The API validates request schemas, limits body size, applies rate limits, and disables response caching.</li>
+          <li>The raw installation UUID is hashed before a community confirmation is persisted in D1.</li>
+          <li>The extension, API, database schema, and tests are open source and publicly reviewable.</li>
+        </ul>
+        <p>No internet service can guarantee absolute security. If you believe you have found a security or privacy issue, please contact the project operator.</p>
+      </section>
+
+      <section id="choices">
+        <p class="section-number">07 · Your choices</p>
+        <h2>Deletion requests and contact</h2>
+        <p>
+          You can stop future extension processing by removing the extension or clearing its local storage. You may also ask for stored waitlist, platform identity, or community-confirmation data to be deleted.
+        </p>
+        <p>
+          Email <a href={`mailto:${contactEmail}?subject=NZ%20Accredited%20Employer%20Inspector%20privacy%20request`}>{contactEmail}</a> with the subject <strong>NZ Accredited Employer Inspector privacy request</strong>. Include the supported public company URL and approximate check or confirmation date when relevant. Because the service does not collect your account identity, additional context—and in some cases the installation UUID—may be needed to locate an anonymous hashed confirmation. Do not send passwords, cookies, or account credentials.
+        </p>
+        <p>Requests will be handled as reasonably practicable. If data cannot be linked to you without collecting additional identifying information, the operator will explain that limitation.</p>
+
+        <div class="contact-card">
+          <div>
+            <span>Privacy contact</span>
+            <strong>Zemo Ai</strong>
+            <small>Auckland, New Zealand</small>
+          </div>
+          <a href={`mailto:${contactEmail}?subject=NZ%20Accredited%20Employer%20Inspector%20privacy%20request`}>Email a privacy request <span aria-hidden="true">→</span></a>
+        </div>
+      </section>
+
+      <section id="changes">
+        <p class="section-number">08 · Changes</p>
+        <h2>Changes to this policy</h2>
+        <p>
+          This policy will be updated when the extension’s data practices materially change. The effective date at the top of the page identifies the current version. The public repository provides a history of policy changes.
+        </p>
+        <a class="source-link" href="https://github.com/aizhimou/nz-accredited-employer-inspector">Review the open-source project <span aria-hidden="true">↗</span></a>
+      </section>
+    </article>
+  </div>
+</BaseLayout>
+
+<style>
+  .policy-hero {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(circle at 82% 22%, rgb(223 242 235 / 90%), transparent 27rem),
+      linear-gradient(145deg, var(--cloud), var(--mist));
+  }
+
+  .policy-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(20rem, 0.85fr);
+    align-items: end;
+    gap: clamp(3rem, 8vw, 8rem);
+  }
+
+  .policy-intro {
+    display: grid;
+    justify-items: start;
+    gap: 1.45rem;
+  }
+
+  .policy-intro h1 { max-width: 11ch; }
+
+  .policy-lede {
+    max-width: 60ch;
+    color: var(--slate);
+    font-size: clamp(1.08rem, 1.8vw, 1.3rem);
+  }
+
+  .policy-meta {
+    display: grid;
+    width: 100%;
+    grid-template-columns: auto 1fr;
+    gap: 0.45rem 1.5rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.75rem;
+  }
+
+  .policy-meta div { display: contents; }
+  .policy-meta dt { color: var(--slate); font-family: var(--font-utility); text-transform: uppercase; }
+  .policy-meta dd { margin: 0; color: var(--harbour); overflow-wrap: anywhere; }
+
+  .data-route {
+    overflow: hidden;
+    border: 1px solid #1b545b;
+    border-radius: 1rem;
+    background: var(--harbour-deep);
+    box-shadow: var(--shadow-card);
+    color: white;
+  }
+
+  .route-label {
+    display: block;
+    padding: 0.85rem 1.2rem;
+    border-bottom: 1px solid #28515a;
+    color: #8ed3bd;
+    font-family: var(--font-utility);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .data-route ol { margin: 0; padding: 0; counter-reset: route-step; list-style: none; }
+
+  .data-route li {
+    position: relative;
+    display: grid;
+    gap: 0.15rem;
+    padding: 1.1rem 1.2rem 1.1rem 3.5rem;
+    border-bottom: 1px solid #28515a;
+  }
+
+  .data-route li::before {
+    position: absolute;
+    top: 1.25rem;
+    left: 1.25rem;
+    display: grid;
+    width: 1.25rem;
+    height: 1.25rem;
+    place-items: center;
+    border: 1px solid #60ad97;
+    border-radius: 50%;
+    color: #8ed3bd;
+    content: counter(route-step, decimal-leading-zero);
+    counter-increment: route-step;
+    font-family: var(--font-utility);
+    font-size: 0.46rem;
+  }
+
+  .data-route li:not(:last-child)::after {
+    position: absolute;
+    bottom: -0.65rem;
+    left: 1.84rem;
+    z-index: 1;
+    color: var(--kōwhai);
+    content: "↓";
+    font-size: 0.75rem;
+  }
+
+  .data-route li b { font-size: 0.88rem; }
+  .data-route li span { color: #a9c0bb; font-size: 0.7rem; }
+  .data-route > p { padding: 1rem 1.2rem; color: #b6cbc6; font-size: 0.7rem; }
+
+  .policy-layout {
+    display: grid;
+    grid-template-columns: 13rem minmax(0, 47rem);
+    justify-content: center;
+    gap: clamp(3rem, 8vw, 8rem);
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+  }
+
+  .policy-nav {
+    position: sticky;
+    top: 2rem;
+    align-self: start;
+  }
+
+  .policy-nav > p {
+    margin-bottom: 1rem;
+    color: var(--pounamu-dark);
+    font-family: var(--font-utility);
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .policy-nav nav {
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .policy-nav a {
+    padding-block: 0.7rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--slate);
+    font-size: 0.75rem;
+    text-decoration: none;
+  }
+
+  .policy-nav a:hover { color: var(--pounamu-dark); }
+
+  .policy-copy { min-width: 0; }
+
+  .policy-copy > section {
+    scroll-margin-top: 2rem;
+    padding-block: 0 4.5rem;
+  }
+
+  .policy-copy > section + section {
+    padding-top: 4.5rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .section-number {
+    margin-bottom: 1rem;
+    color: var(--pounamu-dark);
+    font-family: var(--font-utility);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .policy-copy h2 {
+    max-width: 18ch;
+    margin-bottom: 1.7rem;
+    font-size: clamp(2rem, 4vw, 3.35rem);
+  }
+
+  .policy-copy h3 {
+    margin-bottom: 0.65rem;
+    font-size: 1.2rem;
+    letter-spacing: -0.025em;
+  }
+
+  .policy-copy p,
+  .policy-copy li { color: var(--slate); }
+  .policy-copy p + p { margin-top: 1rem; }
+  .policy-copy ul { display: grid; gap: 0.55rem; padding-left: 1.25rem; }
+  .policy-copy a { color: var(--pounamu-dark); }
+  .policy-copy code { padding: 0.12rem 0.3rem; border-radius: 0.25rem; background: var(--mist); color: var(--harbour); font-size: 0.82em; overflow-wrap: anywhere; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-bottom: 2rem;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+  }
+
+  .summary-grid div { min-height: 9rem; padding: 1.3rem; }
+  .summary-grid div:nth-child(even) { border-left: 1px solid var(--line); }
+  .summary-grid div:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .summary-grid strong { display: block; margin-bottom: 0.55rem; color: var(--harbour); }
+  .summary-grid p { font-size: 0.82rem; }
+
+  .data-list { display: grid; gap: 2rem; }
+  .data-list > div { padding-left: 1.3rem; border-left: 2px solid var(--pounamu-soft); }
+  .data-list ul { margin-block: 0.8rem; }
+
+  .not-collected,
+  .promise {
+    margin-top: 2rem;
+    padding: 1.4rem 1.5rem;
+    border: 1px solid #97c8b8;
+    border-radius: 0.75rem;
+    background: var(--pounamu-soft);
+  }
+
+  .not-collected h3,
+  .promise strong { color: var(--pounamu-dark); }
+  .not-collected p,
+  .promise p { font-size: 0.86rem; }
+
+  .purpose-list { margin-bottom: 1.5rem; padding: 0; list-style: none; }
+  .purpose-list li { padding: 1rem 0 1rem 1.6rem; border-bottom: 1px solid var(--line); }
+  .purpose-list li::marker { color: var(--pounamu); }
+  .purpose-list strong { color: var(--harbour); }
+
+  .retention-table {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+  }
+
+  .retention-table > div {
+    display: grid;
+    grid-template-columns: minmax(10rem, 0.72fr) 1.28fr;
+    gap: 1.5rem;
+    padding: 1.1rem 1.2rem;
+  }
+
+  .retention-table > div + div { border-top: 1px solid var(--line); }
+  .retention-head { background: var(--harbour-deep); color: white; font-family: var(--font-utility); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+  .retention-table strong { color: var(--harbour); font-size: 0.86rem; }
+  .retention-table p { margin: 0; font-size: 0.8rem; }
+  .retention-note { margin-top: 1rem; font-size: 0.72rem; }
+
+  .contact-card {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 2rem;
+    margin-top: 2rem;
+    padding: 1.4rem;
+    border-radius: 0.8rem;
+    background: var(--harbour-deep);
+    color: white;
+  }
+
+  .contact-card > div { display: grid; }
+  .contact-card span,
+  .contact-card small { color: #9fbbb5; }
+  .contact-card span { font-family: var(--font-utility); font-size: 0.58rem; text-transform: uppercase; }
+  .contact-card strong { margin-top: 0.3rem; }
+  .contact-card small { font-size: 0.68rem; }
+  .contact-card a { color: #9ee0cc; font-size: 0.8rem; font-weight: 700; }
+
+  .source-link { display: inline-flex; margin-top: 1.5rem; font-weight: 700; }
+
+  @media (max-width: 900px) {
+    .policy-hero-grid { grid-template-columns: 1fr; }
+    .data-route { width: min(100%, 34rem); }
+    .policy-layout { grid-template-columns: 1fr; }
+    .policy-nav { position: static; }
+    .policy-nav nav { grid-template-columns: repeat(2, 1fr); }
+    .policy-nav a:nth-child(even) { padding-left: 1rem; border-left: 1px solid var(--line); }
+  }
+
+  @media (max-width: 600px) {
+    .policy-hero { padding-top: 4rem; }
+    .policy-meta { display: grid; grid-template-columns: 1fr; gap: 0.65rem; }
+    .policy-meta div { display: grid; gap: 0.05rem; }
+    .policy-nav nav,
+    .summary-grid { grid-template-columns: 1fr; }
+    .policy-nav a:nth-child(even),
+    .summary-grid div:nth-child(even) { padding-left: 0; border-left: 0; }
+    .summary-grid div + div { border-top: 1px solid var(--line); }
+    .retention-table > div { grid-template-columns: 1fr; gap: 0.45rem; }
+    .contact-card { align-items: start; flex-direction: column; }
+  }
+</style>

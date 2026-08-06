@@ -114,6 +114,7 @@ export const GET: APIRoute = () => {
         name: "Zemo Ai",
         url: "https://zemo.bio/",
       },
+      "x-privacy-policy": "https://nzaei.zemo.bio/privacy/",
     },
     externalDocs: {
       description: "Canonical extension and API contract",

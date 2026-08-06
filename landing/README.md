@@ -41,6 +41,7 @@ While the Chrome Web Store listing is under review, the hero CTA opens a dialog 
 - `/llms.txt` is the concise discovery index.
 - `/llms-full.txt` contains detailed product, architecture, trust, privacy, and API context.
 - `/index.md` mirrors the core landing-page content as Markdown.
+- `/privacy/` is the public Chrome Web Store privacy policy, with `/privacy.md` as its agent-readable equivalent.
 - `/.well-known/api-catalog` is an RFC 9727 `application/linkset+json` catalog.
 - `/api/openapi.json` describes the production extension API using OpenAPI 3.1.
 - HTML includes semantic landmarks, JSON-LD, canonical metadata, and alternate-resource links.

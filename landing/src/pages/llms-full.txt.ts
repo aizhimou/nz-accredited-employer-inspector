@@ -15,6 +15,8 @@ export const GET: APIRoute = () => {
 - Author source profile: https://github.com/aizhimou
 - Repository: https://github.com/aizhimou/nz-accredited-employer-inspector
 - Production API: https://nzaei.zemo.bio/api
+- Privacy policy: https://nzaei.zemo.bio/privacy/
+- Privacy policy as Markdown: https://nzaei.zemo.bio/privacy.md
 
 The project is independently created and maintained by Zemo Ai in Auckland, New Zealand. The author homepage is the canonical identity page and links back to this product.
 
@@ -69,8 +71,12 @@ A recognised INZ no-results response is stored only for the exact platform ident
 
 ## Privacy and security characteristics
 
+- Full privacy policy: https://nzaei.zemo.bio/privacy/
 - The extension uses no LinkedIn or SEEK account identifier.
 - The random installation UUID is hashed before a confirmation is persisted.
+- Employer display name, public company identifier, and public company URL are sent to nzaei.zemo.bio only during a user-triggered lookup or confirmation.
+- Data is used only for accreditation lookup, rate limiting, result provenance, and community confirmation; it is not sold or used for advertising.
+- Requests to nzaei.zemo.bio and Immigration New Zealand use HTTPS.
 - API requests have strict schema validation and a 128 KiB body limit.
 - Application responses disable caching and include request IDs.
 - The API rate limits general requests and submissions separately.

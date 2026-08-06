@@ -316,7 +316,7 @@
     min-height: 4.5rem;
   }
 
-  nav a:not(.nav-cta) {
+  .site-header nav a:not(.nav-cta) {
     display: none;
   }
 

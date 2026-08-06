@@ -6,11 +6,15 @@ import "../styles/global.css";
 interface Props {
   title?: string;
   description?: string;
+  pageKind?: "product" | "privacy";
+  markdownAlternate?: string;
 }
 
 const {
   title = "NZ Accredited Employer Inspector | Chrome Extension",
   description = "Check whether employers on SEEK and LinkedIn are accredited with Immigration New Zealand before you apply. A free, open-source Chrome extension.",
+  pageKind = "product",
+  markdownAlternate = "/index.md",
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
@@ -19,7 +23,7 @@ const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspec
 const authorUrl = "https://zemo.bio/";
 const videoUrl = "https://www.youtube.com/watch?v=85SEJU-aHrQ";
 const videoEmbedUrl = "https://www.youtube-nocookie.com/embed/85SEJU-aHrQ";
-const structuredData = {
+const productStructuredData = {
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -97,6 +101,40 @@ const structuredData = {
     },
   ],
 };
+const privacyStructuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      name: title,
+      description,
+      url: canonicalUrl.href,
+      dateModified: "2026-08-06",
+      inLanguage: "en-NZ",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "NZ Accredited Employer Inspector",
+        url: canonicalUrl.origin,
+      },
+      author: { "@id": `${authorUrl}#person` },
+      about: {
+        "@type": "SoftwareApplication",
+        name: "NZ Accredited Employer Inspector",
+        applicationCategory: "BrowserApplication",
+        operatingSystem: "Chrome",
+      },
+    },
+    {
+      "@type": "Person",
+      "@id": `${authorUrl}#person`,
+      name: "Zemo Ai",
+      url: authorUrl,
+    },
+  ],
+};
+const structuredData = pageKind === "privacy"
+  ? privacyStructuredData
+  : productStructuredData;
 ---
 
 <!doctype html>
@@ -113,8 +151,9 @@ const structuredData = {
     <link rel="apple-touch-icon" href={logo.src} />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="author" href={authorUrl} />
+    <link rel="privacy-policy" href="/privacy/" />
     <link rel="sitemap" href="/sitemap.xml" />
-    <link rel="alternate" href="/index.md" type="text/markdown" title="Markdown version" />
+    <link rel="alternate" href={markdownAlternate} type="text/markdown" title="Markdown version" />
     <link rel="describedby" href="/llms.txt" type="text/markdown" title="Agent-readable site index" />
     <link rel="api-catalog" href="/.well-known/api-catalog" type="application/linkset+json" />
     <meta property="og:type" content="website" />
@@ -144,10 +183,10 @@ const structuredData = {
           <BrandMark />
         </a>
         <nav aria-label="Primary navigation">
-          <a href="#how-it-works">How it works</a>
-          <a href="#demo">Demo</a>
-          <a href="#trust">Trust model</a>
-          <a href="#agents">For agents</a>
+          <a href="/#how-it-works">How it works</a>
+          <a href="/#demo">Demo</a>
+          <a href="/#trust">Trust model</a>
+          <a href="/#agents">For agents</a>
           <a class="nav-cta" href={repositoryUrl}>GitHub <span aria-hidden="true">↗</span></a>
         </nav>
       </div>
@@ -166,7 +205,8 @@ const structuredData = {
           <a href={repositoryUrl}>Source code</a>
           <a href={`${repositoryUrl}/blob/main/docs/extension-api-ssot.md`}>Technical contract</a>
           <a href="https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/">Official INZ list</a>
-          <a href="/index.md">Read as Markdown</a>
+          <a href="/privacy/">Privacy policy</a>
+          <a href={markdownAlternate}>Read as Markdown</a>
         </div>
         <p class="legal">
           Not immigration or legal advice. Accreditation data is sourced from Immigration New Zealand; platform associations may be community-confirmed.
