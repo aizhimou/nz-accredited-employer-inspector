@@ -12,8 +12,11 @@ The extension-facing architecture, orchestration, complete API contract, fields,
 - `POST /v1/employers/ingest`
 - `POST /v1/employers/no-match`
 - `POST /v1/employers/associate`
+- `POST /v1/waitlist`
 
-Search requests require an `X-Client-ID` UUID header.
+Employer requests require an `X-Client-ID` UUID header. The landing-page waitlist endpoint does not.
+
+The temporary `extension_waitlist` table stores normalized, unique email addresses for one Chrome Web Store release notification. The landing page discloses this narrow purpose; `notified_at` can be set when the message is sent and the table can be removed after the release.
 
 ## Local development
 

@@ -9,13 +9,16 @@ interface Props {
 }
 
 const {
-  title = "NZ Accredited Employer Inspector | Check Employers on SEEK & LinkedIn",
-  description = "Check whether an employer is accredited in New Zealand while browsing LinkedIn and SEEK.",
+  title = "NZ Accredited Employer Inspector | Chrome Extension",
+  description = "Check whether employers on SEEK and LinkedIn are accredited with Immigration New Zealand before you apply. A free, open-source Chrome extension.",
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
-const socialImageUrl = new URL("/og-image.svg", Astro.site);
+const socialImageUrl = new URL("/og-image.png", Astro.site);
 const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
+const authorUrl = "https://zemo.bio/";
+const videoUrl = "https://www.youtube.com/watch?v=85SEJU-aHrQ";
+const videoEmbedUrl = "https://www.youtube-nocookie.com/embed/85SEJU-aHrQ";
 const structuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -26,8 +29,13 @@ const structuredData = {
       operatingSystem: "Chrome",
       description,
       url: canonicalUrl.href,
+      image: socialImageUrl.href,
       codeRepository: repositoryUrl,
+      downloadUrl: `${repositoryUrl}/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip`,
       softwareVersion: "0.6.0",
+      isAccessibleForFree: true,
+      author: { "@id": `${authorUrl}#person` },
+      sameAs: [repositoryUrl, videoUrl],
       featureList: [
         "Checks employer accreditation from LinkedIn and SEEK",
         "Uses Immigration New Zealand data",
@@ -40,6 +48,52 @@ const structuredData = {
       name: "NZ Accredited Employer Inspector",
       url: canonicalUrl.origin,
       inLanguage: "en-NZ",
+      publisher: { "@id": `${authorUrl}#person` },
+    },
+    {
+      "@type": "Person",
+      "@id": `${authorUrl}#person`,
+      name: "Zemo Ai",
+      url: authorUrl,
+    },
+    {
+      "@type": "VideoObject",
+      name: "Check NZ Employer Accreditation on SEEK & LinkedIn",
+      description: "A short walkthrough of NZ Accredited Employer Inspector checking employer accreditation directly on SEEK and LinkedIn.",
+      thumbnailUrl: "https://i.ytimg.com/vi/85SEJU-aHrQ/hqdefault.jpg",
+      uploadDate: "2026-08-05T23:00:28-07:00",
+      duration: "PT16S",
+      contentUrl: videoUrl,
+      embedUrl: videoEmbedUrl,
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "Does the extension decide whether I can get a visa?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "No. It displays published employer accreditation data and matching context. It is not immigration or legal advice.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Where does accreditation data come from?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Employer names, NZBNs and accreditation expiry dates come from Immigration New Zealand.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Is this an official Immigration New Zealand product?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "No. It is an independent open-source project that links to the official Immigration New Zealand accredited employer list.",
+          },
+        },
+      ],
     },
   ],
 };
@@ -52,24 +106,33 @@ const structuredData = {
     <meta name="viewport" content="width=device-width" />
     <meta name="generator" content={Astro.generator} />
     <meta name="description" content={description} />
+    <meta name="author" content="Zemo Ai" />
     <meta name="theme-color" content="#083b45" />
     <meta name="robots" content="index, follow" />
     <link rel="icon" href={logo.src} type="image/png" />
     <link rel="apple-touch-icon" href={logo.src} />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="author" href={authorUrl} />
+    <link rel="sitemap" href="/sitemap.xml" />
     <link rel="alternate" href="/index.md" type="text/markdown" title="Markdown version" />
     <link rel="describedby" href="/llms.txt" type="text/markdown" title="Agent-readable site index" />
     <link rel="api-catalog" href="/.well-known/api-catalog" type="application/linkset+json" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NZ Accredited Employer Inspector" />
     <meta property="og:locale" content="en_NZ" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:image" content={socialImageUrl} />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="NZ Accredited Employer Inspector checking an employer before a job application" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImageUrl} />
+    <meta name="twitter:image:alt" content="NZ Accredited Employer Inspector checking an employer before a job application" />
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
     <title>{title}</title>
   </head>
@@ -97,6 +160,7 @@ const structuredData = {
         <div>
           <BrandMark />
           <p>Open-source clarity for people navigating New Zealand’s job market.</p>
+          <p class="maker">Built in Tāmaki Makaurau by <a href={authorUrl} rel="author">Zemo Ai</a>.</p>
         </div>
         <div class="footer-links" aria-label="Project links">
           <a href={repositoryUrl}>Source code</a>

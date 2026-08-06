@@ -13,6 +13,7 @@ import {
   parseIngestRequest,
   parseNoMatchRequest,
   parseResolveRequest,
+  parseWaitlistRequest,
   validateClientId,
 } from "../src/validation";
 import { CLIENT_ID, createInzResponse } from "./fixtures";
@@ -110,6 +111,13 @@ describe("request validation", () => {
   it("validates UUID client IDs", () => {
     expect(validateClientId(CLIENT_ID)).toBe(CLIENT_ID);
     expect(() => validateClientId("not-a-uuid")).toThrowError("valid UUID");
+  });
+
+  it("normalizes and validates waitlist email addresses", () => {
+    expect(parseWaitlistRequest({ email: "  USER+NZ@Example.COM ", website: "" }))
+      .toEqual({ email: "user+nz@example.com", website: "" });
+    expect(() => parseWaitlistRequest({ email: "not-an-email" }))
+      .toThrowError("valid email address");
   });
 });
 

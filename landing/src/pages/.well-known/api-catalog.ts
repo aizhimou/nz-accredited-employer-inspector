@@ -18,6 +18,7 @@ export const GET: APIRoute = ({ site }) => {
           },
         ],
         "service-doc": [{ href: CONTRACT_URL, type: "text/html" }],
+        author: [{ href: "https://zemo.bio/", type: "text/html" }],
         status: [{ href: `${API_BASE_URL}/health`, type: "application/json" }],
         "service-meta": [
           { href: new URL("/llms-full.txt", base).href, type: "text/markdown" },

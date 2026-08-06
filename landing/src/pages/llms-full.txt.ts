@@ -10,8 +10,13 @@ export const GET: APIRoute = () => {
 - Current service version: 0.6.0
 - Primary audience: People assessing New Zealand job opportunities on LinkedIn and SEEK
 - Primary task: Check whether the legal employer associated with a platform page appears on the Immigration New Zealand accredited employer list
+- Creator and maintainer: Zemo Ai
+- Author homepage: https://zemo.bio/
+- Author source profile: https://github.com/aizhimou
 - Repository: https://github.com/aizhimou/nz-accredited-employer-inspector
 - Production API: https://nzaei.zemo.bio/api
+
+The project is independently created and maintained by Zemo Ai in Auckland, New Zealand. The author homepage is the canonical identity page and links back to this product.
 
 ## Product behaviour
 
@@ -59,7 +64,7 @@ A recognised INZ no-results response is stored only for the exact platform ident
 - **Content script:** extracts platform identity, mounts Shadow DOM UI, renders candidates, and captures explicit user choices.
 - **Extension background:** creates and stores a random installation UUID, calls the Worker, performs user-triggered INZ requests, recognises official no-result envelopes, and submits responses.
 - **Cloudflare Worker:** validates requests, searches and upserts canonical employers, derives exact-name matches, aggregates community confirmations, evaluates freshness/status, stores exact 24-hour no-match observations, and rate limits clients.
-- **D1:** stores canonical employer records, platform entities, per-installation confirmations, and no-match observation fields.
+- **D1:** stores canonical employer records, platform entities, per-installation confirmations, no-match observation fields, and the temporary extension-release waitlist.
 - **INZ:** official lookup source. The Worker never calls INZ.
 
 ## Privacy and security characteristics
@@ -69,17 +74,19 @@ A recognised INZ no-results response is stored only for the exact platform ident
 - API requests have strict schema validation and a 128 KiB body limit.
 - Application responses disable caching and include request IDs.
 - The API rate limits general requests and submissions separately.
+- Waitlist email addresses are normalized, deduplicated, and used only for the one-time Chrome Web Store release notification disclosed on the landing page.
 - A public browser client cannot cryptographically prove that a submitted payload came from INZ. The current architecture is an MVP trust model, not protection against a determined payload fabricator.
 
 ## Public API summary
 
-All POST routes require JSON and an X-Client-ID UUID header.
+All POST routes require JSON. Employer routes require an X-Client-ID UUID header; the landing-page waitlist route does not.
 
 - GET /health — public service health; no client ID required
 - POST /v1/employers/resolve — read-only platform identity resolution
 - POST /v1/employers/ingest — validate and atomically store a positive INZ response
 - POST /v1/employers/no-match — store a recognised, exact, 24-hour no-match observation
 - POST /v1/employers/associate — confirm or change this installation's platform-to-NZBN mapping
+- POST /v1/waitlist — join the one-message Chrome Web Store release notification list
 
 OpenAPI: /api/openapi.json
 API catalog: /.well-known/api-catalog

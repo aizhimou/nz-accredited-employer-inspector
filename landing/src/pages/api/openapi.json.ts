@@ -105,10 +105,14 @@ export const GET: APIRoute = () => {
       title: "NZ Accredited Employer API",
       version: "0.6.0",
       description:
-        "Extension-facing API for resolving platform employers, accepting validated INZ observations, and storing user-confirmed associations. The Worker does not call INZ.",
+        "Product API for resolving platform employers, accepting validated INZ observations, storing user-confirmed associations, and collecting the temporary Chrome Web Store notification list. The Worker does not call INZ.",
       license: {
         name: "Repository license",
         identifier: "NOASSERTION",
+      },
+      contact: {
+        name: "Zemo Ai",
+        url: "https://zemo.bio/",
       },
     },
     externalDocs: {
@@ -200,6 +204,36 @@ export const GET: APIRoute = () => {
           responses: operationResponses,
         },
       },
+      "/v1/waitlist": {
+        post: {
+          operationId: "joinExtensionWaitlist",
+          summary: "Join the Chrome Web Store release notification list",
+          description: "Stores a normalized, unique email address for one release notification. Does not require an extension client ID.",
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/WaitlistRequest" } },
+            },
+          },
+          responses: {
+            "200": {
+              description: "The address was accepted or was already present",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    required: ["state"],
+                    properties: { state: { type: "string", const: "subscribed" } },
+                  },
+                },
+              },
+            },
+            "400": { $ref: "#/components/responses/Error" },
+            "429": { $ref: "#/components/responses/Error" },
+            "500": { $ref: "#/components/responses/Error" },
+          },
+        },
+      },
     },
     components: {
       schemas: {
@@ -264,6 +298,14 @@ export const GET: APIRoute = () => {
           properties: {
             identity: { $ref: "#/components/schemas/PlatformIdentity" },
             nzbn: { type: "string", pattern: "^[0-9]{13}$" },
+          },
+        },
+        WaitlistRequest: {
+          type: "object",
+          required: ["email"],
+          properties: {
+            email: { type: "string", format: "email", maxLength: 254 },
+            website: { type: "string", maxLength: 300, description: "Spam honeypot; genuine clients leave this empty." },
           },
         },
         Error: {

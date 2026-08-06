@@ -3,6 +3,7 @@ import {
   associateEmployer,
   hashClientId,
   ingestEmployers,
+  joinExtensionWaitlist,
   resolveEmployer,
   storeNoMatchObservation,
 } from "./service";
@@ -11,6 +12,7 @@ import {
   parseIngestRequest,
   parseNoMatchRequest,
   parseResolveRequest,
+  parseWaitlistRequest,
   validateClientId,
 } from "./validation";
 
@@ -19,6 +21,7 @@ const INGEST_PATH = "/v1/employers/ingest";
 const NO_MATCH_PATH = "/v1/employers/no-match";
 const ASSOCIATE_PATH = "/v1/employers/associate";
 const HEALTH_PATH = "/health";
+const WAITLIST_PATH = "/v1/waitlist";
 const PUBLIC_API_PREFIX = "/api";
 const MAX_SUBMISSION_BYTES = 128 * 1024;
 
@@ -173,7 +176,8 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       pathname !== RESOLVE_PATH &&
       pathname !== INGEST_PATH &&
       pathname !== NO_MATCH_PATH &&
-      pathname !== ASSOCIATE_PATH
+      pathname !== ASSOCIATE_PATH &&
+      pathname !== WAITLIST_PATH
     ) {
       throw new ApiError(404, "not_found", "The requested endpoint was not found.");
     }
@@ -183,6 +187,29 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
         "method_not_allowed",
         "Only POST is allowed for this endpoint.",
       );
+    }
+
+    if (pathname === WAITLIST_PATH) {
+      const body = await readSubmissionJson(request);
+      const input = parseWaitlistRequest(body);
+      const rateLimitKey = request.headers.get("CF-Connecting-IP") ?? input.email;
+      const submissionLimit = await env.SUBMISSION_RATE_LIMITER.limit({
+        key: `${rateLimitKey}:extension-waitlist`,
+      });
+      if (!submissionLimit.success) {
+        throw new ApiError(429, "submission_rate_limit_exceeded", "Too many submissions.", 60);
+      }
+
+      const result = input.website === ""
+        ? await joinExtensionWaitlist(env.DB, input.email)
+        : { state: "subscribed" as const };
+      logEvent("info", {
+        event: "extension_waitlist_join",
+        requestId,
+        stored: input.website === "",
+        durationMs: Date.now() - startedAt,
+      });
+      return jsonResponse(result, 200, requestId);
     }
 
     const clientId = validateClientId(request.headers.get("X-Client-ID"));

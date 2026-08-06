@@ -83,6 +83,7 @@ beforeEach(async () => {
     env.DB.prepare("DELETE FROM platform_employer_confirmations"),
     env.DB.prepare("DELETE FROM platform_entities"),
     env.DB.prepare("DELETE FROM employers"),
+    env.DB.prepare("DELETE FROM extension_waitlist"),
   ]);
 });
 
@@ -177,6 +178,40 @@ describe("HTTP routing and controls", () => {
       padding: "x".repeat(128 * 1024),
     });
     expect(oversized.status).toBe(413);
+  });
+
+  it("stores unique waitlist emails without requiring an extension client ID", async () => {
+    const testEnv = createTestEnv();
+    const request = () => new IncomingRequest("https://api.example.test/api/v1/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "CF-Connecting-IP": "203.0.113.8" },
+      body: JSON.stringify({ email: "  PERSON@Example.COM ", website: "" }),
+    });
+
+    const first = await worker.fetch(request(), testEnv, createExecutionContext());
+    const duplicate = await worker.fetch(request(), testEnv, createExecutionContext());
+    expect(first.status).toBe(200);
+    expect(duplicate.status).toBe(200);
+    expect(await first.json()).toEqual({ state: "subscribed" });
+
+    const rows = await env.DB.prepare("SELECT email FROM extension_waitlist").all<{ email: string }>();
+    expect(rows.results).toEqual([{ email: "person@example.com" }]);
+  });
+
+  it("silently accepts honeypot waitlist submissions without storing them", async () => {
+    const response = await worker.fetch(
+      new IncomingRequest("https://api.example.test/api/v1/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: "bot@example.com", website: "https://spam.example" }),
+      }),
+      createTestEnv(),
+      createExecutionContext(),
+    );
+    expect(response.status).toBe(200);
+    const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM extension_waitlist")
+      .first<{ count: number }>();
+    expect(count?.count).toBe(0);
   });
 });
 

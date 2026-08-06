@@ -1,0 +1,378 @@
+---
+interface Props {
+  downloadUrl: string;
+}
+
+const { downloadUrl } = Astro.props;
+---
+
+<dialog class="download-dialog" id="download-dialog" aria-labelledby="download-dialog-title" aria-describedby="download-dialog-copy">
+  <div class="dialog-card">
+    <button class="dialog-close" type="button" data-download-close aria-label="Close download options">
+      <span aria-hidden="true">×</span>
+    </button>
+
+    <header class="dialog-header">
+      <span class="review-status"><i aria-hidden="true"></i> Chrome Web Store review in progress</span>
+      <h2 id="download-dialog-title">Not on the shelf <em>just yet.</em></h2>
+      <p id="download-dialog-copy">
+        The extension is with the Chrome Web Store team. Pop back tomorrow or in a couple of days—or choose one of the options below.
+      </p>
+    </header>
+
+    <div class="dialog-options">
+      <section class="notify-option" aria-labelledby="notify-title">
+        <span class="option-label">Wait for the store</span>
+        <h3 id="notify-title">Get the all-clear by email.</h3>
+        <p>Leave your email and you’ll get one message when the approved store version is ready. No newsletter, no carry-on.</p>
+        <form class="waitlist-form" data-waitlist-form>
+          <label for="waitlist-email">Email address</label>
+          <div class="email-control">
+            <input id="waitlist-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" maxlength="254" required />
+            <button type="submit">Notify me</button>
+          </div>
+          <div class="honeypot" aria-hidden="true">
+            <label for="waitlist-website">Website</label>
+            <input id="waitlist-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          <p class="form-note">Used only for this release notification. You can ask to have it removed at any time.</p>
+          <p class="form-status" data-waitlist-status aria-live="polite"></p>
+        </form>
+      </section>
+
+      <section class="manual-option" aria-labelledby="manual-title">
+        <span class="option-label">Keen to try it now?</span>
+        <h3 id="manual-title">Install it in Developer mode.</h3>
+        <ol>
+          <li><span>01</span><p><a href={downloadUrl}>Download the extension ZIP</a> and extract it to a folder.</p></li>
+          <li><span>02</span><p>Open <code>chrome://extensions</code> in Chrome.</p></li>
+          <li><span>03</span><p>Switch on <strong>Developer mode</strong> in the top-right corner.</p></li>
+          <li><span>04</span><p>Select <strong>Load unpacked</strong>, then choose the extracted folder.</p></li>
+        </ol>
+        <a class="manual-download" href={downloadUrl}>
+          Download version 0.6.0 ZIP
+          <span aria-hidden="true">↓</span>
+        </a>
+        <p class="manual-note">Chrome may warn that Developer mode extensions are enabled. That’s expected for a local install.</p>
+      </section>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  const dialog = document.querySelector<HTMLDialogElement>("#download-dialog");
+  const openButtons = document.querySelectorAll<HTMLElement>("[data-download-trigger]");
+  const closeButton = dialog?.querySelector<HTMLButtonElement>("[data-download-close]");
+  const form = dialog?.querySelector<HTMLFormElement>("[data-waitlist-form]");
+  const status = dialog?.querySelector<HTMLElement>("[data-waitlist-status]");
+
+  openButtons.forEach((button) => {
+    button.addEventListener("click", () => dialog?.showModal());
+  });
+
+  closeButton?.addEventListener("click", () => dialog?.close());
+  dialog?.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const statusElement = status;
+    if (statusElement === null || statusElement === undefined) return;
+
+    const submitButton = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    const formData = new FormData(form);
+    const email = formData.get("email");
+    const website = formData.get("website");
+
+    statusElement.className = "form-status";
+    statusElement.textContent = "";
+    if (submitButton !== null) {
+      submitButton.disabled = true;
+      submitButton.textContent = "Joining…";
+    }
+
+    try {
+      const response = await fetch("/api/v1/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, website }),
+      });
+      if (!response.ok) throw new Error("waitlist request failed");
+
+      form.reset();
+      statusElement.classList.add("success");
+      statusElement.textContent = "You’re on the list. We’ll email you when the store version is ready.";
+      if (submitButton !== null) submitButton.textContent = "You’re on the list";
+    } catch {
+      statusElement.classList.add("error");
+      statusElement.textContent = "That didn’t go through. Please try again in a moment.";
+      if (submitButton !== null) {
+        submitButton.disabled = false;
+        submitButton.textContent = "Notify me";
+      }
+    }
+  });
+</script>
+
+<style>
+  .download-dialog {
+    width: min(58rem, calc(100% - 2rem));
+    max-height: min(52rem, calc(100dvh - 2rem));
+    padding: 0;
+    overflow: auto;
+    border: 0;
+    border-radius: 1.15rem;
+    background: transparent;
+    color: var(--ink);
+    box-shadow: 0 30px 90px rgb(5 45 53 / 35%);
+  }
+
+  .download-dialog::backdrop {
+    background: rgb(5 35 41 / 64%);
+    backdrop-filter: blur(6px);
+  }
+
+  .download-dialog[open] {
+    animation: dialog-in 180ms ease-out;
+  }
+
+  @keyframes dialog-in {
+    from { opacity: 0; transform: translateY(0.65rem) scale(0.985); }
+  }
+
+  .dialog-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--cloud);
+  }
+
+  .dialog-card::before {
+    position: absolute;
+    top: -8rem;
+    right: -6rem;
+    width: 23rem;
+    height: 23rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--pounamu-soft), transparent 67%);
+    content: "";
+    pointer-events: none;
+  }
+
+  .dialog-close {
+    position: absolute;
+    z-index: 2;
+    top: 1rem;
+    right: 1rem;
+    display: grid;
+    width: 2.25rem;
+    height: 2.25rem;
+    padding: 0;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 78%);
+    color: var(--harbour);
+    cursor: pointer;
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+
+  .dialog-close:hover { background: white; }
+
+  .dialog-header {
+    position: relative;
+    display: grid;
+    gap: 1rem;
+    padding: 2.5rem 4.25rem 2.1rem 2.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .review-status,
+  .option-label {
+    color: var(--pounamu-dark);
+    font-family: var(--font-utility);
+    font-size: 0.63rem;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .review-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .review-status i {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--kōwhai);
+    box-shadow: 0 0 0 0.3rem rgb(229 182 71 / 17%);
+  }
+
+  .dialog-header h2 {
+    max-width: 15ch;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+  }
+
+  .dialog-header h2 em {
+    color: var(--pounamu);
+    font-style: normal;
+  }
+
+  .dialog-header p {
+    max-width: 62ch;
+    color: var(--slate);
+    font-size: 0.95rem;
+  }
+
+  .dialog-options {
+    position: relative;
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+  }
+
+  .dialog-options section {
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    padding: 2rem 2.5rem 2.4rem;
+  }
+
+  .manual-option {
+    border-left: 1px solid var(--line);
+    background: white;
+  }
+
+  .dialog-options h3 {
+    max-width: 20ch;
+    font-size: 1.35rem;
+    letter-spacing: -0.03em;
+  }
+
+  .notify-option > p,
+  .manual-note {
+    color: var(--slate);
+    font-size: 0.82rem;
+  }
+
+  .waitlist-form {
+    display: grid;
+    gap: 0.55rem;
+    margin-top: 0.45rem;
+  }
+
+  .waitlist-form > label {
+    color: var(--harbour);
+    font-size: 0.72rem;
+    font-weight: 750;
+  }
+
+  .email-control {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    padding: 0.28rem;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    background: white;
+  }
+
+  .email-control:focus-within {
+    border-color: var(--pounamu);
+    box-shadow: 0 0 0 3px rgb(8 122 92 / 12%);
+  }
+
+  .email-control input {
+    min-width: 0;
+    padding: 0.55rem 0.65rem;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font-size: 0.82rem;
+  }
+
+  .email-control button {
+    padding: 0.55rem 0.75rem;
+    border: 0;
+    border-radius: 0.45rem;
+    background: var(--harbour);
+    color: white;
+    cursor: pointer;
+    font-size: 0.74rem;
+    font-weight: 750;
+  }
+
+  .email-control button:disabled { cursor: wait; opacity: 0.72; }
+  .honeypot { position: absolute; left: -10000px; }
+  .form-note { color: var(--slate); font-size: 0.65rem; }
+  .form-status { min-height: 2.4em; color: var(--slate); font-size: 0.72rem; font-weight: 650; }
+  .form-status.success { color: var(--pounamu-dark); }
+  .form-status.error { color: var(--alert); }
+
+  .manual-option ol {
+    display: grid;
+    gap: 0;
+    margin: 0.15rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .manual-option li {
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.65rem;
+    padding-block: 0.65rem;
+    border-bottom: 1px solid var(--line-light);
+    font-size: 0.8rem;
+  }
+
+  .manual-option li > span {
+    color: var(--pounamu);
+    font-family: var(--font-utility);
+    font-size: 0.62rem;
+    font-weight: 750;
+  }
+
+  .manual-option a { color: var(--pounamu-dark); font-weight: 750; }
+
+  .manual-option code {
+    padding: 0.12rem 0.3rem;
+    border-radius: 0.25rem;
+    background: var(--mist);
+    color: var(--harbour);
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .manual-download {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 0.35rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid #91bdb0;
+    border-radius: 0.55rem;
+    background: var(--pounamu-soft);
+    text-decoration: none;
+  }
+
+  .manual-note { margin-top: 0.1rem; font-size: 0.67rem; }
+
+  @media (max-width: 700px) {
+    .download-dialog { width: min(100% - 1rem, 34rem); max-height: calc(100dvh - 1rem); }
+    .dialog-header { padding: 3.6rem 1.25rem 1.6rem; }
+    .dialog-options { grid-template-columns: 1fr; }
+    .dialog-options section { padding: 1.5rem 1.25rem 1.8rem; }
+    .manual-option { border-top: 1px solid var(--line); border-left: 0; }
+    .email-control { grid-template-columns: 1fr; gap: 0.25rem; }
+    .email-control button { min-height: 2.6rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .download-dialog[open] { animation: none; }
+  }
+</style>

@@ -7,6 +7,11 @@ export const GET: APIRoute = ({ site }) => {
 
 > An open-source Chrome extension that checks New Zealand employer accreditation on LinkedIn and SEEK using Immigration New Zealand data. It keeps official accreditation facts, derived name matches, and community platform associations visibly separate.
 
+## Creator
+
+- [Zemo Ai](https://zemo.bio/): Creator and maintainer of NZ Accredited Employer Inspector, based in Auckland, New Zealand.
+- [GitHub profile](https://github.com/aizhimou): Author profile for the project's public source repository.
+
 ## Start here
 
 - [Product overview](${link("/index.md")}): What the product does, how a check works, trust boundaries, privacy, and supported platforms.
@@ -23,6 +28,7 @@ export const GET: APIRoute = ({ site }) => {
 - [Repository](https://github.com/aizhimou/nz-accredited-employer-inspector): Worker, D1 migrations, extension, tests, and documentation.
 - [Canonical architecture and API contract](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md): Single source of truth for implementation semantics.
 - [Extension guide](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/extension/README.md): Local setup and verification.
+- [Chrome extension 0.6.0 ZIP](https://github.com/aizhimou/nz-accredited-employer-inspector/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip): Direct download while the Chrome Web Store listing is under review.
 - [API guide](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/api/README.md): Endpoints and local development.
 
 ## Authoritative external source

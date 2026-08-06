@@ -295,6 +295,22 @@ export async function hashClientId(clientId: string): Promise<string> {
     .join("");
 }
 
+export async function joinExtensionWaitlist(
+  db: D1Database,
+  email: string,
+  nowSeconds = Math.floor(Date.now() / 1000),
+): Promise<{ state: "subscribed" }> {
+  await db
+    .prepare(
+      `INSERT INTO extension_waitlist (email, created_at)
+       VALUES (?1, ?2)
+       ON CONFLICT(email) DO NOTHING`,
+    )
+    .bind(email, nowSeconds)
+    .run();
+  return { state: "subscribed" };
+}
+
 export async function resolveEmployer(
   db: D1Database,
   identity: PlatformIdentity,

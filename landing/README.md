@@ -30,14 +30,9 @@ SITE_URL=https://preview.example.com npm run build
 
 Without `SITE_URL`, generated absolute URLs use the production origin.
 
-## Chrome Web Store URL
+## Temporary download flow
 
-Set `PUBLIC_CHROME_EXTENSION_URL` to the published Chrome Web Store listing. Until it is configured, the hero CTA links to the Chrome Web Store home page.
-
-```bash
-PUBLIC_CHROME_EXTENSION_URL=https://chromewebstore.google.com/detail/your-extension-id \
-npm run build
-```
+While the Chrome Web Store listing is under review, the hero CTA opens a dialog with two paths: a one-message release waitlist backed by `POST /api/v1/waitlist`, or a direct version 0.6.0 ZIP download with Developer mode instructions. Replace this temporary dialog with the store link after approval.
 
 ## Agent-readable resources
 
@@ -75,4 +70,4 @@ The hero's provenance path and the trust-model grid are the primary visual signa
 
 ## Demo video
 
-The video section currently uses a YouTube placeholder. Replace the video ID in `src/pages/index.astro` when the final walkthrough is uploaded. The embed uses YouTube's privacy-enhanced `youtube-nocookie.com` domain and loads lazily.
+The demo embeds the published walkthrough from YouTube's privacy-enhanced `youtube-nocookie.com` domain and loads lazily. The hero's “See how it works” action scrolls to the player and starts playback.

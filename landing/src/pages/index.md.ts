@@ -3,9 +3,11 @@ import type { APIRoute } from "astro";
 export const GET: APIRoute = () => {
   const body = `---
 title: NZ Accredited Employer Inspector
-description: Check whether an employer is accredited in New Zealand while browsing LinkedIn and SEEK.
+description: Check whether employers on SEEK and LinkedIn are accredited with Immigration New Zealand before you apply.
 language: en-NZ
 version: 0.6.0
+author: Zemo Ai
+author_url: https://zemo.bio/
 ---
 
 # Know who's accredited. Before you apply.
@@ -45,7 +47,11 @@ Accreditation status and platform association confidence are separate dimensions
 
 ## Product walkthrough
 
-The landing page reserves a 16:9 YouTube player for a short product walkthrough. The current embed is explicitly labelled as a placeholder until the final recorded demo is published.
+Watch the [16-second product walkthrough](https://www.youtube.com/watch?v=85SEJU-aHrQ) to see the extension check a supported job page and show the evidence behind the result.
+
+## Get the extension
+
+The Chrome Web Store listing is currently under review. Visitors can join the one-message release notification list on the landing page or [download version 0.6.0](https://github.com/aizhimou/nz-accredited-employer-inspector/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip) and load the extracted extension through Chrome Developer mode.
 
 ## Project links
 
@@ -53,6 +59,7 @@ The landing page reserves a 16:9 YouTube player for a short product walkthrough.
 - [Extension source](https://github.com/aizhimou/nz-accredited-employer-inspector/tree/main/extension)
 - [Architecture and API contract](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md)
 - [Official INZ accredited employer list](https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/)
+- [Built by Zemo Ai](https://zemo.bio/)
 
 ## Agent resources
 

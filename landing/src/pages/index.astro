@@ -1,11 +1,12 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import DownloadDialog from "../components/DownloadDialog.astro";
 import linkedInLogo from "../assets/LI-Logo.png";
 import seekLogo from "../assets/Seek_Limited-logo.svg";
 
 const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
-const chromeExtensionUrl =
-  import.meta.env.PUBLIC_CHROME_EXTENSION_URL ?? "https://chromewebstore.google.com/";
+const chromeExtensionDownloadUrl =
+  "https://github.com/aizhimou/nz-accredited-employer-inspector/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip";
 const sourceModel = [
   {
     label: "Official fact",
@@ -62,13 +63,13 @@ const agentResources = [
           A small Chrome extension that checks employers on LinkedIn and SEEK against Immigration New Zealand data—right where you’re job hunting.
         </p>
         <div class="button-row">
-          <a class="button button-primary" href={chromeExtensionUrl}>
+          <button class="button button-primary" type="button" data-download-trigger>
             Download for Chrome
-            <span aria-hidden="true">↗</span>
-          </a>
-          <a class="button button-secondary" href="#how-it-works">
+            <span aria-hidden="true">→</span>
+          </button>
+          <a class="button button-secondary" href="#demo" data-play-demo>
             See how it works
-            <span aria-hidden="true">↓</span>
+            <span aria-hidden="true">▶</span>
           </a>
         </div>
         <ul class="hero-notes" aria-label="Product characteristics">
@@ -161,13 +162,13 @@ const agentResources = [
         </div>
         <div class="demo-intro">
           <p>Watch a quick check on a supported job page—from the first click to the evidence behind the result.</p>
-          <span>Placeholder video · Final walkthrough coming soon</span>
+          <span>16-second walkthrough · Real extension, real pages</span>
         </div>
       </div>
-      <div class="video-shell">
+      <div class="video-shell" id="demo-video">
         <iframe
-          src="https://www.youtube-nocookie.com/embed/cE0wfjsybIQ?rel=0&modestbranding=1"
-          title="NZ Accredited Employer Inspector demo video placeholder"
+          src="https://www.youtube-nocookie.com/embed/85SEJU-aHrQ?rel=0&modestbranding=1&playsinline=1"
+          title="Check NZ Employer Accreditation on SEEK and LinkedIn"
           loading="lazy"
           referrerpolicy="strict-origin-when-cross-origin"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -360,6 +361,20 @@ const agentResources = [
       </div>
     </div>
   </section>
+
+  <DownloadDialog downloadUrl={chromeExtensionDownloadUrl} />
+
+<script>
+  const playDemoLink = document.querySelector<HTMLAnchorElement>("[data-play-demo]");
+  const demoFrame = document.querySelector<HTMLIFrameElement>("#demo-video iframe");
+
+  playDemoLink?.addEventListener("click", () => {
+    if (demoFrame === null || demoFrame.src.includes("autoplay=1")) return;
+    const videoUrl = new URL(demoFrame.src);
+    videoUrl.searchParams.set("autoplay", "1");
+    demoFrame.src = videoUrl.href;
+  });
+</script>
 </BaseLayout>
 
 <style>

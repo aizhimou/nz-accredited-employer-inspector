@@ -6,6 +6,7 @@ const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
 const NZBN_PATTERN = /^\d{13}$/u;
 const LINKEDIN_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]{0,99}$/u;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/u;
 
 export interface ResolveRequest {
   identity: PlatformIdentity;
@@ -28,6 +29,11 @@ export interface NoMatchRequest extends ResolveRequest {
     Title: "No Results";
     Message: string;
   };
+}
+
+export interface WaitlistRequest {
+  email: string;
+  website: string;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -240,6 +246,23 @@ export function parseNoMatchRequest(value: unknown): NoMatchRequest {
       Message: record.inzResponse.Message,
     },
   };
+}
+
+export function parseWaitlistRequest(value: unknown): WaitlistRequest {
+  const record = parseEnvelope(value);
+  if (typeof record.email !== "string") {
+    throw new ApiError(400, "invalid_email", "A valid email address is required.");
+  }
+  const email = record.email.normalize("NFKC").trim().toLowerCase();
+  if (email.length > 254 || CONTROL_CHARACTERS.test(email) || !EMAIL_PATTERN.test(email)) {
+    throw new ApiError(400, "invalid_email", "A valid email address is required.");
+  }
+
+  const website = record.website ?? "";
+  if (typeof website !== "string" || website.length > 300) {
+    throw new ApiError(400, "invalid_submission", "The request body is invalid.");
+  }
+  return { email, website: website.trim() };
 }
 
 export function validateClientId(value: string | null): string {

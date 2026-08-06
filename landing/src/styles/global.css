@@ -74,6 +74,8 @@
   }
 
   a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
   summary:focus-visible {
     border-radius: 0.2rem;
     outline: 3px solid color-mix(in srgb, var(--kōwhai) 70%, white);
@@ -150,6 +152,9 @@
   }
 
   .brand-link {
+    display: inline-flex;
+    align-self: stretch;
+    align-items: center;
     text-decoration: none;
   }
 
@@ -223,6 +228,7 @@
     padding: 0.7rem 1.1rem;
     border: 1px solid transparent;
     border-radius: 0.65rem;
+    cursor: pointer;
     font-weight: 700;
     text-decoration: none;
     transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
@@ -265,6 +271,14 @@
     margin-top: 1rem;
     color: var(--slate);
   }
+
+  .footer-grid > div:first-child > .maker {
+    margin-top: 0.55rem;
+    color: var(--harbour);
+    font-size: 0.8rem;
+  }
+
+  .maker a { font-weight: 750; }
 
   .footer-links {
     display: grid;
