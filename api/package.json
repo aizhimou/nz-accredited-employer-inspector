@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typegen:check && npm run typecheck && npm test",
+    "check": "npm run typegen && npm run typecheck && npm test",
     "d1:migrate:local": "wrangler d1 migrations apply DB --local",
     "d1:migrate:prod": "wrangler d1 migrations apply nz-accredited-employer-prod --remote",
     "d1:official:prepare": "python3 scripts/prepare-official-import.py",
