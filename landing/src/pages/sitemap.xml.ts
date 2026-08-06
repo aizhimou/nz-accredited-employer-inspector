@@ -10,7 +10,7 @@ const paths = [
 ];
 
 export const GET: APIRoute = ({ site }) => {
-  const base = site ?? new URL("https://nzaec.zemo.bio");
+  const base = site ?? new URL("https://nzaei.zemo.bio");
   const urls = paths
     .map((path) => `  <url><loc>${new URL(path, base).href}</loc></url>`)
     .join("\n");

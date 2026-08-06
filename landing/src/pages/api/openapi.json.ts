@@ -115,7 +115,7 @@ export const GET: APIRoute = () => {
       description: "Canonical extension and API contract",
       url: "https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md",
     },
-    servers: [{ url: "https://nzaec.zemo.bio/api" }],
+    servers: [{ url: "https://nzaei.zemo.bio/api" }],
     paths: {
       "/health": {
         get: {

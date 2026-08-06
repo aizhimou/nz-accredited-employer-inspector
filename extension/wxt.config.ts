@@ -17,7 +17,7 @@ export default defineConfig({
       "https://www.linkedin.com/*",
       "https://nz.seek.com/*",
       "https://www.immigration.govt.nz/*",
-      "https://nzaec.zemo.bio/*",
+      "https://nzaei.zemo.bio/*",
     ],
   },
 });

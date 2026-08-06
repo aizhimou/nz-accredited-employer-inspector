@@ -4,7 +4,7 @@ Status: active
 API version: `v1`  
 Service version: `0.6.0`
 Last updated: 2026-08-06
-Production base URL: `https://nzaec.zemo.bio/api`
+Production base URL: `https://nzaei.zemo.bio/api`
 
 This document is the single source of truth (SSOT) for the browser extension and Worker contract. Extension code must not infer behaviour by reading the `api/` implementation.
 

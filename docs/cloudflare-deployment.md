@@ -2,9 +2,9 @@
 
 Production is split across two Cloudflare projects connected to the same GitHub repository:
 
-- Cloudflare Pages serves `https://nzaec.zemo.bio` from `landing/`.
-- Cloudflare Workers serves `https://nzaec.zemo.bio/api/health` and `https://nzaec.zemo.bio/api/v1/*` from `api/`.
-- Pages continues to serve the static OpenAPI document at `https://nzaec.zemo.bio/api/openapi.json` because the Worker routes are intentionally narrower than `/api/*`.
+- Cloudflare Pages serves `https://nzaei.zemo.bio` from `landing/`.
+- Cloudflare Workers serves `https://nzaei.zemo.bio/api/health` and `https://nzaei.zemo.bio/api/v1/*` from `api/`.
+- Pages continues to serve the static OpenAPI document at `https://nzaei.zemo.bio/api/openapi.json` because the Worker routes are intentionally narrower than `/api/*`.
 
 Complete the following dashboard setup once. Afterwards, pushes to `main` deploy automatically.
 
@@ -22,9 +22,9 @@ Use these build settings:
 | Build output directory | `dist` |
 | Build watch path | `landing/**` |
 
-The committed Astro configuration defaults canonical and discovery URLs to `https://nzaec.zemo.bio`. Set `PUBLIC_CHROME_EXTENSION_URL` in the Pages production environment when the Chrome Web Store listing is available.
+The committed Astro configuration defaults canonical and discovery URLs to `https://nzaei.zemo.bio`. Set `PUBLIC_CHROME_EXTENSION_URL` in the Pages production environment when the Chrome Web Store listing is available.
 
-After the first successful deployment, add `nzaec.zemo.bio` under the Pages project's **Custom domains** settings. Wait until the domain is active and its DNS record is proxied by Cloudflare before configuring the Worker. The Pages hostname is the origin behind the API Worker routes.
+After the first successful deployment, add `nzaei.zemo.bio` under the Pages project's **Custom domains** settings. Wait until the domain is active and its DNS record is proxied by Cloudflare before configuring the Worker. The Pages hostname is the origin behind the API Worker routes.
 
 ## 2. Connect the API to Cloudflare Workers Builds
 
@@ -45,21 +45,21 @@ The build command verifies generated binding types, TypeScript, and tests. The d
 The production environment in `api/wrangler.jsonc` owns these routes:
 
 ```text
-nzaec.zemo.bio/api/health
-nzaec.zemo.bio/api/v1/*
+nzaei.zemo.bio/api/health
+nzaei.zemo.bio/api/v1/*
 ```
 
-Do not configure the Worker as a Custom Domain and do not replace these routes with `nzaec.zemo.bio/api/*`; either change would prevent Pages from serving `/api/openapi.json`.
+Do not configure the Worker as a Custom Domain and do not replace these routes with `nzaei.zemo.bio/api/*`; either change would prevent Pages from serving `/api/openapi.json`.
 
 ## 3. Verify production
 
 After both deployments succeed:
 
 ```bash
-curl -fsS https://nzaec.zemo.bio/
-curl -fsS https://nzaec.zemo.bio/api/health
-curl -fsS https://nzaec.zemo.bio/api/openapi.json
-curl -i -X OPTIONS https://nzaec.zemo.bio/api/v1/employers/resolve
+curl -fsS https://nzaei.zemo.bio/
+curl -fsS https://nzaei.zemo.bio/api/health
+curl -fsS https://nzaei.zemo.bio/api/openapi.json
+curl -i -X OPTIONS https://nzaei.zemo.bio/api/v1/employers/resolve
 ```
 
 The expected results are:
@@ -69,4 +69,4 @@ The expected results are:
 - `/api/openapi.json` returns the Pages-generated OpenAPI 3.1 document.
 - the preflight request returns `204` and the API CORS headers.
 
-Once the updated extension is built, inspect its generated manifest and confirm its only API host permission is `https://nzaec.zemo.bio/*`.
+Once the updated extension is built, inspect its generated manifest and confirm its only API host permission is `https://nzaei.zemo.bio/*`.

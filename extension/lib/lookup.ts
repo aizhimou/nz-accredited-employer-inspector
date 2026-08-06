@@ -7,7 +7,7 @@ import {
   type PlatformIdentity,
 } from "./contracts";
 
-export const API_BASE_URL = "https://nzaec.zemo.bio/api";
+export const API_BASE_URL = "https://nzaei.zemo.bio/api";
 export const INZ_API_URL = "https://www.immigration.govt.nz/list-api/getAPIResults/";
 
 const INZ_COLLECTION_ID = "2";

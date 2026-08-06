@@ -22,7 +22,7 @@ The Pages project builds from the `landing` monorepo root with `npm run build` a
 
 ## Production site URL
 
-The production origin defaults to `https://nzaec.zemo.bio`. Astro uses it for canonical links, `robots.txt`, `sitemap.xml`, `llms.txt`, the API catalog, and social metadata. Override `SITE_URL` only when building for another environment.
+The production origin defaults to `https://nzaei.zemo.bio`. Astro uses it for canonical links, `robots.txt`, `sitemap.xml`, `llms.txt`, the API catalog, and social metadata. Override `SITE_URL` only when building for another environment.
 
 ```bash
 SITE_URL=https://preview.example.com npm run build
@@ -57,7 +57,7 @@ npm run build
 This static project publishes explicit Markdown URLs, but Astro static output does not negotiate a second representation for `/` based on `Accept: text/markdown`. If the deployed domain uses Cloudflare, enable **Markdown for Agents** at the zone or matching Configuration Rule to provide network-level content negotiation. Verify it after deployment:
 
 ```bash
-curl -I https://nzaec.zemo.bio/ -H 'Accept: text/markdown'
+curl -I https://nzaei.zemo.bio/ -H 'Accept: text/markdown'
 ```
 
 The response should use `Content-Type: text/markdown`, include `Vary: Accept`, and return the converted page body.

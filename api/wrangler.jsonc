@@ -38,11 +38,11 @@
       "workers_dev": false,
       "routes": [
         {
-          "pattern": "nzaec.zemo.bio/api/v1/*",
+          "pattern": "nzaei.zemo.bio/api/v1/*",
           "zone_name": "zemo.bio"
         },
         {
-          "pattern": "nzaec.zemo.bio/api/health",
+          "pattern": "nzaei.zemo.bio/api/health",
           "zone_name": "zemo.bio"
         }
       ],

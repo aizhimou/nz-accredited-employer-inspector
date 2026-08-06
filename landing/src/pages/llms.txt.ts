@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 
 export const GET: APIRoute = ({ site }) => {
-  const base = site ?? new URL("https://nzaec.zemo.bio");
+  const base = site ?? new URL("https://nzaei.zemo.bio");
   const link = (path: string): string => new URL(path, base).href;
   const body = `# NZ Accredited Employer Inspector
 
@@ -16,7 +16,7 @@ export const GET: APIRoute = ({ site }) => {
 
 - [API catalog](${link("/.well-known/api-catalog")}): RFC 9727 linkset for the public extension API.
 - [OpenAPI description](${link("/api/openapi.json")}): Machine-readable OpenAPI 3.1 contract.
-- [API health](https://nzaec.zemo.bio/api/health): Current service health and version.
+- [API health](https://nzaei.zemo.bio/api/health): Current service health and version.
 
 ## Project source
 

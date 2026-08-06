@@ -6,7 +6,7 @@ The extension-facing architecture, orchestration, complete API contract, fields,
 
 ## Endpoints
 
-- Production base URL: `https://nzaec.zemo.bio/api`
+- Production base URL: `https://nzaei.zemo.bio/api`
 - `GET /health`
 - `POST /v1/employers/resolve`
 - `POST /v1/employers/ingest`
@@ -82,4 +82,4 @@ npm run d1:migrate:prod
 npm run deploy:prod
 ```
 
-The D1 binding, production resource identifiers, and the `nzaec.zemo.bio/api` routes are defined in `wrangler.jsonc`. `npm run release:prod` applies pending D1 migrations and deploys the production Worker; Cloudflare Workers Builds uses this command after a successful CI build.
+The D1 binding, production resource identifiers, and the `nzaei.zemo.bio/api` routes are defined in `wrangler.jsonc`. `npm run release:prod` applies pending D1 migrations and deploys the production Worker; Cloudflare Workers Builds uses this command after a successful CI build.
