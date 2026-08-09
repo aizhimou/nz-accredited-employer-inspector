@@ -39,7 +39,7 @@ When fresh official data is required, the extension sends the employer-name or N
 
 ### Optional release email
 
-The landing page, not the extension, offers an optional one-message Chrome Web Store release waitlist. A submitted email address is used only for that notification.
+Before the Chrome Web Store release, the landing page, not the extension, offered an optional one-message release waitlist. Submitted email addresses are used only for that notification.
 
 ## Data not read
 

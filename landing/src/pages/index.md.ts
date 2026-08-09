@@ -51,7 +51,7 @@ Watch the [16-second product walkthrough](https://www.youtube.com/watch?v=85SEJU
 
 ## Get the extension
 
-The Chrome Web Store listing is currently under review. Visitors can join the one-message release notification list on the landing page or [download version 0.6.0](https://github.com/aizhimou/nz-accredited-employer-inspector/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip) and load the extracted extension through Chrome Developer mode.
+[Install NZ Accredited Employer Inspector from the Chrome Web Store](https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg).
 
 ## Project links
 

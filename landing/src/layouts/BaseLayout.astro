@@ -20,6 +20,7 @@ const {
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
 const socialImageUrl = new URL("/og-image.png", Astro.site);
 const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
+const chromeWebStoreUrl = "https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg";
 const authorUrl = "https://zemo.bio/";
 const videoUrl = "https://www.youtube.com/watch?v=85SEJU-aHrQ";
 const videoEmbedUrl = "https://www.youtube-nocookie.com/embed/85SEJU-aHrQ";
@@ -35,11 +36,11 @@ const productStructuredData = {
       url: canonicalUrl.href,
       image: socialImageUrl.href,
       codeRepository: repositoryUrl,
-      downloadUrl: `${repositoryUrl}/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip`,
+      downloadUrl: chromeWebStoreUrl,
       softwareVersion: "0.6.0",
       isAccessibleForFree: true,
       author: { "@id": `${authorUrl}#person` },
-      sameAs: [repositoryUrl, videoUrl],
+      sameAs: [repositoryUrl, chromeWebStoreUrl, videoUrl],
       featureList: [
         "Checks employer accreditation from LinkedIn and SEEK",
         "Uses Immigration New Zealand data",

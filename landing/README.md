@@ -30,9 +30,9 @@ SITE_URL=https://preview.example.com npm run build
 
 Without `SITE_URL`, generated absolute URLs use the production origin.
 
-## Temporary download flow
+## Chrome Web Store download
 
-While the Chrome Web Store listing is under review, the hero CTA opens a dialog with two paths: a one-message release waitlist backed by `POST /api/v1/waitlist`, or a direct version 0.6.0 ZIP download with Developer mode instructions. Replace this temporary dialog with the store link after approval.
+The hero CTA links directly to the approved Chrome Web Store listing. The pre-release waitlist endpoint remains documented for handling existing submissions.
 
 ## Agent-readable resources
 

@@ -1,12 +1,11 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
-import DownloadDialog from "../components/DownloadDialog.astro";
 import linkedInLogo from "../assets/LI-Logo.png";
 import seekLogo from "../assets/Seek_Limited-logo.svg";
 
 const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
 const chromeExtensionDownloadUrl =
-  "https://github.com/aizhimou/nz-accredited-employer-inspector/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip";
+  "https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg";
 const sourceModel = [
   {
     label: "Official fact",
@@ -64,10 +63,10 @@ const agentResources = [
           A small Chrome extension that checks employers on LinkedIn and SEEK against Immigration New Zealand data—right where you’re job hunting.
         </p>
         <div class="button-row">
-          <button class="button button-primary" type="button" data-download-trigger>
+          <a class="button button-primary" href={chromeExtensionDownloadUrl}>
             Download for Chrome
             <span aria-hidden="true">→</span>
-          </button>
+          </a>
           <a class="button button-secondary" href="#demo" data-play-demo>
             See how it works
             <span aria-hidden="true">▶</span>
@@ -362,8 +361,6 @@ const agentResources = [
       </div>
     </div>
   </section>
-
-  <DownloadDialog downloadUrl={chromeExtensionDownloadUrl} />
 
 <script>
   const playDemoLink = document.querySelector<HTMLAnchorElement>("[data-play-demo]");

@@ -30,7 +30,7 @@ export const GET: APIRoute = ({ site }) => {
 - [Repository](https://github.com/aizhimou/nz-accredited-employer-inspector): Worker, D1 migrations, extension, tests, and documentation.
 - [Canonical architecture and API contract](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md): Single source of truth for implementation semantics.
 - [Extension guide](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/extension/README.md): Local setup and verification.
-- [Chrome extension 0.6.0 ZIP](https://github.com/aizhimou/nz-accredited-employer-inspector/releases/download/0.6.0/nz-accredited-employer-inspector-extension-0.6.0-chrome.zip): Direct download while the Chrome Web Store listing is under review.
+- [Chrome Web Store](https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg): Install NZ Accredited Employer Inspector for Chrome.
 - [API guide](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/api/README.md): Endpoints and local development.
 
 ## Authoritative external source

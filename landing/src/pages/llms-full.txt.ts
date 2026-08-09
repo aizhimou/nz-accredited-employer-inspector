@@ -15,6 +15,7 @@ export const GET: APIRoute = () => {
 - Author source profile: https://github.com/aizhimou
 - Repository: https://github.com/aizhimou/nz-accredited-employer-inspector
 - Production API: https://nzaei.zemo.bio/api
+- Chrome Web Store: https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg
 - Privacy policy: https://nzaei.zemo.bio/privacy/
 - Privacy policy as Markdown: https://nzaei.zemo.bio/privacy.md
 
@@ -66,7 +67,7 @@ A recognised INZ no-results response is stored only for the exact platform ident
 - **Content script:** extracts platform identity, mounts Shadow DOM UI, renders candidates, and captures explicit user choices.
 - **Extension background:** creates and stores a random installation UUID, calls the Worker, performs user-triggered INZ requests, recognises official no-result envelopes, and submits responses.
 - **Cloudflare Worker:** validates requests, searches and upserts canonical employers, derives exact-name matches, aggregates community confirmations, evaluates freshness/status, stores exact 24-hour no-match observations, and rate limits clients.
-- **D1:** stores canonical employer records, platform entities, per-installation confirmations, no-match observation fields, and the temporary extension-release waitlist.
+- **D1:** stores canonical employer records, platform entities, per-installation confirmations, no-match observation fields, and retained pre-release waitlist records.
 - **INZ:** official lookup source. The Worker never calls INZ.
 
 ## Privacy and security characteristics
@@ -80,7 +81,7 @@ A recognised INZ no-results response is stored only for the exact platform ident
 - API requests have strict schema validation and a 128 KiB body limit.
 - Application responses disable caching and include request IDs.
 - The API rate limits general requests and submissions separately.
-- Waitlist email addresses are normalized, deduplicated, and used only for the one-time Chrome Web Store release notification disclosed on the landing page.
+- Pre-release waitlist email addresses are normalized, deduplicated, and retained only for the disclosed one-time Chrome Web Store release notification.
 - A public browser client cannot cryptographically prove that a submitted payload came from INZ. The current architecture is an MVP trust model, not protection against a determined payload fabricator.
 
 ## Public API summary
