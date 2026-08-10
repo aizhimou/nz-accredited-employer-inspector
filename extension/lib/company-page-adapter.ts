@@ -10,6 +10,7 @@ export interface CompanyPageAdapter {
   mountLayout?: "inline" | "stacked";
   mountAnchorSelector: string;
   isSupportedPage(url: URL): boolean;
+  getPanelLayout?(url: URL): "overlay" | "in-flow";
   getIdentity(): PlatformIdentity | null;
   ensureMountAnchor(): HTMLElement | null;
   removeMountAnchor(): void;
@@ -112,7 +113,9 @@ export function startCompanyPageAdapter(
         shadowHost.style.setProperty("z-index", "20", "important");
         const identity = adapter.getIdentity();
         mountedIdentitySignature = identitySignature(identity);
-        return mountCompanyWidget(container, identity);
+        return mountCompanyWidget(container, identity, {
+          panelLayout: adapter.getPanelLayout?.(url) ?? "overlay",
+        });
       },
       onRemove(controller) {
         controller?.destroy();

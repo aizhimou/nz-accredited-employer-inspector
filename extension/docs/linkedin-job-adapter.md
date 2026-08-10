@@ -26,6 +26,8 @@ The job link must have the canonical `/jobs/view/<numeric-id>/` path. The compan
 
 On a direct job page, the adapter finds the canonical company link in the main job header and inserts the mount anchor immediately after the company-name row and before the job title. On search results, it inserts the anchor immediately after the job-title row and before the location metadata. It derives the same strong `company:<slug>` identity used on company pages, so results and community associations are shared across both surfaces.
 
+On direct job pages, the result panel participates in the job header's document flow while open. LinkedIn clips overflowing content inside these job cards, so an overlay panel would otherwise be cut off at the card boundary. Search-result panels retain their overlay layout.
+
 The shared adapter observes asynchronous rendering and remounts after LinkedIn SPA navigation, when choosing another search result changes the visible employer, and when LinkedIn replaces a header with a second render of the same employer. It compares both the live mount anchor and the mounted Shadow host, so the UI is recovered when LinkedIn replaces the anchor or clears only its children even when the company identity did not change.
 
 ## Manual verification

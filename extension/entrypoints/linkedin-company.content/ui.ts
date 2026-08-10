@@ -12,6 +12,10 @@ export interface WidgetController {
   destroy(): void;
 }
 
+interface WidgetOptions {
+  panelLayout?: "overlay" | "in-flow";
+}
+
 const OFFICIAL_LIST_URL =
   "https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/";
 
@@ -108,8 +112,12 @@ function createOfficialLink(): HTMLAnchorElement {
 export function mountCompanyWidget(
   container: HTMLElement,
   identity: PlatformIdentity | null,
+  options: WidgetOptions = {},
 ): WidgetController {
-  const root = createElement("div", "widget");
+  const root = createElement(
+    "div",
+    `widget${options.panelLayout === "in-flow" ? " panel-in-flow" : ""}`,
+  );
   const button = createElement("button", "check-button idle") as HTMLButtonElement;
   button.type = "button";
   button.setAttribute("aria-haspopup", "dialog");

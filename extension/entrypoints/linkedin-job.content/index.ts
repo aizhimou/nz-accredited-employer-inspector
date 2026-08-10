@@ -152,6 +152,8 @@ const adapter: CompanyPageAdapter = {
   mountLayout: "stacked",
   mountAnchorSelector: MOUNT_ANCHOR_SELECTOR,
   isSupportedPage: (url) => getLinkedInJobSurface(url) !== null,
+  getPanelLayout: (url) =>
+    getLinkedInJobSurface(url) === "view" ? "in-flow" : "overlay",
   getIdentity: readIdentity,
   ensureMountAnchor,
   removeMountAnchor() {
