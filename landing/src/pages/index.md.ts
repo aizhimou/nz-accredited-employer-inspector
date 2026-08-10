@@ -28,7 +28,7 @@ No lookup runs automatically on page load. One click may perform at most one liv
 - **Accreditation:** Official employer name, trading name, NZBN, expiry and verification time are INZ facts.
 - **Platform association:** A mapping between a LinkedIn or SEEK identity and an NZBN is user-confirmed community data.
 - **Exact legal-name match:** A sole candidate may be derived automatically only when its normalised official employer name exactly matches the platform display name. It is not community-confirmed.
-- **No published match:** An exact platform-and-query observation lasts 24 hours. It is not proof that an employer is unaccredited.
+- **No published match:** An exact platform-and-query observation uses the configured negative TTL, currently seven days. It is not proof that an employer is unaccredited.
 
 Accreditation status and platform association confidence are separate dimensions.
 

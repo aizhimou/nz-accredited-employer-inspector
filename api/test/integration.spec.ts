@@ -34,6 +34,8 @@ function createTestEnv(
     SUBMISSION_RATE_LIMITER: overrides.SUBMISSION_RATE_LIMITER ?? allowRateLimit(),
     ENVIRONMENT: "development",
     SERVICE_VERSION: "0.6.0",
+    POSITIVE_TTL_SECONDS: 2592000,
+    NEGATIVE_TTL_SECONDS: 604800,
   };
 }
 
@@ -443,7 +445,7 @@ describe("canonical employers and resolution", () => {
     });
     await env.DB.prepare(
       "UPDATE employers SET last_verified_at = ?1 WHERE nzbn = '9429034908822'",
-    ).bind(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60).run();
+    ).bind(Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60).run();
 
     const response = await call("/v1/employers/resolve", { identity: linkedinIdentity });
     expect(await response.json()).toMatchObject({
@@ -455,7 +457,7 @@ describe("canonical employers and resolution", () => {
     });
   });
 
-  it("keeps complete official imports fresh for 30 days without exposing internal provenance", async () => {
+  it("uses the same positive TTL for live lookups and official imports", async () => {
     const verifiedAt = Math.floor(Date.now() / 1000) - 10 * 24 * 60 * 60;
     await env.DB.prepare(
       `INSERT INTO employers (
@@ -492,7 +494,7 @@ describe("canonical employers and resolution", () => {
       identity: linkedinIdentity,
     });
     expect(await liveResponse.json()).toMatchObject({
-      state: "refresh_required",
+      state: "associated",
       matchMethod: "exact_employer_name",
     });
   });
@@ -551,7 +553,7 @@ describe("canonical employers and resolution", () => {
 });
 
 describe("platform no-match observations", () => {
-  it("stores and reuses an exact no-match observation for 24 hours", async () => {
+  it("stores and reuses an exact no-match observation for seven days", async () => {
     const stored = await call("/v1/employers/no-match", noMatchBody());
     expect(stored.status).toBe(200);
     const storedBody = await stored.json<{
@@ -564,7 +566,7 @@ describe("platform no-match observations", () => {
     });
     expect(
       Date.parse(storedBody.noMatch.expiresAt) - Date.parse(storedBody.noMatch.checkedAt),
-    ).toBe(24 * 60 * 60 * 1000);
+    ).toBe(7 * 24 * 60 * 60 * 1000);
 
     const resolved = await call("/v1/employers/resolve", { identity: linkedinIdentity });
     expect(await resolved.json()).toMatchObject({
@@ -586,11 +588,11 @@ describe("platform no-match observations", () => {
     expect(after?.last_no_match_at).toBe(before?.last_no_match_at);
   });
 
-  it("expires at 24 hours and ignores an observation for a changed display name", async () => {
+  it("expires at seven days and ignores an observation for a changed display name", async () => {
     await call("/v1/employers/no-match", noMatchBody());
     await env.DB.prepare(
       "UPDATE platform_entities SET last_no_match_at = ?1 WHERE platform = 'linkedin' AND external_key = 'company:onenz'",
-    ).bind(Math.floor(Date.now() / 1000) - 24 * 60 * 60).run();
+    ).bind(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60).run();
 
     const expired = await call("/v1/employers/resolve", { identity: linkedinIdentity });
     expect(await expired.json()).toMatchObject({
@@ -781,7 +783,7 @@ describe("platform confirmations", () => {
     });
   });
 
-  it("returns refresh_required at seven days and keeps accreditation separate", async () => {
+  it("returns refresh_required at 30 days and keeps accreditation separate", async () => {
     await call("/v1/employers/ingest", ingestBody([{
       employerName: "ONE NEW ZEALAND GROUP LIMITED",
       nzbn: "9429034908822",
@@ -793,7 +795,7 @@ describe("platform confirmations", () => {
     });
     await env.DB.prepare(
       "UPDATE employers SET last_verified_at = ?1 WHERE nzbn = '9429034908822'",
-    ).bind(Math.floor(Date.now() / 1000) - 7 * 24 * 60 * 60).run();
+    ).bind(Math.floor(Date.now() / 1000) - 30 * 24 * 60 * 60).run();
 
     const response = await call("/v1/employers/resolve", { identity: linkedinIdentity });
     expect(await response.json()).toMatchObject({

@@ -1,3 +1,4 @@
+import { readFreshnessPolicy } from "./config";
 import { ApiError } from "./errors";
 import {
   associateEmployer,
@@ -212,6 +213,8 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return jsonResponse(result, 200, requestId);
     }
 
+    const freshnessPolicy = readFreshnessPolicy(env);
+
     const clientId = validateClientId(request.headers.get("X-Client-ID"));
     const clientLimit = await env.CLIENT_RATE_LIMITER.limit({
       key: `${clientId}:employers-v1`,
@@ -225,7 +228,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (pathname === RESOLVE_PATH) {
       const input = parseResolveRequest(body);
-      const result = await resolveEmployer(env.DB, input.identity, clientIdHash);
+      const result = await resolveEmployer(
+        env.DB,
+        input.identity,
+        clientIdHash,
+        freshnessPolicy,
+      );
       logEvent("info", {
         event: "employer_resolve",
         requestId,
@@ -247,7 +255,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (pathname === INGEST_PATH) {
       const input = parseIngestRequest(body);
-      const result = await ingestEmployers(env.DB, input, clientIdHash);
+      const result = await ingestEmployers(
+        env.DB,
+        input,
+        clientIdHash,
+        freshnessPolicy,
+      );
       logEvent("info", {
         event: "employer_ingest",
         requestId,
@@ -263,7 +276,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (pathname === NO_MATCH_PATH) {
       const input = parseNoMatchRequest(body);
-      const result = await storeNoMatchObservation(env.DB, input, clientIdHash);
+      const result = await storeNoMatchObservation(
+        env.DB,
+        input,
+        clientIdHash,
+        freshnessPolicy,
+      );
       logEvent("info", {
         event: "employer_no_match",
         requestId,
@@ -282,6 +300,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       input.identity,
       input.nzbn,
       clientIdHash,
+      freshnessPolicy,
     );
     logEvent("info", {
       event: "employer_associate",

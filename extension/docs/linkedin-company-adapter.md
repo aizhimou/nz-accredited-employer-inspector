@@ -38,7 +38,7 @@ LinkedIn may render the company header after `document_idle`. The content script
 2. `Checking INZ…`: background orchestration is active.
 3. `Confirm employer match`: D1 or live INZ returned official employer candidates, but no platform association can be assumed.
 4. `Accredited in NZ` / `Accreditation expired`: the selected employer's official expiry evaluation. Selection may be a stored platform association or a unique exact official-name match.
-5. `No published INZ match`: recognised live INZ `400 No Results`; the exact platform identity/query observation is reused for 24 hours and its check/expiry times are shown.
+5. `No published INZ match`: recognised live INZ `400 No Results`; the exact platform identity/query observation is reused for the configured negative TTL and its check/expiry times are shown.
 6. `Live verification needs review`: an associated NZBN could not be republished by INZ; the old row is only dated context.
 7. `Try again`: API, INZ, or extension background failure.
 
@@ -54,7 +54,7 @@ The result panel shows the selected employer and all API candidates (up to 50), 
 6. From `chrome://extensions`, open the extension service worker's DevTools. Background requests do not appear in the LinkedIn tab's Network panel.
 7. Confirm the first call is `POST /v1/employers/resolve`.
 8. If the response is `inz_lookup_required` or `refresh_required`, confirm exactly one background INZ request is followed by `POST /v1/employers/ingest` only for a positive payload.
-9. For a recognised display-name `400 No Results`, confirm one `POST /v1/employers/no-match`; a repeat check within 24 hours should stop after `/resolve` and make no INZ request.
+9. For a recognised display-name `400 No Results`, confirm one `POST /v1/employers/no-match`; a repeat check inside the configured negative TTL should stop after `/resolve` and make no INZ request.
 10. If candidates need confirmation, select one and confirm one `POST /v1/employers/associate` request.
 11. Confirm accreditation, automatic exact-name match, association, and no-match provenance are labelled separately and the official INZ link opens in a new tab.
 12. Navigate to `/company/onenz/about/?viewAsMember=true`; confirm the control remains mounted with the same `company:onenz` identity.

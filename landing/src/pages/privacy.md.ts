@@ -71,7 +71,7 @@ The project does not sell data, share it with advertising networks, or use it fo
 - **Raw UUID in API requests:** processed during the request for rate limiting and hashing; not intentionally written to the application database or application event logs.
 - **Hashed UUID and community confirmation:** retained while the community-association feature operates, until no longer needed, or until a valid deletion request can be matched to it.
 - **Employer name, company identifier, and public URL:** retained while the lookup and community-association service operates, unless removed earlier when no longer needed or following an applicable deletion request.
-- **No-published-match observation:** used for no more than 24 hours. Stored fields may remain until replaced or cleared, but are ignored after expiry.
+- **No-published-match observation:** used for the configured negative TTL, currently seven days. Stored fields may remain until replaced or cleared, but are ignored after expiry.
 - **Official employer records:** retained while the service operates and updated or replaced as newer public Immigration New Zealand data is accepted.
 - **Release waitlist email:** retained until the one release notification is sent or deletion is requested, then deleted from the active waitlist within 30 days after the notification campaign ends.
 

@@ -17,7 +17,7 @@ The product is a shared accredited-employer data source, not an INZ search-respo
 - LinkedIn/SEEK associations are community confirmations. They are useful identity mappings, but are not official INZ facts.
 - A unique exact official-name match is a derived resolution, not a stored association: the normalised platform `displayName` must exactly equal the sole candidate's official INZ `employerName`.
 - The Worker does not call INZ. A live INZ lookup only happens in the extension background after an explicit user action.
-- The MVP has no general D1 search-cache table. It stores only exact, platform-bound INZ no-match observations for 24 hours.
+- The MVP has no general D1 search-cache table. It stores only exact, platform-bound INZ no-match observations for the configured negative TTL, which defaults to seven days.
 
 These independent truth and provenance dimensions must stay visible in code and UI:
 
@@ -26,7 +26,7 @@ These independent truth and provenance dimensions must stay visible in code and 
 | Accreditation | INZ | Whether an NZBN is published and its accreditation expiry date. |
 | Platform association | Extension users | Which NZBN corresponds to a LinkedIn company or SEEK advertiser/profile. |
 | Automatic exact-name match | Worker-derived | The sole current candidate's official `employerName` exactly equals the platform display name after normalisation. It is not community-confirmed and is not persisted. |
-| Platform no-match observation | INZ lookup submitted by extension | This exact platform identity and normalised display-name query returned no published INZ result within the last 24 hours. |
+| Platform no-match observation | INZ lookup submitted by extension | This exact platform identity and normalised display-name query returned no published INZ result within the configured negative TTL. |
 
 ## 2. Components and responsibilities
 
@@ -35,6 +35,8 @@ These independent truth and provenance dimensions must stay visible in code and 
 - Cloudflare Worker: validates requests, searches/upserts `employers`, aggregates community confirmations, derives exact official-name matches, evaluates freshness/accreditation, stores short-lived exact no-match observations, and rate-limits clients.
 - D1: stores canonical employers, platform associations/confirmations, and platform-bound no-match observation fields.
 - INZ: official lookup called directly by the extension, never by the Worker.
+
+Worker freshness policy is configured with positive integer second values in `POSITIVE_TTL_SECONDS` and `NEGATIVE_TTL_SECONDS`. The defaults are 30 days and seven days respectively. Wrangler environment variables are non-inheritable, so every named environment declares both values explicitly.
 
 ```mermaid
 sequenceDiagram
@@ -77,7 +79,7 @@ sequenceDiagram
                 API-->>Ext: ASSOCIATED exact match or CONFIRMATION_REQUIRED
             else Recognised No Results
                 Ext->>API: POST /no-match with raw envelope
-                API->>D1: upsert platform identity + 24h observation
+                API->>D1: upsert platform identity + configured negative-TTL observation
                 API-->>Ext: NO_PUBLISHED_INZ_MATCH
             end
         end
@@ -196,10 +198,10 @@ interface EmployerResolutionResponse {
 
 Rules:
 
-- `associated`: a selected employer exists and its official observation is fresh. Live INZ observations are fresh for 7 days; complete MBIE official imports are fresh for 30 days from their source snapshot date. Do not call INZ. Selection may come from a stored platform association or an automatic exact-name match; inspect `matchMethod`.
-- `refresh_required`: a selected employer exists but its source-specific freshness window has elapsed. `inzQuery` is the selected employer's NZBN. Selection provenance remains in `matchMethod`.
+- `associated`: a selected employer exists and its official observation is fresh according to the configured positive TTL, which defaults to 30 days. Live INZ observations and complete MBIE official imports use the same freshness window. Do not call INZ. Selection may come from a stored platform association or an automatic exact-name match; inspect `matchMethod`.
+- `refresh_required`: a selected employer exists but the configured positive freshness window has elapsed. `inzQuery` is the selected employer's NZBN. Selection provenance remains in `matchMethod`.
 - `confirmation_required`: D1 has one or more plausible candidates but no usable association. The UI lists all candidates and asks the user to confirm; it must not silently pick a fuzzy match.
-- `no_published_inz_match`: there is no association or positive candidate, and this exact platform identity plus normalised display-name query has a no-match observation less than 24 hours old. Do not call INZ.
+- `no_published_inz_match`: there is no association or positive candidate, and this exact platform identity plus normalised display-name query has a no-match observation inside the configured negative TTL, which defaults to seven days. Do not call INZ.
 - `inz_lookup_required`: neither an association nor a local candidate exists. `inzQuery` is the platform display name.
 - `candidates` are ordered with the selected employer first, followed by live-INZ results, community-confirmed alternatives, then exact/fuzzy local matches. At most 50 are returned; live INZ order is preserved.
 - `matchMethod: "platform_association"` means `association` is non-null and the selected NZBN came from this installation or the unique community winner.
@@ -270,7 +272,7 @@ A fuzzy candidate is never automatically written as an association.
 
 After applying association precedence, `/resolve` automatically selects a candidate only when the returned canonical candidate set contains exactly one row and normalised `identity.displayName` exactly equals that row's normalised official `employerName`. The response uses the existing freshness state (`associated` or `refresh_required`), sets `matchMethod: "exact_employer_name"`, keeps `association: null`, and performs no D1 write. Exact `tradingName` or containment matches still return `confirmation_required`.
 
-If no association/candidate exists, the Worker compares `(platform, externalKey)` and the normalised current `displayName` with the stored no-match observation. A matching observation is fresh for exactly 24 hours from Worker `checkedAt`; at the boundary it is expired and `/resolve` returns `inz_lookup_required`.
+If no association/candidate exists, the Worker compares `(platform, externalKey)` and the normalised current `displayName` with the stored no-match observation. A matching observation is fresh for `NEGATIVE_TTL_SECONDS` from Worker `checkedAt`; at the boundary it is expired and `/resolve` returns `inz_lookup_required`.
 
 ### 6.3 Ingest a successful INZ response
 
@@ -416,7 +418,7 @@ For that recognised envelope after an unassociated display-name lookup:
 - do not call `/ingest`;
 - call `/no-match` with the raw envelope; do not synthesise an empty INZ result;
 - do not create an `employers` row;
-- show `No published INZ match` and its 24-hour observation window;
+- show `No published INZ match` and its configured observation window;
 - show `Live verification needs review` for a stale associated NZBN;
 - include a new-tab link to the official [INZ accredited employer list](https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/).
 
@@ -464,7 +466,7 @@ Automatic exact-name matches have no table and no stored flag. They are derived 
 
 `employer_searches` and `employer_search_results` are removed. D1 is not used as a query-response cache.
 
-No-match observations need no cleanup job: `/resolve` ignores them at 24 hours, and a later positive ingest/association clears them. The timestamp is not extended by duplicate fresh submissions.
+No-match observations need no cleanup job: `/resolve` ignores them after `NEGATIVE_TTL_SECONDS`, and a later positive ingest/association clears them. The timestamp is not extended by duplicate fresh submissions.
 
 ## 10. Trust and provenance
 
@@ -476,7 +478,7 @@ Current controls:
 - valid 13-digit NZBN, expiry date, duplicate, pagination, and field-length checks;
 - Worker-owned timestamps and source labels;
 - atomic upsert of every accepted INZ result;
-- strict no-match envelope/query validation, exact platform scoping, and a 24-hour lifetime;
+- strict no-match envelope/query validation, exact platform scoping, and a configured negative lifetime;
 - 30 requests/minute/client and 10 writes/minute/client;
 - hashed client IDs in association confirmation rows;
 - visible distinction between official employer data and community mappings;

@@ -39,7 +39,7 @@ The shared adapter harness waits for asynchronous rendering, restores the Shadow
 6. Inspect requests from the extension service worker DevTools, not the SEEK tab's Network panel.
 7. Confirm the first call is `POST /v1/employers/resolve`.
 8. If live verification is required, confirm exactly one INZ call and one positive-only `POST /v1/employers/ingest`.
-9. For recognised display-name `400 No Results`, confirm `/no-match` stores the exact strong/weak SEEK identity and a repeat check within 24 hours does not call INZ.
+9. For recognised display-name `400 No Results`, confirm `/no-match` stores the exact strong/weak SEEK identity and a repeat check inside the configured negative TTL does not call INZ.
 10. Confirm choosing a candidate calls `POST /v1/employers/associate` and the selected NZBN is shown as community association data.
 11. For a sole candidate whose official `employerName` exactly equals the SEEK advertiser name after normalisation, confirm the result is shown directly as `Exact match` and `Not community-confirmed`, with no `/associate` call.
 12. Open `https://nz.seek.com/`, click a Recommended job, and confirm the control appears on its own row immediately below the employer row in the sidebar header.

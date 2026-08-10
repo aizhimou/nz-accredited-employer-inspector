@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFreshnessPolicy } from "../src/config";
 import { InzResponseError } from "../src/errors";
 import { parseInzResponse } from "../src/inz-response";
 import {
@@ -173,10 +174,18 @@ describe("Auckland accreditation and freshness", () => {
     )).toBe("expired");
   });
 
-  it("requires refresh at seven days", () => {
+  it("evaluates configurable freshness boundaries", () => {
     const verified = Math.floor(Date.parse("2026-08-01T00:00:00Z") / 1000);
-    expect(isRecentlyVerified(verified, Date.parse("2026-08-07T23:59:59Z"))).toBe(true);
-    expect(isRecentlyVerified(verified, Date.parse("2026-08-08T00:00:00Z"))).toBe(false);
+    expect(isRecentlyVerified(
+      verified,
+      Date.parse("2026-08-07T23:59:59Z"),
+      7 * 24 * 60 * 60,
+    )).toBe(true);
+    expect(isRecentlyVerified(
+      verified,
+      Date.parse("2026-08-08T00:00:00Z"),
+      7 * 24 * 60 * 60,
+    )).toBe(false);
     expect(isRecentlyVerified(
       verified,
       Date.parse("2026-08-30T23:59:59Z"),
@@ -188,4 +197,26 @@ describe("Auckland accreditation and freshness", () => {
       30 * 24 * 60 * 60,
     )).toBe(false);
   });
+});
+
+describe("freshness configuration", () => {
+  it("accepts positive integer number and string Worker variables", () => {
+    expect(readFreshnessPolicy({
+      POSITIVE_TTL_SECONDS: 2592000,
+      NEGATIVE_TTL_SECONDS: "604800",
+    })).toEqual({
+      positiveTtlSeconds: 2592000,
+      negativeTtlSeconds: 604800,
+    });
+  });
+
+  it.each([0, -1, 1.5, "", "7 days", undefined])(
+    "rejects invalid TTL value %s",
+    (value) => {
+      expect(() => readFreshnessPolicy({
+        POSITIVE_TTL_SECONDS: value,
+        NEGATIVE_TTL_SECONDS: 604800,
+      })).toThrowError("POSITIVE_TTL_SECONDS must be a positive integer");
+    },
+  );
 });

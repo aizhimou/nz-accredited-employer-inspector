@@ -288,7 +288,7 @@ export function mountCompanyWidget(
         "span",
         "source-badge",
         noPublished && response.data.noMatch !== null
-          ? "24h INZ check"
+          ? "Recent INZ check"
           : exactNameMatch
             ? "Exact INZ name"
             : response.liveLookupStatus === "updated"

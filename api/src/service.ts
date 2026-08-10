@@ -1,3 +1,4 @@
+import type { FreshnessPolicy } from "./config";
 import { ApiError, InzResponseError } from "./errors";
 import { parseInzResponse } from "./inz-response";
 import { getAccreditationStatus, isRecentlyVerified } from "./time";
@@ -14,9 +15,6 @@ import {
   type IngestRequest,
   type NoMatchRequest,
 } from "./validation";
-
-const NO_MATCH_TTL_SECONDS = 24 * 60 * 60;
-const OFFICIAL_IMPORT_TTL_SECONDS = 30 * 24 * 60 * 60;
 
 type VerificationSource = "inz_live_lookup" | "inz_official_import";
 
@@ -77,6 +75,7 @@ function toPublicEmployer(candidate: EmployerCandidate): AccreditedEmployer {
 function isCandidateRecentlyVerified(
   candidate: EmployerCandidate,
   nowMilliseconds: number,
+  positiveTtlSeconds: number,
 ): boolean {
   const lastVerifiedAtSeconds = Math.floor(
     Date.parse(candidate.lastVerifiedAt) / 1000,
@@ -84,9 +83,7 @@ function isCandidateRecentlyVerified(
   return isRecentlyVerified(
     lastVerifiedAtSeconds,
     nowMilliseconds,
-    candidate.verificationSource === "inz_official_import"
-      ? OFFICIAL_IMPORT_TTL_SECONDS
-      : undefined,
+    positiveTtlSeconds,
   );
 }
 
@@ -252,6 +249,7 @@ function getFreshNoMatch(
   association: AssociationResolution,
   displayName: string,
   nowMilliseconds: number,
+  negativeTtlSeconds: number,
 ): NoMatchObservation | null {
   const query = association.noMatchQuery;
   const checkedAt = association.noMatchAt;
@@ -261,14 +259,14 @@ function getFreshNoMatch(
     checkedAt === null ||
     query !== normalizeName(displayName) ||
     checkedAt > nowSeconds ||
-    nowSeconds - checkedAt >= NO_MATCH_TTL_SECONDS
+    nowSeconds - checkedAt >= negativeTtlSeconds
   ) {
     return null;
   }
   return {
     query,
     checkedAt: new Date(checkedAt * 1000).toISOString(),
-    expiresAt: new Date((checkedAt + NO_MATCH_TTL_SECONDS) * 1000).toISOString(),
+    expiresAt: new Date((checkedAt + negativeTtlSeconds) * 1000).toISOString(),
   };
 }
 
@@ -315,6 +313,7 @@ export async function resolveEmployer(
   db: D1Database,
   identity: PlatformIdentity,
   clientIdHash: string,
+  freshnessPolicy: FreshnessPolicy,
   preferredNzbns: readonly string[] = [],
   nowMilliseconds = Date.now(),
   allowExactNameMatch = true,
@@ -334,7 +333,11 @@ export async function resolveEmployer(
   const publicCandidates = candidates.map(toPublicEmployer);
 
   if (selectedEmployer !== null) {
-    const fresh = isCandidateRecentlyVerified(selectedEmployer, nowMilliseconds);
+    const fresh = isCandidateRecentlyVerified(
+      selectedEmployer,
+      nowMilliseconds,
+      freshnessPolicy.positiveTtlSeconds,
+    );
     return {
       state: fresh ? "associated" : "refresh_required",
       matchMethod: "platform_association",
@@ -354,7 +357,11 @@ export async function resolveEmployer(
       ? candidates[0]
       : undefined;
   if (exactNameEmployer !== undefined) {
-    const fresh = isCandidateRecentlyVerified(exactNameEmployer, nowMilliseconds);
+    const fresh = isCandidateRecentlyVerified(
+      exactNameEmployer,
+      nowMilliseconds,
+      freshnessPolicy.positiveTtlSeconds,
+    );
     return {
       state: fresh ? "associated" : "refresh_required",
       matchMethod: "exact_employer_name",
@@ -378,7 +385,12 @@ export async function resolveEmployer(
     };
   }
 
-  const noMatch = getFreshNoMatch(association, identity.displayName, nowMilliseconds);
+  const noMatch = getFreshNoMatch(
+    association,
+    identity.displayName,
+    nowMilliseconds,
+    freshnessPolicy.negativeTtlSeconds,
+  );
   if (noMatch !== null) {
     return {
       state: "no_published_inz_match",
@@ -439,6 +451,7 @@ export async function ingestEmployers(
   db: D1Database,
   request: IngestRequest,
   clientIdHash: string,
+  freshnessPolicy: FreshnessPolicy,
   nowMilliseconds = Date.now(),
 ): Promise<EmployerResolutionResponse> {
   let parsed;
@@ -499,6 +512,7 @@ export async function ingestEmployers(
     db,
     request.identity,
     clientIdHash,
+    freshnessPolicy,
     parsed.results.map((employer) => employer.nzbn),
     nowMilliseconds,
     parsed.totalResults === 1,
@@ -509,12 +523,14 @@ export async function storeNoMatchObservation(
   db: D1Database,
   request: NoMatchRequest,
   clientIdHash: string,
+  freshnessPolicy: FreshnessPolicy,
   nowMilliseconds = Date.now(),
 ): Promise<EmployerResolutionResponse> {
   const current = await resolveEmployer(
     db,
     request.identity,
     clientIdHash,
+    freshnessPolicy,
     [],
     nowMilliseconds,
   );
@@ -560,7 +576,7 @@ export async function storeNoMatchObservation(
       request.identity.publicUrl,
       nowSeconds,
       request.normalizedQuery,
-      NO_MATCH_TTL_SECONDS,
+      freshnessPolicy.negativeTtlSeconds,
     )
     .run();
 
@@ -568,6 +584,7 @@ export async function storeNoMatchObservation(
     db,
     request.identity,
     clientIdHash,
+    freshnessPolicy,
     [],
     nowMilliseconds,
   );
@@ -578,6 +595,7 @@ export async function associateEmployer(
   identity: PlatformIdentity,
   nzbn: string,
   clientIdHash: string,
+  freshnessPolicy: FreshnessPolicy,
   nowMilliseconds = Date.now(),
 ): Promise<EmployerResolutionResponse> {
   if (await findEmployer(db, nzbn, nowMilliseconds) === null) {
@@ -630,5 +648,12 @@ export async function associateEmployer(
       .bind(identity.platform, identity.externalKey, clientIdHash, nzbn, nowSeconds),
   ]);
 
-  return resolveEmployer(db, identity, clientIdHash, [nzbn], nowMilliseconds);
+  return resolveEmployer(
+    db,
+    identity,
+    clientIdHash,
+    freshnessPolicy,
+    [nzbn],
+    nowMilliseconds,
+  );
 }

@@ -52,21 +52,21 @@ When no stored platform association is selected, the Worker may derive a match o
 
 ### No published match
 
-A recognised INZ no-results response is stored only for the exact platform identity and normalised display-name query. It expires after 24 hours. It is evidence that the name query returned no published result, not evidence that the employer is unaccredited. Any positive employer candidate or association takes precedence.
+A recognised INZ no-results response is stored only for the exact platform identity and normalised display-name query. It expires after the configured negative TTL, currently seven days. It is evidence that the name query returned no published result, not evidence that the employer is unaccredited. Any positive employer candidate or association takes precedence.
 
 ## Resolution states
 
-- **associated:** A selected employer exists and was verified less than 7 days ago.
-- **refresh_required:** A selected employer exists but its official data is at least 7 days old. The extension may make one NZBN lookup.
+- **associated:** A selected employer exists and is inside the configured positive TTL, currently 30 days.
+- **refresh_required:** A selected employer exists but its official data is outside the configured positive TTL. The extension may make one NZBN lookup.
 - **confirmation_required:** One or more plausible official candidates exist, but no association or safe exact-name rule selects one.
-- **no_published_inz_match:** No positive candidate exists and an exact no-match observation is less than 24 hours old.
+- **no_published_inz_match:** No positive candidate exists and an exact no-match observation is inside the configured negative TTL, currently seven days.
 - **inz_lookup_required:** No association, candidate, or fresh no-match exists. The extension may make one display-name lookup.
 
 ## Components and trust boundaries
 
 - **Content script:** extracts platform identity, mounts Shadow DOM UI, renders candidates, and captures explicit user choices.
 - **Extension background:** creates and stores a random installation UUID, calls the Worker, performs user-triggered INZ requests, recognises official no-result envelopes, and submits responses.
-- **Cloudflare Worker:** validates requests, searches and upserts canonical employers, derives exact-name matches, aggregates community confirmations, evaluates freshness/status, stores exact 24-hour no-match observations, and rate limits clients.
+- **Cloudflare Worker:** validates requests, searches and upserts canonical employers, derives exact-name matches, aggregates community confirmations, evaluates configurable freshness/status, stores exact no-match observations, and rate limits clients.
 - **D1:** stores canonical employer records, platform entities, per-installation confirmations, no-match observation fields, and retained pre-release waitlist records.
 - **INZ:** official lookup source. The Worker never calls INZ.
 
@@ -91,7 +91,7 @@ All POST routes require JSON. Employer routes require an X-Client-ID UUID header
 - GET /health — public service health; no client ID required
 - POST /v1/employers/resolve — read-only platform identity resolution
 - POST /v1/employers/ingest — validate and atomically store a positive INZ response
-- POST /v1/employers/no-match — store a recognised, exact, 24-hour no-match observation
+- POST /v1/employers/no-match — store a recognised exact no-match observation for the configured negative TTL
 - POST /v1/employers/associate — confirm or change this installation's platform-to-NZBN mapping
 - POST /v1/waitlist — join the one-message Chrome Web Store release notification list
 

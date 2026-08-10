@@ -38,7 +38,9 @@ curl -X POST \
   'http://localhost:8787/v1/employers/resolve'
 ```
 
-An `inz_lookup_required` response tells the extension to perform one user-triggered INZ lookup. Positive results are submitted to `/ingest`; recognised INZ `400 No Results` envelopes are submitted to `/no-match` and reused only for the exact platform identity/query for 24 hours. A sole candidate whose official `employerName` exactly matches the normalised platform display name is returned directly with `matchMethod: "exact_employer_name"`; this is derived on read and does not create a community confirmation.
+An `inz_lookup_required` response tells the extension to perform one user-triggered INZ lookup. Positive results are submitted to `/ingest`; recognised INZ `400 No Results` envelopes are submitted to `/no-match` and reused only for the exact platform identity/query for the configured negative TTL (seven days by default). All selected positive observations use the configured positive TTL (30 days by default), regardless of whether they came from a live lookup or an official import. A sole candidate whose official `employerName` exactly matches the normalised platform display name is returned directly with `matchMethod: "exact_employer_name"`; this is derived on read and does not create a community confirmation.
+
+Freshness is configured in `wrangler.jsonc` through `POSITIVE_TTL_SECONDS` and `NEGATIVE_TTL_SECONDS`. Both variables are required positive integer numbers of seconds and must be declared separately for every Wrangler environment.
 
 ## Official employer imports
 

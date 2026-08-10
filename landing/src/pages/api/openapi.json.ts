@@ -180,7 +180,7 @@ export const GET: APIRoute = () => {
         post: {
           operationId: "recordNoMatch",
           summary: "Record a recognised exact INZ no-match observation",
-          description: "The observation is bound to the platform identity and normalised display-name query and is reusable for 24 hours.",
+          description: "The observation is bound to the platform identity and normalised display-name query and is reusable for the configured negative TTL, currently seven days.",
           parameters: [clientHeader],
           requestBody: {
             required: true,
