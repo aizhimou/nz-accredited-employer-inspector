@@ -18,6 +18,8 @@ export const GET: APIRoute = () => {
 - Chrome Web Store: https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg
 - Privacy policy: https://nzaei.zemo.bio/privacy/
 - Privacy policy as Markdown: https://nzaei.zemo.bio/privacy.md
+- Plain-language result guide: https://nzaei.zemo.bio/how-results-work/
+- Agent-readable result guide: https://nzaei.zemo.bio/how-results-work.md
 
 The project is independently created and maintained by Zemo Ai in Auckland, New Zealand. The author homepage is the canonical identity page and links back to this product.
 
@@ -107,6 +109,10 @@ Canonical API contract: https://github.com/aizhimou/nz-accredited-employer-inspe
 - It can show expired accreditation as well as current accreditation.
 - A no-match name lookup does not prove non-accreditation.
 - It is independent open-source software, not an official INZ product and not immigration advice.
+
+## Result interpretation reference
+
+For definitions of every user-facing notice, the meaning of multiple candidates and **Use this employer**, community selection precedence, exact-name rules, and statements that must not be inferred, use https://nzaei.zemo.bio/how-results-work.md.
 `;
 
   return new Response(body, {

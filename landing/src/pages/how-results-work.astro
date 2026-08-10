@@ -1,0 +1,621 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const officialListUrl =
+  "https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/";
+
+const chapters = [
+  ["01", "Read a result", "#read-a-result"],
+  ["02", "How it is formed", "#how-it-is-formed"],
+  ["03", "When you choose", "#when-you-choose"],
+  ["04", "Notice reference", "#notices"],
+  ["05", "Important limits", "#limits"],
+];
+---
+
+<BaseLayout
+  title="How the results work | NZ Accredited Employer Inspector"
+  description="A plain-language guide to where employer accreditation data comes from, how results are matched, what community confirmations mean, and what the Inspector cannot prove."
+  pageKind="guide"
+  markdownAlternate="/how-results-work.md"
+>
+  <section class="guide-hero" aria-labelledby="guide-title">
+    <div class="shell hero-layout">
+      <div class="hero-copy">
+        <p class="eyebrow">How results work</p>
+        <h1 id="guide-title">Accreditation is official. <em>The match may not be.</em></h1>
+        <p class="hero-lede">
+          The Inspector keeps an employer’s official accreditation record separate from the reason that record was connected to a LinkedIn or SEEK page. This guide shows you how to read both.
+        </p>
+        <div class="button-row">
+          <a class="button button-primary" href="#read-a-result">Learn to read a result <span aria-hidden="true">↓</span></a>
+          <a class="button button-secondary" href="/how-results-work.md">AI agent version <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+
+      <figure class="result-anatomy" aria-labelledby="result-anatomy-caption">
+        <figcaption id="result-anatomy-caption">Anatomy of a result</figcaption>
+        <div class="page-context">
+          <span>Name shown on the job page</span>
+          <strong>Koru Digital</strong>
+        </div>
+        <div class="anatomy-block official-block">
+          <div class="source-key official-key"><span></span>Official accreditation</div>
+          <strong>Koru Digital Limited</strong>
+          <dl>
+            <div><dt>NZBN</dt><dd>94•••••••••••</dd></div>
+            <div><dt>Accredited to</dt><dd>18 Mar 2027</dd></div>
+            <div><dt>Verified</dt><dd>Today</dd></div>
+          </dl>
+        </div>
+        <div class="anatomy-block match-block">
+          <div class="source-key match-key"><span></span>Why this employer is shown</div>
+          <p><strong>Platform association</strong><br />1 community confirmation</p>
+        </div>
+        <div class="anatomy-rule">
+          <span class="official-rule">INZ supplies the employer record</span>
+          <span class="match-rule">The Inspector explains the match</span>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <nav class="chapter-nav" aria-label="Guide chapters">
+    <div class="shell chapter-nav-inner">
+      {chapters.map(([number, label, href]) => (
+        <a href={href}>
+          <span>{number}</span>
+          <strong>{label}</strong>
+        </a>
+      ))}
+    </div>
+  </nav>
+
+  <article class="guide-body">
+    <section class="chapter read-chapter" id="read-a-result" aria-labelledby="read-title">
+      <div class="shell chapter-shell">
+        <header class="chapter-heading">
+          <p class="chapter-number">01 · Read a result</p>
+          <h2 id="read-title">Start with two separate claims.</h2>
+          <p>Do not read a positive result as one single fact. Check the official employer record and the page-to-employer match independently.</p>
+        </header>
+
+        <div class="chapter-content">
+          <div class="claim-list">
+            <section class="claim official-claim" aria-labelledby="official-claim-title">
+              <div class="claim-label"><span></span>Official claim</div>
+              <div>
+                <h3 id="official-claim-title">This legal employer appears in official INZ data.</h3>
+                <p>Employer name, optional trading name, NZBN and accreditation expiry come from Immigration New Zealand.</p>
+              </div>
+            </section>
+            <section class="claim match-claim" aria-labelledby="match-claim-title">
+              <div class="claim-label"><span></span>Matching claim</div>
+              <div>
+                <h3 id="match-claim-title">This page appears to belong to that legal employer.</h3>
+                <p>The connection may come from your choice, a community association, or a narrow automatic exact-name rule. INZ does not supply this connection.</p>
+              </div>
+            </section>
+          </div>
+
+          <aside class="reading-rule">
+            <strong>The practical reading rule</strong>
+            <p>A current accreditation date can be correct while the match still needs checking. This is common when a brand name on a job page differs from the legal entity that will employ you.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter evidence-chapter" id="how-it-is-formed" aria-labelledby="evidence-title">
+      <div class="shell chapter-shell">
+        <header class="chapter-heading">
+          <p class="chapter-number">02 · How it is formed</p>
+          <h2 id="evidence-title">How the Inspector reaches a result.</h2>
+          <p>Each step answers a different question. Reliability checks happen inside the step they protect—not as a separate promise.</p>
+        </header>
+
+        <div class="chapter-content">
+          <ol class="evidence-path">
+            <li>
+              <div class="path-marker">Page</div>
+              <div class="path-copy">
+                <p class="path-question">Which public company is this?</p>
+                <h3>Read the employer identity on the page</h3>
+                <p>The extension reads the public company or advertiser name and a public page identifier from LinkedIn or SEEK. It does not treat the display name as a legal identity and does not use your platform account identity.</p>
+                <span class="path-note">A company profile is a stronger identity than a SEEK advertiser name.</span>
+              </div>
+            </li>
+            <li>
+              <div class="path-marker official-marker">INZ</div>
+              <div class="path-copy">
+                <p class="path-question">What does the official record say?</p>
+                <h3>Find and validate official accreditation data</h3>
+                <p>Employer records come from Immigration New Zealand, part of MBIE. The service uses a validated official bulk snapshot and, when fresh data is needed, a direct lookup of INZ’s public service triggered by you.</p>
+                <span class="path-note">Names, 13-digit NZBNs, dates, result totals and complete bulk imports are checked before acceptance.</span>
+              </div>
+            </li>
+            <li>
+              <div class="path-marker match-marker">Match</div>
+              <div class="path-copy">
+                <p class="path-question">Which legal employer belongs to the page?</p>
+                <h3>Use the safest available connection</h3>
+                <p>Your saved choice takes priority for you. Without one, a clear community winner can be used. Automatic selection happens only when there is one candidate and its official legal name exactly matches the page name; an immediate live search must also report one total result.</p>
+                <span class="path-note">Trading-name, similar-name and multiple-candidate matches are never silently selected.</span>
+              </div>
+            </li>
+            <li>
+              <div class="path-marker">Time</div>
+              <div class="path-copy">
+                <p class="path-question">Is the observation still useful?</p>
+                <h3>Show freshness instead of hiding age</h3>
+                <p>Selected positive records are treated as fresh for up to 30 days. Older records trigger a new INZ lookup. A no-result name search lasts for up to seven days and is scoped to that exact page identity and query.</p>
+                <span class="path-note">“No published INZ match” records a search result; it does not prove non-accreditation.</span>
+              </div>
+            </li>
+          </ol>
+
+          <div class="decision-ledger" aria-label="Automatic selection safeguards">
+            <section>
+              <span class="ledger-label safe">Can select</span>
+              <h3>A known association or one exact legal-name candidate</h3>
+            </section>
+            <section>
+              <span class="ledger-label ask">Must ask you</span>
+              <h3>Similar names, trading names, ties or several candidates</h3>
+            </section>
+            <section>
+              <span class="ledger-label never">Never changes</span>
+              <h3>Community input cannot alter official accreditation facts</h3>
+            </section>
+          </div>
+
+          <p class="open-note">The extension, service, data rules and tests are open source, so these behaviours can be inspected and challenged.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter choice-chapter" id="when-you-choose" aria-labelledby="choice-title">
+      <div class="shell chapter-shell">
+        <header class="chapter-heading">
+          <p class="chapter-number">03 · When you choose</p>
+          <h2 id="choice-title">Sometimes the Inspector needs your help.</h2>
+          <p>A brand can be connected to several related legal entities. Showing every plausible record is safer than guessing.</p>
+        </header>
+
+        <div class="chapter-content">
+          <section class="choice-situation" id="multiple-results" aria-labelledby="multiple-title">
+            <div class="situation-copy">
+              <p class="subsection-label">When several names appear</p>
+              <h3 id="multiple-title">Why one name can show several employers</h3>
+              <p>Each row is a separate official employer record, usually with a different NZBN. They are not several accreditations for one company.</p>
+              <p>This can happen when a brand has related companies, a trading name differs from the registered name, or a short advertiser name resembles more than one organisation.</p>
+            </div>
+
+            <figure class="candidate-panel" aria-labelledby="candidate-caption">
+              <figcaption id="candidate-caption">Example · two official records</figcaption>
+              <div class="candidate-page-name"><span>Name on SEEK</span><strong>Koru Digital</strong></div>
+              <div class="candidate-row">
+                <span class="candidate-dot"></span>
+                <div>
+                  <strong>Koru Digital Limited</strong>
+                  <small>NZBN 9429••••••••• · Accredited</small>
+                  <span class="candidate-action">Use this employer</span>
+                </div>
+              </div>
+              <div class="candidate-row">
+                <span class="candidate-dot"></span>
+                <div>
+                  <strong>Koru Digital Services Limited</strong>
+                  <small>NZBN 9429••••••••• · Accredited</small>
+                  <span class="candidate-action">Use this employer</span>
+                </div>
+              </div>
+              <p class="example-label">Illustrative names and numbers</p>
+            </figure>
+          </section>
+
+          <section class="action-explainer" id="use-this-employer" aria-labelledby="action-title">
+            <div class="action-intro">
+              <p class="subsection-label">The choice you record</p>
+              <h3 id="action-title">What “Use this employer” means</h3>
+              <p>It tells the Inspector: “For this public LinkedIn or SEEK identity, use this official NZBN.”</p>
+              <span class="example-action">Use this employer <b aria-hidden="true">→</b></span>
+            </div>
+            <div class="action-facts">
+              <section>
+                <h4>What it records</h4>
+                <ul>
+                  <li>Your selected result for this browser installation.</li>
+                  <li>One anonymous community confirmation for that page.</li>
+                  <li>A replacement for your earlier choice if you select another employer later.</li>
+                </ul>
+              </section>
+              <section>
+                <h4>What it does not do</h4>
+                <p>It does not change INZ data, certify the match, contact the employer, submit a job application, or send your choice to LinkedIn or SEEK.</p>
+              </section>
+            </div>
+          </section>
+
+          <aside class="before-choosing">
+            <strong>Before choosing</strong>
+            <p>Compare the legal name and NZBN with the job ad, employment agreement, company website, or information supplied by the employer. Ask the employer if you are unsure.</p>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="chapter notices-chapter" id="notices" aria-labelledby="notices-title">
+      <div class="shell">
+        <header class="reference-heading">
+          <div>
+            <p class="chapter-number">04 · Notice reference</p>
+            <h2 id="notices-title">What each notice means.</h2>
+          </div>
+          <p>Read the accreditation status and matching notice together. One describes the official employer record; the other explains why that record was shown on this page.</p>
+        </header>
+
+        <div class="notice-source-key" aria-label="Notice source key">
+          <span class="source-key official-key"><i></i>Official record or status</span>
+          <span class="source-key match-key"><i></i>Page-to-employer match</span>
+          <span class="source-key neutral-key"><i></i>Freshness or caution</span>
+        </div>
+
+        <div class="notice-columns">
+          <section aria-labelledby="match-notices-title">
+            <h3 id="match-notices-title">Match and community</h3>
+            <dl class="notice-list">
+              <div>
+                <dt><span class="notice-sample association">Platform association</span></dt>
+                <dd>A saved user-created connection links this page identity to an official NZBN. It is not an INZ fact.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample association">Your confirmed association</span></dt>
+                <dd>This browser installation previously chose that employer for this page. Your current choice takes priority for you.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample association">1 community confirmation</span></dt>
+                <dd>One other browser installation chose this NZBN for the same public page identity. It is matching context—not official verification.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample warning">Other users selected a different NZBN</span></dt>
+                <dd>The community choices disagree. If the leading counts are tied, the Inspector will not choose a winner.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample weak">Based on advertiser name</span></dt>
+                <dd>The SEEK page did not provide a strong company profile identity. Similar advertiser names require extra care.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample exact">Automatic exact official-name match</span></dt>
+                <dd>Exactly one candidate met the narrow official legal-name rule. No community confirmation was created.</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section aria-labelledby="status-notices-title">
+            <h3 id="status-notices-title">Status and freshness</h3>
+            <dl class="notice-list">
+              <div>
+                <dt><span class="notice-sample current">Accredited in NZ</span></dt>
+                <dd>The selected official record’s expiry date has not passed in New Zealand time. It does not decide whether a particular role supports your visa.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample expired">Accreditation expired</span></dt>
+                <dd>The selected official record’s expiry date has passed. Check its verification date and the official list.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample review">Confirm employer match</span></dt>
+                <dd>Plausible official records exist, but the Inspector cannot safely decide which employer belongs to this page.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample review">No published INZ match</span></dt>
+                <dd>A recent INZ search returned no result for this exact page name. This is not proof that the employer is unaccredited.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample warning">Live verification needs review</span></dt>
+                <dd>The latest lookup did not confirm an older selected record. The dated record remains visible but is not treated as current.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample neutral">Live INZ · Shared data · Verified</span></dt>
+                <dd>These labels describe whether official data was just fetched or reused, and when it was accepted.</dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="limits-chapter" id="limits" aria-labelledby="limits-title">
+      <div class="shell limits-layout">
+        <header>
+          <p class="chapter-number">05 · Important limits</p>
+          <h2 id="limits-title">What a result cannot tell you.</h2>
+          <p>The Inspector is an independent open-source project. It is not an Immigration New Zealand product and does not provide immigration or legal advice.</p>
+        </header>
+        <div class="limits-content">
+          <ul>
+            <li><strong>The page may not name the legal employer</strong><span>The entity signing your employment agreement can differ from the brand on the job ad.</span></li>
+            <li><strong>Accreditation does not decide a visa</strong><span>An accredited employer may not be able to support every role or application.</span></li>
+            <li><strong>Community counts are not official proof</strong><span>A confirmation can be mistaken, even when several people agree.</span></li>
+            <li><strong>Public data changes</strong><span>Use the displayed verification date and recheck important decisions.</span></li>
+            <li><strong>Live payload provenance has a technical limit</strong><span>The service validates the structure of browser-submitted INZ results, but cannot cryptographically prove their origin.</span></li>
+          </ul>
+          <aside class="final-check">
+            <strong>For an important decision</strong>
+            <p>Confirm the legal employer name and NZBN with the employer, then check the official INZ list.</p>
+            <a class="button limits-button" href={officialListUrl}>Check the official INZ list <span aria-hidden="true">↗</span></a>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .guide-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(5rem, 9vw, 8rem);
+    background:
+      linear-gradient(112deg, transparent 0 63%, rgb(223 242 235 / 78%) 63% 100%),
+      var(--cloud);
+  }
+
+  .guide-hero::after {
+    position: absolute;
+    right: -9rem;
+    bottom: -13rem;
+    width: 36rem;
+    height: 36rem;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    box-shadow: 0 0 0 5rem rgb(255 255 255 / 18%), 0 0 0 10rem rgb(255 255 255 / 12%);
+    content: "";
+  }
+
+  .hero-layout {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(27rem, 0.84fr);
+    align-items: center;
+    gap: clamp(3rem, 8vw, 8rem);
+  }
+
+  .hero-copy { display: grid; justify-items: start; gap: 1.6rem; }
+  .hero-copy h1 { max-width: 12ch; font-size: clamp(2.75rem, 5.35vw, 5rem); }
+  .hero-copy h1 em { color: var(--pounamu); font-style: normal; }
+  .hero-lede { max-width: 58ch; color: var(--slate); font-size: clamp(1.08rem, 1.65vw, 1.28rem); }
+
+  .result-anatomy {
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 1rem;
+    background: rgb(255 255 255 / 94%);
+    box-shadow: var(--shadow-card);
+    transform: rotate(0.8deg);
+  }
+
+  .result-anatomy figcaption {
+    padding: 0.25rem 0.25rem 0.9rem;
+    color: var(--slate);
+    font-family: var(--font-utility);
+    font-size: 0.68rem;
+    font-weight: 750;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .page-context { display: grid; padding: 0.9rem 1rem; border-radius: 0.6rem; background: var(--harbour); color: white; }
+  .page-context span { color: #b8cfca; font-size: 0.67rem; }
+  .page-context strong { font-size: 1.02rem; }
+
+  .anatomy-block { margin-top: 0.65rem; padding: 1rem; border-radius: 0.6rem; }
+  .official-block { border: 1px solid #9dccbb; background: var(--pounamu-soft); }
+  .official-block > strong { display: block; margin-top: 0.55rem; }
+  .official-block dl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 0.65rem 0 0; }
+  .official-block dl div { display: grid; }
+  .official-block dt { color: var(--slate); font-size: 0.57rem; text-transform: uppercase; }
+  .official-block dd { margin: 0; color: var(--ink); font-size: 0.69rem; font-weight: 700; }
+  .match-block { display: flex; align-items: center; gap: 0.85rem; border: 1px dashed #d5bc70; background: #fffaf0; }
+  .match-block p { color: var(--slate); font-size: 0.73rem; line-height: 1.4; }
+  .match-block p strong { color: var(--ink); }
+
+  .source-key { display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-utility); font-size: 0.6rem; font-weight: 750; letter-spacing: 0.03em; text-transform: uppercase; }
+  .source-key > span,
+  .source-key > i { width: 0.5rem; height: 0.5rem; flex: none; border-radius: 50%; }
+  .official-key { color: var(--pounamu-dark); }
+  .official-key > span,
+  .official-key > i { background: var(--pounamu); }
+  .match-key { color: #735610; }
+  .match-key > span,
+  .match-key > i { background: var(--kōwhai); }
+  .neutral-key { color: var(--slate); }
+  .neutral-key > i { background: #91a7a2; }
+
+  .anatomy-rule { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 0.65rem; overflow: hidden; border-radius: 0.45rem; background: var(--line); }
+  .anatomy-rule span { padding: 0.6rem 0.75rem; font-size: 0.62rem; font-weight: 700; text-align: center; }
+  .official-rule { background: var(--mist); color: var(--pounamu-dark); }
+  .match-rule { background: #fff7df; color: #735610; }
+
+  .chapter-nav { border-block: 1px solid var(--line); background: white; }
+  .chapter-nav-inner { display: grid; grid-template-columns: repeat(5, 1fr); }
+  .chapter-nav a { display: grid; grid-template-columns: 2rem 1fr; align-items: center; min-height: 5rem; padding: 0.9rem 1rem; color: var(--harbour); text-decoration: none; }
+  .chapter-nav a + a { border-left: 1px solid var(--line-light); }
+  .chapter-nav a:hover { background: var(--mist); }
+  .chapter-nav span { color: var(--pounamu); font-family: var(--font-utility); font-size: 0.65rem; font-weight: 750; }
+  .chapter-nav strong { font-size: 0.78rem; }
+
+  .guide-body { background: var(--cloud); }
+  .chapter { padding-block: clamp(5rem, 9vw, 8rem); scroll-margin-top: 1rem; }
+  .chapter + .chapter { border-top: 1px solid var(--line); }
+  .chapter-shell { display: grid; grid-template-columns: minmax(14rem, 0.58fr) minmax(0, 1.42fr); align-items: start; gap: clamp(3rem, 8vw, 8rem); }
+  .chapter-heading { display: grid; justify-items: start; gap: 1rem; }
+  .chapter-number,
+  .subsection-label { color: var(--pounamu-dark); font-family: var(--font-utility); font-size: 0.7rem; font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase; }
+  .chapter-heading h2,
+  .reference-heading h2,
+  .limits-layout h2 { max-width: 21ch; font-size: clamp(1.9rem, 2.8vw, 2.8rem); line-height: 1.08; }
+  .chapter-heading > p:last-child { max-width: 38ch; color: var(--slate); }
+  .chapter-content { min-width: 0; }
+
+  .read-chapter { background: white; }
+  .claim-list { border-top: 1px solid var(--line); }
+  .claim { display: grid; grid-template-columns: 10rem 1fr; gap: 2rem; padding-block: 2rem; border-bottom: 1px solid var(--line); }
+  .claim-label { display: flex; align-items: center; gap: 0.5rem; align-self: start; font-family: var(--font-utility); font-size: 0.65rem; font-weight: 750; text-transform: uppercase; }
+  .claim-label span { width: 0.62rem; height: 0.62rem; border-radius: 50%; }
+  .official-claim .claim-label { color: var(--pounamu-dark); }
+  .official-claim .claim-label span { background: var(--pounamu); }
+  .match-claim .claim-label { color: #735610; }
+  .match-claim .claim-label span { background: var(--kōwhai); }
+  .claim h3 { max-width: 29ch; margin-bottom: 0.55rem; font-size: clamp(1.35rem, 2.1vw, 1.75rem); letter-spacing: -0.03em; }
+  .claim p { max-width: 58ch; color: var(--slate); }
+  .reading-rule { display: grid; grid-template-columns: 10rem 1fr; gap: 2rem; margin-top: 1.5rem; padding: 1.2rem 1.4rem; border-left: 4px solid var(--kōwhai); background: #fffaf0; }
+  .reading-rule p { color: var(--slate); }
+
+  .evidence-chapter { background: var(--harbour); color: white; }
+  .evidence-chapter .chapter-number { color: #9edcc5; }
+  .evidence-chapter .chapter-heading h2 { color: white; }
+  .evidence-chapter .chapter-heading > p:last-child { color: #b8cfca; }
+  .evidence-path { display: grid; margin: 0; padding: 0; list-style: none; }
+  .evidence-path li { position: relative; display: grid; grid-template-columns: 5rem 1fr; gap: 1.5rem; padding-bottom: 3rem; }
+  .evidence-path li::before { position: absolute; top: 2.4rem; bottom: 0; left: 2.45rem; width: 1px; background: rgb(158 220 197 / 34%); content: ""; }
+  .evidence-path li:last-child::before { display: none; }
+  .path-marker { display: grid; width: 5rem; height: 2.25rem; place-items: center; border: 1px solid rgb(184 207 202 / 48%); border-radius: 999px; color: #b8cfca; font-family: var(--font-utility); font-size: 0.62rem; font-weight: 750; text-transform: uppercase; }
+  .official-marker { border-color: #74c5a8; color: #9edcc5; }
+  .match-marker { border-color: #d5bc70; color: #f0d683; }
+  .path-question { margin-bottom: 0.2rem; color: #8fb0a9; font-family: var(--font-utility); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; }
+  .path-copy h3 { margin-bottom: 0.65rem; color: white; font-size: 1.4rem; letter-spacing: -0.025em; }
+  .path-copy > p:not(.path-question) { max-width: 62ch; color: #c5d7d3; }
+  .path-note { display: block; max-width: 65ch; margin-top: 0.85rem; padding-left: 0.8rem; border-left: 2px solid rgb(229 182 71 / 62%); color: #9ebbb5; font-size: 0.78rem; }
+  .decision-ledger { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 0.5rem; border: 1px solid rgb(184 207 202 / 25%); border-radius: 0.7rem; }
+  .decision-ledger section { min-height: 10rem; padding: 1.2rem; }
+  .decision-ledger section + section { border-left: 1px solid rgb(184 207 202 / 25%); }
+  .ledger-label { display: inline-flex; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-size: 0.61rem; font-weight: 750; text-transform: uppercase; }
+  .ledger-label.safe { background: rgb(8 122 92 / 32%); color: #a8e1cd; }
+  .ledger-label.ask { background: rgb(229 182 71 / 20%); color: #f0d683; }
+  .ledger-label.never { background: rgb(255 255 255 / 9%); color: #b8cfca; }
+  .decision-ledger h3 { margin-top: 1rem; color: white; font-size: 1rem; line-height: 1.35; letter-spacing: -0.015em; }
+  .open-note { margin-top: 1rem; color: #8fb0a9; font-size: 0.75rem; }
+
+  .choice-chapter { background: white; }
+  .choice-situation { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(22rem, 1fr); align-items: start; gap: clamp(2.5rem, 6vw, 5rem); }
+  .situation-copy { display: grid; justify-items: start; gap: 1rem; padding-top: 0.2rem; }
+  .situation-copy h3,
+  .action-intro h3 { max-width: 21ch; font-size: clamp(1.75rem, 2.8vw, 2.4rem); }
+  .situation-copy > p:not(.subsection-label),
+  .action-intro > p:not(.subsection-label) { max-width: 48ch; color: var(--slate); }
+  .candidate-panel { padding: 1rem; border: 1px solid var(--line); border-radius: 0.9rem; box-shadow: var(--shadow-card); }
+  .candidate-panel figcaption { padding: 0.2rem 0.25rem 0.85rem; color: var(--slate); font-family: var(--font-utility); font-size: 0.62rem; text-transform: uppercase; }
+  .candidate-page-name { display: grid; padding: 0.85rem 1rem; border-radius: 0.55rem; background: var(--harbour); color: white; }
+  .candidate-page-name span { color: #b8cfca; font-size: 0.62rem; }
+  .candidate-row { display: grid; grid-template-columns: 0.55rem 1fr; gap: 0.75rem; padding: 1rem 0.6rem; border-bottom: 1px solid var(--line-light); }
+  .candidate-dot { width: 0.48rem; height: 0.48rem; margin-top: 0.38rem; border-radius: 50%; background: var(--pounamu); box-shadow: 0 0 0 3px var(--pounamu-soft); }
+  .candidate-row div { display: grid; justify-items: start; }
+  .candidate-row small { margin-top: 0.1rem; color: var(--slate); }
+  .candidate-action { margin-top: 0.65rem; padding: 0.36rem 0.55rem; border: 1px solid var(--line); border-radius: 0.35rem; background: var(--cloud); color: var(--pounamu-dark); font-size: 0.66rem; font-weight: 750; }
+  .example-label { padding: 0.65rem 0.25rem 0.05rem; color: var(--slate); font-size: 0.62rem; }
+
+  .action-explainer { display: grid; grid-template-columns: minmax(15rem, 0.7fr) 1fr; gap: clamp(2.5rem, 6vw, 5rem); margin-top: 4.5rem; padding-block: 3rem; border-block: 1px solid var(--line); }
+  .action-intro { display: grid; justify-items: start; gap: 1rem; align-content: start; }
+  .example-action { display: inline-flex; min-height: 3.2rem; align-items: center; justify-content: space-between; gap: 2rem; margin-top: 0.5rem; padding: 0.75rem 1rem; border-radius: 0.5rem; background: var(--harbour); color: white; font-weight: 750; box-shadow: 0 7px 18px rgb(5 45 53 / 16%); }
+  .example-action b { color: var(--kōwhai); }
+  .action-facts { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 0.7rem; }
+  .action-facts section { padding: 1.4rem; }
+  .action-facts section + section { border-left: 1px solid var(--line); background: var(--cloud); }
+  .action-facts h4 { margin: 0 0 0.8rem; color: var(--harbour); font-family: var(--font-display); font-size: 1rem; }
+  .action-facts ul { display: grid; gap: 0.55rem; margin: 0; padding-left: 1.1rem; color: var(--slate); font-size: 0.87rem; }
+  .action-facts p { color: var(--slate); font-size: 0.87rem; }
+  .before-choosing { display: grid; grid-template-columns: 10rem 1fr; gap: 2rem; margin-top: 1.5rem; padding: 1.1rem 1.3rem; border-left: 4px solid var(--pounamu); background: var(--mist); }
+  .before-choosing p { color: var(--slate); }
+
+  .notices-chapter { background: var(--mist); }
+  .reference-heading { display: grid; grid-template-columns: 0.8fr 1.2fr; align-items: end; gap: clamp(3rem, 8vw, 8rem); padding-bottom: 2.5rem; border-bottom: 1px solid var(--line); }
+  .reference-heading > div { display: grid; gap: 0.9rem; }
+  .reference-heading > p { max-width: 57ch; color: var(--slate); }
+  .notice-source-key { display: flex; flex-wrap: wrap; gap: 0.7rem 1.4rem; padding-block: 1rem; border-bottom: 1px solid var(--line); }
+  .notice-columns { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(2.5rem, 6vw, 5rem); padding-top: 3rem; }
+  .notice-columns > section > h3 { padding-bottom: 0.8rem; border-bottom: 2px solid var(--harbour); font-size: 1.35rem; }
+  .notice-list { display: grid; margin: 0; }
+  .notice-list > div { padding-block: 1.15rem; border-bottom: 1px solid var(--line); }
+  .notice-list dt,
+  .notice-list dd { margin: 0; }
+  .notice-list dd { max-width: 58ch; margin-top: 0.55rem; color: var(--slate); font-size: 0.86rem; }
+  .notice-sample { display: inline-flex; padding: 0.28rem 0.5rem; border-radius: 0.35rem; font-size: 0.7rem; font-weight: 750; line-height: 1.25; }
+  .notice-sample.association { background: #fff0bb; color: #735610; }
+  .notice-sample.warning { background: #f8dfdc; color: #883c34; }
+  .notice-sample.weak,
+  .notice-sample.neutral { background: #dfe9e6; color: var(--slate); }
+  .notice-sample.exact,
+  .notice-sample.current { background: var(--pounamu-soft); color: var(--pounamu-dark); }
+  .notice-sample.expired { background: #f8dfdc; color: var(--alert); }
+  .notice-sample.review { border: 1px solid #d5bc70; background: #fffaf0; color: #735610; }
+
+  .limits-chapter { padding-block: clamp(5rem, 9vw, 8rem); scroll-margin-top: 1rem; background: var(--harbour-deep); color: white; }
+  .limits-layout { display: grid; grid-template-columns: minmax(15rem, 0.65fr) minmax(0, 1.35fr); gap: clamp(3rem, 8vw, 8rem); }
+  .limits-layout .chapter-number { color: #9edcc5; }
+  .limits-layout h2 { margin-top: 1rem; color: white; }
+  .limits-layout header > p:last-child { max-width: 40ch; margin-top: 1.2rem; color: #b8cfca; }
+  .limits-content ul { display: grid; margin: 0; padding: 0; border-top: 1px solid rgb(184 207 202 / 28%); list-style: none; }
+  .limits-content li { display: grid; grid-template-columns: minmax(12rem, 0.8fr) 1fr; gap: 2rem; padding-block: 1.15rem; border-bottom: 1px solid rgb(184 207 202 / 28%); }
+  .limits-content li strong { color: white; }
+  .limits-content li span { color: #b8cfca; }
+  .final-check { display: grid; justify-items: start; gap: 0.6rem; margin-top: 1.5rem; padding: 1.2rem 1.4rem; border-left: 4px solid var(--kōwhai); background: rgb(229 182 71 / 9%); }
+  .final-check p { color: #c5d7d3; }
+  .limits-button { margin-top: 0.4rem; background: var(--kōwhai); color: var(--harbour-deep); }
+  .limits-button:hover { background: #efc95f; }
+
+  @media (max-width: 950px) {
+    .hero-layout,
+    .chapter-shell,
+    .limits-layout { grid-template-columns: 1fr; }
+
+    .hero-layout { max-width: 46rem; }
+    .result-anatomy { transform: none; }
+    .chapter-nav-inner { grid-template-columns: repeat(3, 1fr); }
+    .chapter-nav a:nth-child(4) { border-left: 0; border-top: 1px solid var(--line-light); }
+    .chapter-nav a:nth-child(5) { border-top: 1px solid var(--line-light); }
+    .chapter-heading { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); align-items: end; }
+    .chapter-heading .chapter-number { grid-column: 1 / -1; }
+    .chapter-heading > p:last-child { justify-self: start; }
+    .choice-situation { margin-top: 3rem; }
+  }
+
+  @media (max-width: 720px) {
+    .hero-copy h1 { max-width: 11ch; }
+    .chapter-nav-inner { grid-template-columns: 1fr 1fr; }
+    .chapter-nav a:nth-child(3),
+    .chapter-nav a:nth-child(5) { border-left: 0; }
+    .chapter-nav a:nth-child(3) { border-top: 1px solid var(--line-light); }
+    .chapter-nav a:nth-child(4) { border-left: 1px solid var(--line-light); }
+    .chapter-nav a:nth-child(5) { border-top: 1px solid var(--line-light); }
+    .chapter-heading,
+    .reference-heading,
+    .choice-situation,
+    .action-explainer,
+    .notice-columns { grid-template-columns: 1fr; }
+    .chapter-heading { gap: 0.9rem; }
+    .claim,
+    .reading-rule,
+    .before-choosing { grid-template-columns: 1fr; gap: 0.7rem; }
+    .decision-ledger { grid-template-columns: 1fr; }
+    .decision-ledger section { min-height: auto; }
+    .decision-ledger section + section { border-top: 1px solid rgb(184 207 202 / 25%); border-left: 0; }
+    .choice-situation { margin-top: 2.5rem; }
+    .action-facts { grid-template-columns: 1fr; }
+    .action-facts section + section { border-top: 1px solid var(--line); border-left: 0; }
+    .notice-columns { gap: 3.5rem; }
+    .limits-content li { grid-template-columns: 1fr; gap: 0.35rem; }
+  }
+
+  @media (max-width: 460px) {
+    .official-block dl { grid-template-columns: 1fr 1fr; }
+    .match-block { align-items: start; flex-direction: column; }
+    .anatomy-rule { grid-template-columns: 1fr; }
+    .chapter-nav a { min-height: 4.4rem; padding-inline: 0.75rem; }
+    .evidence-path li { grid-template-columns: 3.7rem 1fr; gap: 1rem; }
+    .evidence-path li::before { left: 1.82rem; }
+    .path-marker { width: 3.7rem; }
+    .candidate-panel { padding: 0.8rem; }
+  }
+</style>

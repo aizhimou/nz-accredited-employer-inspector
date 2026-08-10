@@ -15,6 +15,8 @@ export const GET: APIRoute = ({ site }) => {
 ## Start here
 
 - [Product overview](${link("/index.md")}): What the product does, how a check works, trust boundaries, privacy, and supported platforms.
+- [How results work](${link("/how-results-work/")}): Plain-language explanation of official data, matching, multiple candidates, community confirmations, notices, and limitations.
+- [How results work — agent version](${link("/how-results-work.md")}): Machine-readable interpretation rules and notice dictionary for accurate downstream answers.
 - [Privacy policy](${link("/privacy/")}): Public Chrome extension privacy policy covering data collection, use, sharing, retention, security, and deletion requests.
 - [Privacy policy as Markdown](${link("/privacy.md")}): Low-markup version of the same policy.
 - [Full agent context](${link("/llms-full.txt")}): Detailed architecture, data provenance, resolution states, API summary, limitations, and terminology.

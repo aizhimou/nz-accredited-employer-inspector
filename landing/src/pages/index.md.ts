@@ -49,6 +49,10 @@ Accreditation status and platform association confidence are separate dimensions
 
 Watch the [16-second product walkthrough](https://www.youtube.com/watch?v=85SEJU-aHrQ) to see the extension check a supported job page and show the evidence behind the result.
 
+## Understand a result
+
+Read [How the results work](/how-results-work/) for a plain-language explanation of where the data comes from, why one employer name can show several legal employers, what **Use this employer** records, and how to read platform-association and community-confirmation notices.
+
 ## Get the extension
 
 [Install NZ Accredited Employer Inspector from the Chrome Web Store](https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg).
@@ -66,6 +70,7 @@ Watch the [16-second product walkthrough](https://www.youtube.com/watch?v=85SEJU
 
 - [/llms.txt](/llms.txt): concise discovery index
 - [/llms-full.txt](/llms-full.txt): complete product context
+- [/how-results-work.md](/how-results-work.md): result interpretation rules and notice dictionary
 - [/privacy.md](/privacy.md): privacy policy without presentation markup
 - [/.well-known/api-catalog](/.well-known/api-catalog): RFC 9727 API catalog
 - [/api/openapi.json](/api/openapi.json): OpenAPI 3.1 description
