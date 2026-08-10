@@ -4,7 +4,7 @@ export default defineConfig({
   manifest: {
     name: "NZ Accredited Employer Inspector",
     description: "Check a company's New Zealand employer accreditation from supported job sites.",
-    version: "0.6.0",
+    version: "0.6.1",
     icons: {
       16: "/icon-16.png",
       32: "/icon-32.png",
