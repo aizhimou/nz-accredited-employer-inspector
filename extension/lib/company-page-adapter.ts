@@ -4,6 +4,7 @@ import {
   type WidgetController,
 } from "../entrypoints/linkedin-company.content/ui";
 import type { PlatformIdentity } from "./contracts";
+import { isExtensionEnabled } from "./settings";
 
 export interface CompanyPageAdapter {
   id: string;
@@ -166,8 +167,13 @@ export function startCompanyPageAdapter(
   };
 
   ctx.signal.addEventListener("abort", () => activeSync?.abort(), { once: true });
-  runSync(new URL(location.href));
-  ctx.addEventListener(window, "wxt:locationchange", ({ newUrl }) => {
-    runSync(newUrl);
+  void isExtensionEnabled().then((enabled) => {
+    if (!enabled || ctx.signal.aborted) {
+      return;
+    }
+    runSync(new URL(location.href));
+    ctx.addEventListener(window, "wxt:locationchange", ({ newUrl }) => {
+      runSync(newUrl);
+    });
   });
 }
