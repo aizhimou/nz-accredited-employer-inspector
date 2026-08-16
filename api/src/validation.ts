@@ -26,9 +26,14 @@ export interface AssociationRequest extends ResolveRequest {
   nzbn: string;
 }
 
+export interface EmployerRefreshRequest extends AssociationRequest {
+  manual: boolean;
+}
+
 export interface NoMatchRequest extends ResolveRequest {
   query: string;
   normalizedQuery: string;
+  targetNzbn: string | null;
   inzResponse: {
     Title: "No Results";
     Message: string;
@@ -222,12 +227,22 @@ export function parseAssociationRequest(value: unknown): AssociationRequest {
   return { identity: parseIdentity(record.identity), nzbn: record.nzbn };
 }
 
+export function parseEmployerRefreshRequest(value: unknown): EmployerRefreshRequest {
+  const record = parseEnvelope(value);
+  const association = parseAssociationRequest(record);
+  if (typeof record.manual !== "boolean") {
+    throw new ApiError(400, "invalid_submission", "manual must be a boolean.");
+  }
+  return { ...association, manual: record.manual };
+}
+
 export function parseNoMatchRequest(value: unknown): NoMatchRequest {
   const record = parseEnvelope(value);
   const identity = parseIdentity(record.identity);
   const query = validateQuery(record.query);
   const normalizedQuery = normalizeName(query);
-  if (normalizedQuery !== normalizeName(identity.displayName)) {
+  const targetNzbn = NZBN_PATTERN.test(query) ? query : null;
+  if (targetNzbn === null && normalizedQuery !== normalizeName(identity.displayName)) {
     throw new ApiError(
       400,
       "query_mismatch",
@@ -250,6 +265,7 @@ export function parseNoMatchRequest(value: unknown): NoMatchRequest {
     identity,
     query,
     normalizedQuery,
+    targetNzbn,
     inzResponse: {
       Title: "No Results",
       Message: record.inzResponse.Message,

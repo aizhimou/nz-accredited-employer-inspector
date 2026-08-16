@@ -9,6 +9,7 @@ import {
   type FetchLike,
   INZ_API_URL,
   lookupEmployer,
+  refreshEmployer,
   searchEmployers,
 } from "../lib/lookup";
 
@@ -108,6 +109,21 @@ function resolution(
 function apiResult(data: EmployerResolutionResponse): Response {
   return Response.json(data, {
     headers: { "X-Request-ID": "22222222-2222-4222-8222-222222222222" },
+  });
+}
+
+function refreshAuthorizationResult(
+  state: "authorized" | "cooldown" | "not_required",
+  data = resolution("refresh_required"),
+  retryAt: string | null = null,
+): Response {
+  return Response.json({
+    state,
+    resolution: data,
+    inzQuery: state === "authorized" ? employer.nzbn : null,
+    retryAt,
+  }, {
+    headers: { "X-Request-ID": "refresh-request" },
   });
 }
 
@@ -312,16 +328,23 @@ describe("employer lookup orchestration", () => {
   });
 
   it("keeps stale associated data as review context after NZBN no-result", async () => {
-    let callCount = 0;
-    const fetchFn: FetchLike = async () => {
-      callCount += 1;
-      if (callCount === 1) {
+    const calls: string[] = [];
+    const fetchFn: FetchLike = async (input) => {
+      const url = String(input);
+      calls.push(url);
+      if (url.endsWith("/resolve")) {
         return apiResult(resolution("refresh_required"));
       }
-      return new Response(JSON.stringify({
-        Title: "No Results",
-        Message: "Your search found no results. Check the spelling.",
-      }), { status: 400 });
+      if (url.endsWith("/refresh")) {
+        return refreshAuthorizationResult("authorized");
+      }
+      if (url === INZ_API_URL) {
+        return new Response(JSON.stringify({
+          Title: "No Results",
+          Message: "Your search found no results. Check the spelling.",
+        }), { status: 400 });
+      }
+      return apiResult(resolution("refresh_required"));
     };
     const result = await lookupEmployer(identity, CLIENT_ID, fetchFn);
     expect(result).toMatchObject({
@@ -329,7 +352,12 @@ describe("employer lookup orchestration", () => {
       liveLookupStatus: "verification_required",
       data: { state: "refresh_required", selectedEmployer: { nzbn: employer.nzbn } },
     });
-    expect(callCount).toBe(2);
+    expect(calls).toEqual([
+      `${API_BASE_URL}/v1/employers/resolve`,
+      `${API_BASE_URL}/v1/employers/refresh`,
+      INZ_API_URL,
+      `${API_BASE_URL}/v1/employers/no-match`,
+    ]);
   });
 
   it("does not treat an unrelated INZ 400 as no result", async () => {
@@ -395,6 +423,9 @@ describe("employer lookup orchestration", () => {
       if (url.endsWith("/associate")) {
         return apiResult(resolution("refresh_required"));
       }
+      if (url.endsWith("/refresh")) {
+        return refreshAuthorizationResult("authorized");
+      }
       if (url === INZ_API_URL) {
         return Response.json(rawInzResponse);
       }
@@ -410,8 +441,63 @@ describe("employer lookup orchestration", () => {
     });
     expect(calls).toEqual([
       `${API_BASE_URL}/v1/employers/associate`,
+      `${API_BASE_URL}/v1/employers/refresh`,
       INZ_API_URL,
       `${API_BASE_URL}/v1/employers/ingest`,
     ]);
+  });
+
+  it("defers an automatic refresh during the employer cooldown", async () => {
+    const calls: string[] = [];
+    const retryAt = "2026-08-06T01:00:00.000Z";
+    const fetchFn: FetchLike = async (input) => {
+      const url = String(input);
+      calls.push(url);
+      return url.endsWith("/resolve")
+        ? apiResult(resolution("refresh_required"))
+        : refreshAuthorizationResult("cooldown", resolution("refresh_required"), retryAt);
+    };
+
+    const result = await lookupEmployer(identity, CLIENT_ID, fetchFn);
+
+    expect(result).toMatchObject({
+      ok: true,
+      liveLookupStatus: "refresh_deferred",
+      refreshAvailableAt: retryAt,
+      data: { state: "refresh_required" },
+    });
+    expect(calls).toEqual([
+      `${API_BASE_URL}/v1/employers/resolve`,
+      `${API_BASE_URL}/v1/employers/refresh`,
+    ]);
+  });
+
+  it("manually refreshes a fresh employer without creating an association", async () => {
+    const calls: Array<{ url: string; body: unknown }> = [];
+    const fetchFn: FetchLike = async (input, init) => {
+      const url = String(input);
+      const body = typeof init?.body === "string" ? JSON.parse(init.body) : null;
+      calls.push({ url, body });
+      if (url.endsWith("/refresh")) {
+        return refreshAuthorizationResult("authorized", resolution("associated"));
+      }
+      if (url === INZ_API_URL) {
+        return Response.json(rawInzResponse);
+      }
+      return apiResult(resolution("associated"));
+    };
+
+    const result = await refreshEmployer(identity, employer.nzbn, CLIENT_ID, fetchFn);
+
+    expect(result).toMatchObject({
+      ok: true,
+      liveLookupStatus: "updated",
+    });
+    expect(calls.map((call) => call.url)).toEqual([
+      `${API_BASE_URL}/v1/employers/refresh`,
+      INZ_API_URL,
+      `${API_BASE_URL}/v1/employers/ingest`,
+    ]);
+    expect(calls[0]?.body).toEqual({ identity, nzbn: employer.nzbn, manual: true });
   });
 });

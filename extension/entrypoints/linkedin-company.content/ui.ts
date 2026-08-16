@@ -8,6 +8,7 @@ import {
   type LookupResponse,
   type LookupSuccess,
   type PlatformIdentity,
+  type RefreshEmployerMessage,
   type SearchEmployersMessage,
 } from "../../lib/contracts";
 
@@ -89,7 +90,9 @@ function appendChevron(button: HTMLButtonElement): void {
   button.append(chevron);
 }
 
-async function sendLookupMessage(message: CheckEmployerMessage | AssociateEmployerMessage) {
+async function sendLookupMessage(
+  message: CheckEmployerMessage | AssociateEmployerMessage | RefreshEmployerMessage,
+) {
   const response: unknown = await browser.runtime.sendMessage(message);
   if (!isLookupResponse(response)) {
     return {
@@ -190,6 +193,7 @@ export function mountCompanyWidget(
     selectedNzbn: string | null,
     selectedLabel: string,
     onSelect: (nzbn: string) => void,
+    onRefresh: (nzbn: string) => void,
   ): HTMLElement => {
     const selected = employer.nzbn === selectedNzbn;
     const row = createElement("li", `result-row ${selected ? "selected" : ""}`);
@@ -226,12 +230,18 @@ export function mountCompanyWidget(
       createElement("span", "verified-at", `INZ data verified ${formatVerifiedAt(employer.lastVerifiedAt)}`),
     );
 
+    const actions = createElement("div", "employer-actions");
     if (!selected) {
       const select = createElement("button", "associate-button", "Use this employer");
       select.type = "button";
       select.addEventListener("click", () => onSelect(employer.nzbn));
-      content.append(select);
+      actions.append(select);
     }
+    const refresh = createElement("button", "refresh-button", "Refresh from INZ");
+    refresh.type = "button";
+    refresh.addEventListener("click", () => onRefresh(employer.nzbn));
+    actions.append(refresh);
+    content.append(actions);
     row.append(dot, content);
     return row;
   };
@@ -265,7 +275,9 @@ export function mountCompanyWidget(
       response.data.state === "no_published_inz_match";
     const needsReview =
       response.liveLookupStatus === "verification_required" ||
-      response.data.state === "refresh_required";
+      response.liveLookupStatus === "refresh_deferred" ||
+      (response.data.state === "refresh_required" &&
+        response.liveLookupStatus !== "updated");
     const needsConfirmation = response.data.state === "confirmation_required";
 
     clear(button);
@@ -307,6 +319,8 @@ export function mountCompanyWidget(
         "source-badge",
         noPublished && response.data.noMatch !== null
           ? "Recent INZ check"
+          : response.liveLookupStatus === "refresh_deferred"
+            ? "Recent INZ attempt"
           : exactNameMatch
             ? "Exact INZ name"
             : response.liveLookupStatus === "updated"
@@ -389,8 +403,12 @@ export function mountCompanyWidget(
         createElement(
           "p",
           "warning",
-          response.liveLookupStatus === "verification_required"
-            ? `INZ returned no published match when refreshing the ${exactNameMatch ? "exact-name matched" : "associated"} NZBN. The older record below was not deleted or silently treated as current.`
+          response.liveLookupStatus === "refresh_deferred"
+            ? response.refreshAvailableAt === null
+              ? "A live INZ refresh was attempted recently. The dated record below is retained until another refresh is available."
+              : `A live INZ refresh was attempted recently. The dated record below is retained; another refresh is available after ${formatObservationAt(response.refreshAvailableAt)}.`
+            : response.liveLookupStatus === "verification_required"
+            ? "INZ returned no published match when refreshing this NZBN. The older record below was not deleted or silently treated as current."
             : `The live response did not verify the ${exactNameMatch ? "exact-name matched" : "associated"} NZBN. Review the dated record and confirm it on the official INZ list.`,
         ),
       );
@@ -425,6 +443,9 @@ export function mountCompanyWidget(
             exactNameMatch ? "Exact match" : "Associated",
             (nzbn) => {
               void runAssociation(nzbn);
+            },
+            (nzbn) => {
+              void runRefresh(nzbn);
             },
           ),
         );
@@ -571,6 +592,30 @@ export function mountCompanyWidget(
     renderLoading("Saving association…");
     try {
       const response = await sendLookupMessage({ type: "associate-employer", identity, nzbn });
+      response.ok ? renderSuccess(response) : renderError(response);
+    } catch {
+      renderError({
+        ok: false,
+        error: {
+          code: "background_unavailable",
+          message: "The extension background service is unavailable. Reload the page and try again.",
+          requestId: null,
+        },
+      });
+    } finally {
+      loading = false;
+      button.disabled = false;
+    }
+  };
+
+  const runRefresh = async (nzbn: string): Promise<void> => {
+    if (loading || identity === null) {
+      return;
+    }
+    loading = true;
+    renderLoading("Refreshing from INZ…");
+    try {
+      const response = await sendLookupMessage({ type: "refresh-employer", identity, nzbn });
       response.ok ? renderSuccess(response) : renderError(response);
     } catch {
       renderError({

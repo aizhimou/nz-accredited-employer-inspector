@@ -10,6 +10,7 @@ import {
 import type {
   AccreditedEmployer,
   EmployerAssociation,
+  EmployerRefreshAuthorizationResponse,
   EmployerResolutionResponse,
   EmployerSearchResponse,
   NoMatchObservation,
@@ -18,6 +19,7 @@ import type {
 } from "./types";
 import {
   normalizeName,
+  type EmployerRefreshRequest,
   type IngestRequest,
   type NoMatchRequest,
 } from "./validation";
@@ -35,6 +37,12 @@ interface EmployerRow {
 
 interface EmployerCandidate extends AccreditedEmployer {
   verificationSource: VerificationSource;
+}
+
+interface EmployerRefreshControlRow {
+  last_refresh_attempt_at: number | null;
+  last_refresh_outcome: "pending" | "positive" | "no_result" | null;
+  refresh_not_before: number | null;
 }
 
 interface LocalCandidateResult {
@@ -96,6 +104,9 @@ function isCandidateRecentlyVerified(
   nowMilliseconds: number,
   positiveTtlSeconds: number,
 ): boolean {
+  if (candidate.accreditationStatus === "expired") {
+    return false;
+  }
   const lastVerifiedAtSeconds = Math.floor(
     Date.parse(candidate.lastVerifiedAt) / 1000,
   );
@@ -104,6 +115,12 @@ function isCandidateRecentlyVerified(
     nowMilliseconds,
     positiveTtlSeconds,
   );
+}
+
+function refreshRetryAt(refreshNotBefore: number | null): string | null {
+  return refreshNotBefore === null
+    ? null
+    : new Date(refreshNotBefore * 1000).toISOString();
 }
 
 async function findLocalCandidates(
@@ -497,15 +514,24 @@ function employerUpsert(
   db: D1Database,
   employer: ParsedInzEmployer,
   verifiedAt: number,
+  freshnessPolicy: FreshnessPolicy,
 ): D1PreparedStatement {
+  const refreshCooldownSeconds =
+    getAccreditationStatus(employer.expiryDateOfAccreditation, verifiedAt * 1000) === "expired"
+      ? freshnessPolicy.refreshNoMatchCooldownSeconds
+      : freshnessPolicy.refreshAttemptCooldownSeconds;
   return db
     .prepare(
       `INSERT INTO employers (
          employer_name, normalized_employer_name,
          trading_name, normalized_trading_name,
          nzbn, expiry_date_of_accreditation,
-         first_seen_at, last_verified_at, last_verified_source
-       ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7, 'inz_live_lookup')
+         first_seen_at, last_verified_at, last_verified_source,
+         last_refresh_attempt_at, last_refresh_outcome, refresh_not_before
+       ) VALUES (
+         ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7, 'inz_live_lookup',
+         ?7, 'positive', ?8
+       )
        ON CONFLICT(nzbn) DO UPDATE SET
          employer_name = excluded.employer_name,
          normalized_employer_name = excluded.normalized_employer_name,
@@ -513,7 +539,10 @@ function employerUpsert(
          normalized_trading_name = excluded.normalized_trading_name,
          expiry_date_of_accreditation = excluded.expiry_date_of_accreditation,
          last_verified_at = excluded.last_verified_at,
-         last_verified_source = excluded.last_verified_source`,
+         last_verified_source = excluded.last_verified_source,
+         last_refresh_attempt_at = excluded.last_refresh_attempt_at,
+         last_refresh_outcome = excluded.last_refresh_outcome,
+         refresh_not_before = excluded.refresh_not_before`,
     )
     .bind(
       employer.employerName,
@@ -523,6 +552,7 @@ function employerUpsert(
       employer.nzbn,
       employer.expiryDateOfAccreditation,
       verifiedAt,
+      verifiedAt + refreshCooldownSeconds,
     );
 }
 
@@ -564,7 +594,9 @@ export async function ingestEmployers(
 
   const verifiedAt = Math.floor(nowMilliseconds / 1000);
   await db.batch([
-    ...parsed.results.map((employer) => employerUpsert(db, employer, verifiedAt)),
+    ...parsed.results.map((employer) =>
+      employerUpsert(db, employer, verifiedAt, freshnessPolicy)
+    ),
     db
       .prepare(
         `UPDATE platform_entities
@@ -605,6 +637,73 @@ export async function storeNoMatchObservation(
   freshnessPolicy: FreshnessPolicy,
   nowMilliseconds = Date.now(),
 ): Promise<EmployerResolutionResponse> {
+  if (request.targetNzbn !== null) {
+    const nowSeconds = Math.floor(nowMilliseconds / 1000);
+    const control = await db
+      .prepare(
+        `SELECT last_refresh_attempt_at, last_refresh_outcome, refresh_not_before
+           FROM employers
+          WHERE nzbn = ?1`,
+      )
+      .bind(request.targetNzbn)
+      .first<EmployerRefreshControlRow>();
+    if (control === null) {
+      throw new ApiError(404, "employer_not_found", "The employer does not exist.");
+    }
+    if (
+      control.last_refresh_outcome === "no_result" &&
+      control.refresh_not_before !== null &&
+      control.refresh_not_before > nowSeconds
+    ) {
+      return resolveEmployer(
+        db,
+        request.identity,
+        clientIdHash,
+        freshnessPolicy,
+        [request.targetNzbn],
+        nowMilliseconds,
+      );
+    }
+    if (
+      control.last_refresh_outcome !== "pending" ||
+      control.last_refresh_attempt_at === null ||
+      control.last_refresh_attempt_at > nowSeconds ||
+      nowSeconds - control.last_refresh_attempt_at >
+        freshnessPolicy.refreshAttemptCooldownSeconds
+    ) {
+      throw new ApiError(
+        409,
+        "refresh_not_authorized",
+        "The employer refresh must be authorized before recording no results.",
+      );
+    }
+    await db
+      .prepare(
+        `UPDATE employers
+            SET last_refresh_attempt_at = ?2,
+                last_refresh_outcome = 'no_result',
+                refresh_not_before = ?3
+          WHERE nzbn = ?1
+            AND last_refresh_outcome = 'pending'
+            AND last_refresh_attempt_at = ?4`,
+      )
+      .bind(
+        request.targetNzbn,
+        nowSeconds,
+        nowSeconds + freshnessPolicy.refreshNoMatchCooldownSeconds,
+        control.last_refresh_attempt_at,
+      )
+      .run();
+    return resolveEmployer(
+      db,
+      request.identity,
+      clientIdHash,
+      freshnessPolicy,
+      [request.targetNzbn],
+      nowMilliseconds,
+    );
+  }
+
   const current = await resolveEmployer(
     db,
     request.identity,
@@ -667,6 +766,97 @@ export async function storeNoMatchObservation(
     [],
     nowMilliseconds,
   );
+}
+
+export async function authorizeEmployerRefresh(
+  db: D1Database,
+  request: EmployerRefreshRequest,
+  clientIdHash: string,
+  freshnessPolicy: FreshnessPolicy,
+  nowMilliseconds = Date.now(),
+): Promise<EmployerRefreshAuthorizationResponse> {
+  const employer = await findEmployer(db, request.nzbn, nowMilliseconds);
+  if (employer === null) {
+    throw new ApiError(404, "employer_not_found", "The employer does not exist.");
+  }
+
+  const resolution = await resolveEmployer(
+    db,
+    request.identity,
+    clientIdHash,
+    freshnessPolicy,
+    [request.nzbn],
+    nowMilliseconds,
+  );
+  if (
+    !request.manual &&
+    (resolution.state !== "refresh_required" ||
+      resolution.selectedEmployer?.nzbn !== request.nzbn)
+  ) {
+    return {
+      state: "not_required",
+      resolution,
+      inzQuery: null,
+      retryAt: null,
+    };
+  }
+
+  const nowSeconds = Math.floor(nowMilliseconds / 1000);
+  const control = await db
+    .prepare(
+      `SELECT last_refresh_attempt_at, last_refresh_outcome, refresh_not_before
+         FROM employers
+        WHERE nzbn = ?1`,
+    )
+    .bind(request.nzbn)
+    .first<EmployerRefreshControlRow>();
+  if (control === null) {
+    throw new ApiError(404, "employer_not_found", "The employer does not exist.");
+  }
+  if (control.refresh_not_before !== null && control.refresh_not_before > nowSeconds) {
+    return {
+      state: "cooldown",
+      resolution,
+      inzQuery: null,
+      retryAt: refreshRetryAt(control.refresh_not_before),
+    };
+  }
+
+  const leaseUntil = nowSeconds + freshnessPolicy.refreshAttemptCooldownSeconds;
+  const claimed = await db
+    .prepare(
+      `UPDATE employers
+          SET last_refresh_attempt_at = ?2,
+              last_refresh_outcome = 'pending',
+              refresh_not_before = ?3
+        WHERE nzbn = ?1
+          AND (refresh_not_before IS NULL OR refresh_not_before <= ?2)`,
+    )
+    .bind(request.nzbn, nowSeconds, leaseUntil)
+    .run();
+  if (claimed.meta.changes === 1) {
+    return {
+      state: "authorized",
+      resolution,
+      inzQuery: request.nzbn,
+      retryAt: null,
+    };
+  }
+
+  const latest = await db
+    .prepare(
+      `SELECT last_refresh_attempt_at, last_refresh_outcome, refresh_not_before
+         FROM employers
+        WHERE nzbn = ?1`,
+    )
+    .bind(request.nzbn)
+    .first<EmployerRefreshControlRow>();
+  return {
+    state: "cooldown",
+    resolution,
+    inzQuery: null,
+    retryAt: refreshRetryAt(latest?.refresh_not_before ?? leaseUntil),
+  };
 }
 
 export async function associateEmployer(

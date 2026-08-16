@@ -6,7 +6,12 @@ import {
   isExtensionMessage,
   type LookupResponse,
 } from "../lib/contracts";
-import { associateEmployer, lookupEmployer, searchEmployers } from "../lib/lookup";
+import {
+  associateEmployer,
+  lookupEmployer,
+  refreshEmployer,
+  searchEmployers,
+} from "../lib/lookup";
 import { isExtensionEnabled } from "../lib/settings";
 
 type ExtensionResponse = LookupResponse | EmployerSearchResponse;
@@ -30,6 +35,9 @@ async function handleExtensionMessage(message: ExtensionMessage): Promise<Extens
   }
   if (message.type === "search-employers") {
     return searchEmployers(message.identity, message.query, clientId);
+  }
+  if (message.type === "refresh-employer") {
+    return refreshEmployer(message.identity, message.nzbn, clientId);
   }
   return associateEmployer(message.identity, message.nzbn, clientId);
 }

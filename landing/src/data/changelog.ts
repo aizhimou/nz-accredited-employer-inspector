@@ -38,6 +38,11 @@ export const releases: Release[] = [
         detail:
           "Searching does not create an association, alter the page name or bypass an existing no-match observation.",
       },
+      {
+        title: "Expiry-aware live refresh",
+        detail:
+          "Expired stored records refresh on the next eligible check, with a per-employer cooldown and an explicit Refresh from INZ action.",
+      },
     ],
   },
   {

@@ -39,10 +39,10 @@ LinkedIn may render the company header after `document_idle`. The content script
 3. `Confirm employer match`: D1 or live INZ returned official employer candidates, but no platform association can be assumed.
 4. `Accredited in NZ` / `Accreditation expired`: the selected employer's official expiry evaluation. Selection may be a stored platform association or a unique exact official/trading-name match.
 5. `No published INZ match`: recognised live INZ `400 No Results`; the exact platform identity/query observation is reused for the configured negative TTL and its check/expiry times are shown.
-6. `Live verification needs review`: an associated NZBN could not be republished by INZ; the old row is only dated context.
+6. `Live verification needs review`: an NZBN refresh returned no published result; the old row is only dated context. A recent attempt shows when another refresh becomes available.
 7. `Try again`: API, INZ, or extension background failure.
 
-The result panel shows the selected employer and API candidates (up to 10), with legal name, optional trading name, NZBN, accreditation expiry, INZ verification date, match provenance, and explicit `Use this employer` controls. Automatic exact-name matches are labelled `Exact match` and `Not community-confirmed`; they are never presented as a community association. Manual recovery searches replace the current candidate list rather than appending another list.
+The result panel shows the selected employer and API candidates (up to 10), with legal name, optional trading name, NZBN, accreditation expiry, INZ verification date, match provenance, explicit `Use this employer` controls, and a per-row `Refresh from INZ` action. Automatic exact-name matches are labelled `Exact match` and `Not community-confirmed`; they are never presented as a community association. Manual recovery searches replace the current candidate list rather than appending another list.
 
 ## Manual verification
 
@@ -53,12 +53,13 @@ The result panel shows the selected employer and API candidates (up to 10), with
 5. Click it once.
 6. From `chrome://extensions`, open the extension service worker's DevTools. Background requests do not appear in the LinkedIn tab's Network panel.
 7. Confirm the first call is `POST /v1/employers/resolve`.
-8. If the response is `inz_lookup_required` or `refresh_required`, confirm exactly one background INZ request is followed by `POST /v1/employers/ingest` only for a positive payload.
+8. For `refresh_required`, confirm `POST /v1/employers/refresh` runs first. When authorized, exactly one background INZ request is followed by positive `/ingest` or NZBN `/no-match`; during cooldown no INZ request is made.
 9. For a recognised display-name `400 No Results`, confirm one `POST /v1/employers/no-match`; a repeat check inside the configured negative TTL should stop after `/resolve` and make no INZ request.
 10. If candidates need confirmation, select one and confirm one `POST /v1/employers/associate` request.
-11. Confirm accreditation, automatic exact-name match, association, and no-match provenance are labelled separately and the official INZ link opens in a new tab.
-12. Navigate to `/company/onenz/about/?viewAsMember=true`; confirm the control remains mounted with the same `company:onenz` identity.
-13. Navigate between supported company tabs through LinkedIn SPA navigation; confirm exactly one control is mounted.
-14. Open LinkedIn Jobs search results, follow the active job's company link, and confirm the control mounts inside LinkedIn's preload frame without refreshing the company page.
+11. Click `Refresh from INZ` on a candidate and confirm it targets only that NZBN without creating or changing an association.
+12. Confirm accreditation, automatic exact-name match, association, and no-match provenance are labelled separately and the official INZ link opens in a new tab.
+13. Navigate to `/company/onenz/about/?viewAsMember=true`; confirm the control remains mounted with the same `company:onenz` identity.
+14. Navigate between supported company tabs through LinkedIn SPA navigation; confirm exactly one control is mounted.
+15. Open LinkedIn Jobs search results, follow the active job's company link, and confirm the control mounts inside LinkedIn's preload frame without refreshing the company page.
 
 The shared API and orchestration contract remains [`../../docs/extension-api-ssot.md`](../../docs/extension-api-ssot.md).

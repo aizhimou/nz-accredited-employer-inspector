@@ -35,6 +35,18 @@ interface ApiResolution {
   requestId: string | null;
 }
 
+interface EmployerRefreshAuthorization {
+  state: "authorized" | "cooldown" | "not_required";
+  resolution: EmployerResolutionResponse;
+  inzQuery: string | null;
+  retryAt: string | null;
+}
+
+interface ApiRefreshAuthorization {
+  data: EmployerRefreshAuthorization;
+  requestId: string | null;
+}
+
 class LookupError extends Error {
   constructor(
     readonly code: string,
@@ -70,6 +82,20 @@ function isInzNoResultsBody(value: unknown): value is InzNoResultsBody {
     value.Title === "No Results" &&
     typeof value.Message === "string" &&
     value.Message.trimStart().startsWith("Your search found no results.")
+  );
+}
+
+function isEmployerRefreshAuthorization(
+  value: unknown,
+): value is EmployerRefreshAuthorization {
+  return (
+    isRecord(value) &&
+    (value.state === "authorized" ||
+      value.state === "cooldown" ||
+      value.state === "not_required") &&
+    isEmployerResolutionResponse(value.resolution) &&
+    (value.inzQuery === null || typeof value.inzQuery === "string") &&
+    (value.retryAt === null || typeof value.retryAt === "string")
   );
 }
 
@@ -133,6 +159,47 @@ async function callApi(
   return { data: responseBody, requestId: response.headers.get("X-Request-ID") };
 }
 
+async function authorizeRefresh(
+  identity: PlatformIdentity,
+  nzbn: string,
+  manual: boolean,
+  clientId: string,
+  fetchFn: FetchLike,
+): Promise<ApiRefreshAuthorization> {
+  let response: Response;
+  try {
+    response = await fetchFn(`${API_BASE_URL}/v1/employers/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Client-ID": clientId },
+      body: JSON.stringify({ identity, nzbn, manual }),
+    });
+  } catch {
+    throw new LookupError("api_unavailable", "Could not reach the accreditation service.");
+  }
+  if (!response.ok) {
+    throw await toApiError(response);
+  }
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new LookupError(
+      "invalid_api_response",
+      "The accreditation service returned invalid JSON.",
+      response.headers.get("X-Request-ID"),
+    );
+  }
+  if (!isEmployerRefreshAuthorization(body)) {
+    throw new LookupError(
+      "invalid_api_response",
+      "The accreditation service returned an invalid refresh authorization.",
+      response.headers.get("X-Request-ID"),
+    );
+  }
+  return { data: body, requestId: response.headers.get("X-Request-ID") };
+}
+
 async function fetchInzResponse(query: string, fetchFn: FetchLike): Promise<unknown> {
   const formData = new FormData();
   formData.set("query", query);
@@ -193,14 +260,79 @@ function toSuccess(
   identity: PlatformIdentity,
   resolution: ApiResolution,
   liveLookupStatus: LiveLookupStatus,
+  refreshAvailableAt: string | null = null,
 ): LookupSuccess {
   return {
     ok: true,
     identity,
     data: resolution.data,
     liveLookupStatus,
+    refreshAvailableAt,
     requestId: resolution.requestId,
   };
+}
+
+
+async function performEmployerRefresh(
+  identity: PlatformIdentity,
+  nzbn: string,
+  manual: boolean,
+  clientId: string,
+  fetchFn: FetchLike,
+): Promise<LookupSuccess> {
+  const authorization = await authorizeRefresh(
+    identity,
+    nzbn,
+    manual,
+    clientId,
+    fetchFn,
+  );
+  const resolution = {
+    data: authorization.data.resolution,
+    requestId: authorization.requestId,
+  };
+  if (authorization.data.state === "cooldown") {
+    return toSuccess(
+      identity,
+      resolution,
+      "refresh_deferred",
+      authorization.data.retryAt,
+    );
+  }
+  if (authorization.data.state === "not_required") {
+    return toSuccess(identity, resolution, "not_needed");
+  }
+
+  const query = authorization.data.inzQuery;
+  if (query === null) {
+    throw new LookupError(
+      "invalid_api_response",
+      "The accreditation service omitted the authorized INZ query.",
+      authorization.requestId,
+    );
+  }
+
+  try {
+    const inzResponse = await fetchInzResponse(query, fetchFn);
+    const updated = await callApi(
+      "/v1/employers/ingest",
+      { identity, query, page: 1, inzResponse },
+      clientId,
+      fetchFn,
+    );
+    return toSuccess(identity, updated, "updated");
+  } catch (error) {
+    if (error instanceof InzNoResultsError) {
+      const stored = await callApi(
+        "/v1/employers/no-match",
+        { identity, query, inzResponse: error.inzResponse },
+        clientId,
+        fetchFn,
+      );
+      return toSuccess(identity, stored, "verification_required");
+    }
+    throw error;
+  }
 }
 
 function toFailure(error: unknown): LookupFailure {
@@ -246,6 +378,18 @@ export async function lookupEmployer(
       );
     }
 
+    if (resolution.data.state === "refresh_required") {
+      const nzbn = resolution.data.selectedEmployer?.nzbn;
+      if (nzbn === undefined) {
+        throw new LookupError(
+          "invalid_api_response",
+          "The accreditation service omitted the employer requiring refresh.",
+          resolution.requestId,
+        );
+      }
+      return await performEmployerRefresh(identity, nzbn, false, clientId, fetchFn);
+    }
+
     const query = resolution.data.inzQuery;
     if (query === null) {
       throw new LookupError(
@@ -266,9 +410,6 @@ export async function lookupEmployer(
       return toSuccess(identity, updated, "updated");
     } catch (error) {
       if (error instanceof InzNoResultsError) {
-        if (resolution.data.state === "refresh_required") {
-          return toSuccess(identity, resolution, "verification_required");
-        }
         const stored = await callApi(
           "/v1/employers/no-match",
           { identity, query, inzResponse: error.inzResponse },
@@ -300,30 +441,20 @@ export async function associateEmployer(
     if (resolution.data.state !== "refresh_required") {
       return toSuccess(identity, resolution, "not_needed");
     }
+    return await performEmployerRefresh(identity, nzbn, false, clientId, fetchFn);
+  } catch (error) {
+    return toFailure(error);
+  }
+}
 
-    const query = resolution.data.inzQuery;
-    if (query === null) {
-      throw new LookupError(
-        "invalid_api_response",
-        "The accreditation service omitted the required INZ refresh query.",
-        resolution.requestId,
-      );
-    }
-    try {
-      const inzResponse = await fetchInzResponse(query, fetchFn);
-      const updated = await callApi(
-        "/v1/employers/ingest",
-        { identity, query, page: 1, inzResponse },
-        clientId,
-        fetchFn,
-      );
-      return toSuccess(identity, updated, "updated");
-    } catch (error) {
-      if (error instanceof InzNoResultsError) {
-        return toSuccess(identity, resolution, "verification_required");
-      }
-      throw error;
-    }
+export async function refreshEmployer(
+  identity: PlatformIdentity,
+  nzbn: string,
+  clientId: string,
+  fetchFn: FetchLike = fetch,
+): Promise<LookupResponse> {
+  try {
+    return await performEmployerRefresh(identity, nzbn, true, clientId, fetchFn);
   } catch (error) {
     return toFailure(error);
   }

@@ -12,6 +12,7 @@ The extension-facing architecture, orchestration, complete API contract, fields,
 - `POST /v1/employers/search`
 - `POST /v1/employers/ingest`
 - `POST /v1/employers/no-match`
+- `POST /v1/employers/refresh`
 - `POST /v1/employers/associate`
 - `POST /v1/waitlist`
 
@@ -39,11 +40,11 @@ curl -X POST \
   'http://localhost:8787/v1/employers/resolve'
 ```
 
-An `inz_lookup_required` response tells the extension to perform one user-triggered INZ lookup. Positive results are submitted to `/ingest`; recognised INZ `400 No Results` envelopes are submitted to `/no-match` and reused only for the exact platform identity/query for the configured negative TTL (seven days by default). All selected positive observations use the configured positive TTL (30 days by default), regardless of whether they came from a live lookup or an official import. A unique NZBN whose official `employerName` or `tradingName` exactly matches the normalised platform display name is returned directly with `matchMethod: "exact_employer_name"`; fuzzy alternatives do not block this derived match, and no community confirmation is created.
+An `inz_lookup_required` response tells the extension to perform one user-triggered INZ lookup. Positive results are submitted to `/ingest`; recognised INZ `400 No Results` envelopes are submitted to `/no-match`. Selected positive observations refresh after the configured positive TTL (30 days by default) or on the first eligible user check after their stored accreditation expiry passes. `/refresh` claims a short per-NZBN refresh lease before the extension calls INZ, and a recognised NZBN no-result applies a 24-hour cooldown without changing `last_verified_at`. A unique NZBN whose official `employerName` or `tradingName` exactly matches the normalised platform display name is returned directly with `matchMethod: "exact_employer_name"`; fuzzy alternatives do not block this derived match, and no community confirmation is created.
 
 Candidate discovery also uses a D1 FTS5 index over official and trading names. The Worker retrieves a bounded 100-row internal candidate pool, ranks it with generic token, prefix, subsequence, and dynamically derived acronym similarity, and returns at most 10 candidates. Fuzzy results always require explicit confirmation. `/search` accepts an independent recovery query and never writes an association or calls INZ.
 
-Freshness is configured in `wrangler.jsonc` through `POSITIVE_TTL_SECONDS` and `NEGATIVE_TTL_SECONDS`. Both variables are required positive integer numbers of seconds and must be declared separately for every Wrangler environment.
+Freshness is configured in `wrangler.jsonc` through `POSITIVE_TTL_SECONDS`, `NEGATIVE_TTL_SECONDS`, `REFRESH_ATTEMPT_COOLDOWN_SECONDS`, and `REFRESH_NO_MATCH_COOLDOWN_SECONDS`. All four variables are required positive integer numbers of seconds and must be declared separately for every Wrangler environment.
 
 ## Official employer imports
 

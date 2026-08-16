@@ -2,6 +2,7 @@ import { readFreshnessPolicy } from "./config";
 import { ApiError } from "./errors";
 import {
   associateEmployer,
+  authorizeEmployerRefresh,
   hashClientId,
   ingestEmployers,
   joinExtensionWaitlist,
@@ -12,6 +13,7 @@ import {
 import {
   parseAssociationRequest,
   parseEmployerSearchRequest,
+  parseEmployerRefreshRequest,
   parseIngestRequest,
   parseNoMatchRequest,
   parseResolveRequest,
@@ -24,6 +26,7 @@ const SEARCH_PATH = "/v1/employers/search";
 const INGEST_PATH = "/v1/employers/ingest";
 const NO_MATCH_PATH = "/v1/employers/no-match";
 const ASSOCIATE_PATH = "/v1/employers/associate";
+const REFRESH_PATH = "/v1/employers/refresh";
 const HEALTH_PATH = "/health";
 const WAITLIST_PATH = "/v1/waitlist";
 const PUBLIC_API_PREFIX = "/api";
@@ -182,6 +185,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       pathname !== INGEST_PATH &&
       pathname !== NO_MATCH_PATH &&
       pathname !== ASSOCIATE_PATH &&
+      pathname !== REFRESH_PATH &&
       pathname !== WAITLIST_PATH
     ) {
       throw new ApiError(404, "not_found", "The requested endpoint was not found.");
@@ -305,6 +309,25 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
         platform: input.identity.platform,
         identityStrength: input.identity.strength,
         queryLength: input.query.length,
+        state: result.state,
+        durationMs: Date.now() - startedAt,
+      });
+      return jsonResponse(result, 200, requestId);
+    }
+
+    if (pathname === REFRESH_PATH) {
+      const input = parseEmployerRefreshRequest(body);
+      const result = await authorizeEmployerRefresh(
+        env.DB,
+        input,
+        clientIdHash,
+        freshnessPolicy,
+      );
+      logEvent("info", {
+        event: "employer_refresh_authorize",
+        requestId,
+        platform: input.identity.platform,
+        manual: input.manual,
         state: result.state,
         durationMs: Date.now() - startedAt,
       });

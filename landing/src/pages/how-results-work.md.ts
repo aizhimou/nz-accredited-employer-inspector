@@ -117,12 +117,14 @@ It does not modify official INZ data, prove that the association is correct, con
 - **Live INZ:** The displayed response followed a live user-triggered INZ lookup.
 - **Shared data:** The official record was reused from the service's canonical dataset. This label describes delivery, not a different accreditation authority.
 - **Recent INZ check:** A still-fresh exact no-match observation is being reused.
+- **Recent INZ attempt:** Another user-triggered refresh is temporarily suppressed by the per-employer cooldown.
 - **INZ data verified [date]:** The date the service accepted the displayed official observation or official snapshot.
 
 ## Freshness and no-match handling
 
 - The configured positive freshness window is currently 30 days for selected official records.
-- When a selected record is older than the window, the extension performs one user-triggered lookup by NZBN.
+- When a selected record is older than the window or its stored expiry has passed, the extension requests a per-NZBN lease and performs at most one user-triggered lookup.
+- A recognised NZBN no-result retains the dated record and suppresses another live call for 24 hours. Every displayed employer also offers a manual Refresh from INZ action using the same cooldown.
 - The configured negative freshness window is currently seven days.
 - A no-match observation is scoped to the exact platform identity and normalised display-name query.
 - A changed display name, an expired observation, or later positive data prevents the old no-match from deciding the result.

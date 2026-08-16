@@ -70,15 +70,23 @@ export interface SearchEmployersMessage {
   query: string;
 }
 
+export interface RefreshEmployerMessage {
+  type: "refresh-employer";
+  identity: PlatformIdentity;
+  nzbn: string;
+}
+
 export type ExtensionMessage =
   | CheckEmployerMessage
   | AssociateEmployerMessage
+  | RefreshEmployerMessage
   | SearchEmployersMessage;
 
 export type LiveLookupStatus =
   | "not_needed"
   | "updated"
   | "no_published_inz_match"
+  | "refresh_deferred"
   | "verification_required";
 
 export interface LookupSuccess {
@@ -86,6 +94,7 @@ export interface LookupSuccess {
   identity: PlatformIdentity;
   data: EmployerResolutionResponse;
   liveLookupStatus: LiveLookupStatus;
+  refreshAvailableAt: string | null;
   requestId: string | null;
 }
 
@@ -145,7 +154,7 @@ export function isExtensionMessage(value: unknown): value is ExtensionMessage {
     );
   }
   return (
-    value.type === "associate-employer" &&
+    (value.type === "associate-employer" || value.type === "refresh-employer") &&
     typeof value.nzbn === "string" &&
     /^\d{13}$/u.test(value.nzbn)
   );
@@ -258,7 +267,9 @@ export function isLookupResponse(value: unknown): value is LookupResponse {
       (value.liveLookupStatus === "not_needed" ||
         value.liveLookupStatus === "updated" ||
         value.liveLookupStatus === "no_published_inz_match" ||
+        value.liveLookupStatus === "refresh_deferred" ||
         value.liveLookupStatus === "verification_required") &&
+      (value.refreshAvailableAt === null || typeof value.refreshAvailableAt === "string") &&
       (value.requestId === null || typeof value.requestId === "string")
     );
   }

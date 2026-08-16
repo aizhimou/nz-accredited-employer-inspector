@@ -62,8 +62,8 @@ A recognised INZ no-results response is stored only for the exact platform ident
 
 ## Resolution states
 
-- **associated:** A selected employer exists and is inside the configured positive TTL, currently 30 days.
-- **refresh_required:** A selected employer exists but its official data is outside the configured positive TTL. The extension may make one NZBN lookup.
+- **associated:** A selected employer exists, is inside the configured positive TTL, and its stored accreditation expiry has not passed.
+- **refresh_required:** A selected employer is outside the 30-day TTL or its stored expiry has passed. The extension requests a per-NZBN refresh lease before making one INZ lookup.
 - **confirmation_required:** One or more plausible official candidates exist, but no association or safe exact-name rule selects one.
 - **no_published_inz_match:** No positive candidate exists and an exact no-match observation is inside the configured negative TTL, currently seven days.
 - **inz_lookup_required:** No association, candidate, or fresh no-match exists. The extension may make one display-name lookup.
@@ -72,8 +72,8 @@ A recognised INZ no-results response is stored only for the exact platform ident
 
 - **Content script:** extracts platform identity, mounts Shadow DOM UI, renders candidates, and captures explicit user choices.
 - **Extension background:** creates and stores a random installation UUID, calls the Worker, performs user-triggered INZ requests, recognises official no-result envelopes, and submits responses.
-- **Cloudflare Worker:** validates requests, searches and upserts canonical employers, derives exact-name matches, aggregates community confirmations, evaluates configurable freshness/status, stores exact no-match observations, and rate limits clients.
-- **D1:** stores canonical employer records, platform entities, per-installation confirmations, no-match observation fields, and retained pre-release waitlist records.
+- **Cloudflare Worker:** validates requests, searches and upserts canonical employers, derives exact-name matches, aggregates community confirmations, evaluates configurable freshness/status, coordinates per-NZBN refresh cooldowns, stores exact no-match observations, and rate limits clients.
+- **D1:** stores canonical employer records, refresh coordination metadata, platform entities, per-installation confirmations, no-match observation fields, and retained pre-release waitlist records.
 - **INZ:** official lookup source. The Worker never calls INZ.
 
 ## Privacy and security characteristics
@@ -98,7 +98,8 @@ All POST routes require JSON. Employer routes require an X-Client-ID UUID header
 - POST /v1/employers/resolve — read-only platform identity resolution
 - POST /v1/employers/search — read-only local candidate recovery search using an independent query
 - POST /v1/employers/ingest — validate and atomically store a positive INZ response
-- POST /v1/employers/no-match — store a recognised exact no-match observation for the configured negative TTL
+- POST /v1/employers/no-match — store a recognised display-name no-match or an authorized NZBN refresh no-result cooldown
+- POST /v1/employers/refresh — authorize one automatic or manual per-NZBN INZ refresh without changing an association
 - POST /v1/employers/associate — confirm or change this installation's platform-to-NZBN mapping
 - POST /v1/waitlist — join the one-message Chrome Web Store release notification list
 
@@ -112,6 +113,7 @@ Canonical API contract: https://github.com/aizhimou/nz-accredited-employer-inspe
 - It distinguishes official INZ facts from community identity associations.
 - It requires explicit user action before any live INZ lookup.
 - It can show expired accreditation as well as current accreditation.
+- An expired selected record is refreshed on the next eligible user check; every displayed employer also has a manual Refresh from INZ action.
 - A no-match name lookup does not prove non-accreditation.
 - It is independent open-source software, not an official INZ product and not immigration advice.
 

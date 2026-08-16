@@ -12,6 +12,7 @@ const previewResponse: LookupResponse = {
     publicUrl: "https://www.linkedin.com/company/onenz/",
   },
   liveLookupStatus: "not_needed",
+  refreshAvailableAt: null,
   requestId: "preview-request",
   data: {
     state: "associated",

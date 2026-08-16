@@ -36,6 +36,8 @@ function createTestEnv(
     SERVICE_VERSION: "0.7.1",
     POSITIVE_TTL_SECONDS: 2592000,
     NEGATIVE_TTL_SECONDS: 604800,
+    REFRESH_ATTEMPT_COOLDOWN_SECONDS: 900,
+    REFRESH_NO_MATCH_COOLDOWN_SECONDS: 86400,
   };
 }
 
@@ -582,6 +584,150 @@ describe("canonical employers and resolution", () => {
       association: null,
       selectedEmployer: { nzbn: "9429034908822" },
       inzQuery: "9429034908822",
+    });
+  });
+
+  it("requires refresh as soon as a selected employer's stored expiry has passed", async () => {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    await env.DB.prepare(
+      `INSERT INTO employers (
+         employer_name, normalized_employer_name,
+         trading_name, normalized_trading_name,
+         nzbn, expiry_date_of_accreditation,
+         first_seen_at, last_verified_at, last_verified_source,
+         official_snapshot_date
+       ) VALUES (
+         'ONE NEW ZEALAND', 'one new zealand',
+         NULL, NULL,
+         '9429034908822', '2020-01-01T00:00:00',
+         ?1, ?1, 'inz_official_import',
+         '2026-07-27'
+       )`,
+    ).bind(nowSeconds).run();
+
+    const response = await call("/v1/employers/resolve", { identity: linkedinIdentity });
+
+    expect(await response.json()).toMatchObject({
+      state: "refresh_required",
+      matchMethod: "exact_employer_name",
+      inzQuery: "9429034908822",
+      selectedEmployer: {
+        nzbn: "9429034908822",
+        accreditationStatus: "expired",
+      },
+    });
+  });
+
+  it("authorizes one expired-employer refresh and applies a no-result cooldown", async () => {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    await env.DB.prepare(
+      `INSERT INTO employers (
+         employer_name, normalized_employer_name,
+         trading_name, normalized_trading_name,
+         nzbn, expiry_date_of_accreditation,
+         first_seen_at, last_verified_at, last_verified_source,
+         official_snapshot_date
+       ) VALUES (
+         'ONE NEW ZEALAND', 'one new zealand',
+         NULL, NULL,
+         '9429034908822', '2020-01-01T00:00:00',
+         ?1, ?1, 'inz_official_import',
+         '2026-07-27'
+       )`,
+    ).bind(nowSeconds).run();
+
+    const authorized = await call("/v1/employers/refresh", {
+      identity: linkedinIdentity,
+      nzbn: "9429034908822",
+      manual: false,
+    });
+    expect(await authorized.json()).toMatchObject({
+      state: "authorized",
+      inzQuery: "9429034908822",
+      retryAt: null,
+      resolution: { state: "refresh_required" },
+    });
+
+    const duplicate = await call("/v1/employers/refresh", {
+      identity: linkedinIdentity,
+      nzbn: "9429034908822",
+      manual: false,
+    });
+    expect(await duplicate.json()).toMatchObject({
+      state: "cooldown",
+      inzQuery: null,
+    });
+
+    const storedNoResult = await call(
+      "/v1/employers/no-match",
+      noMatchBody(linkedinIdentity, "9429034908822"),
+    );
+    expect(storedNoResult.status).toBe(200);
+    const control = await env.DB.prepare(
+      `SELECT last_refresh_outcome, refresh_not_before
+         FROM employers
+        WHERE nzbn = '9429034908822'`,
+    ).first<{ last_refresh_outcome: string; refresh_not_before: number }>();
+    expect(control?.last_refresh_outcome).toBe("no_result");
+    expect(control?.refresh_not_before).toBeGreaterThanOrEqual(nowSeconds + 86_399);
+
+    const deferred = await call("/v1/employers/refresh", {
+      identity: linkedinIdentity,
+      nzbn: "9429034908822",
+      manual: false,
+    });
+    expect(await deferred.json()).toMatchObject({
+      state: "cooldown",
+      inzQuery: null,
+      resolution: { state: "refresh_required" },
+    });
+  });
+
+  it("allows a manual refresh without creating a platform association", async () => {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    await env.DB.prepare(
+      `INSERT INTO employers (
+         employer_name, normalized_employer_name,
+         trading_name, normalized_trading_name,
+         nzbn, expiry_date_of_accreditation,
+         first_seen_at, last_verified_at, last_verified_source,
+         official_snapshot_date
+       ) VALUES (
+         'ONE NEW ZEALAND GROUP LIMITED', 'one new zealand group limited',
+         'One New Zealand', 'one new zealand',
+         '9429034908822', '2030-01-01T00:00:00',
+         ?1, ?1, 'inz_official_import',
+         '2026-07-27'
+       )`,
+    ).bind(nowSeconds).run();
+
+    const response = await call("/v1/employers/refresh", {
+      identity: linkedinIdentity,
+      nzbn: "9429034908822",
+      manual: true,
+    });
+
+    expect(await response.json()).toMatchObject({
+      state: "authorized",
+      inzQuery: "9429034908822",
+    });
+    const confirmations = await env.DB.prepare(
+      "SELECT COUNT(*) AS count FROM platform_employer_confirmations",
+    ).first<{ count: number }>();
+    expect(confirmations?.count).toBe(0);
+  });
+
+  it("rejects an NZBN no-result without a current refresh authorization", async () => {
+    await call("/v1/employers/ingest", ingestBody());
+
+    const response = await call(
+      "/v1/employers/no-match",
+      noMatchBody(linkedinIdentity, "9429034908822"),
+    );
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({
+      error: { code: "refresh_not_authorized" },
     });
   });
 

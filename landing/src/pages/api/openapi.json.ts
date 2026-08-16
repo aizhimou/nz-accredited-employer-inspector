@@ -86,6 +86,7 @@ const operationResponses = {
     },
   },
   "400": { $ref: "#/components/responses/Error" },
+  "409": { $ref: "#/components/responses/Error" },
   "429": { $ref: "#/components/responses/Error" },
   "500": { $ref: "#/components/responses/Error" },
 } as const;
@@ -151,7 +152,7 @@ export const GET: APIRoute = () => {
         post: {
           operationId: "resolveEmployer",
           summary: "Resolve a LinkedIn or SEEK platform identity",
-          description: "Read-only. Returns an association, exact-name match, candidates, a fresh no-match observation, or a query for one user-triggered INZ lookup.",
+          description: "Read-only. Returns an association, exact-name match, candidates, a fresh no-match observation, or a query for one user-triggered INZ lookup. Selected records require refresh after 30 days or once their stored expiry passes.",
           parameters: [clientHeader],
           requestBody: {
             required: true,
@@ -204,8 +205,8 @@ export const GET: APIRoute = () => {
       "/v1/employers/no-match": {
         post: {
           operationId: "recordNoMatch",
-          summary: "Record a recognised exact INZ no-match observation",
-          description: "The observation is bound to the platform identity and normalised display-name query and is reusable for the configured negative TTL, currently seven days.",
+          summary: "Record a recognised INZ no-match response",
+          description: "A display-name no-match is bound to the platform identity/query for seven days. An authorized NZBN refresh no-match instead applies a 24-hour employer cooldown without changing lastVerifiedAt.",
           parameters: [clientHeader],
           requestBody: {
             required: true,
@@ -214,6 +215,33 @@ export const GET: APIRoute = () => {
             },
           },
           responses: operationResponses,
+        },
+      },
+      "/v1/employers/refresh": {
+        post: {
+          operationId: "authorizeEmployerRefresh",
+          summary: "Authorize one automatic or manual employer refresh",
+          description: "Atomically claims a short per-NZBN refresh lease. The extension, not the Worker, performs the INZ request. Manual refresh never creates an association.",
+          parameters: [clientHeader],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/EmployerRefreshRequest" } },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Refresh authorization, cooldown, or not-required result",
+              content: {
+                "application/json": { schema: { $ref: "#/components/schemas/EmployerRefreshAuthorizationResponse" } },
+              },
+            },
+            "400": { $ref: "#/components/responses/Error" },
+            "404": { $ref: "#/components/responses/Error" },
+            "409": { $ref: "#/components/responses/Error" },
+            "429": { $ref: "#/components/responses/Error" },
+            "500": { $ref: "#/components/responses/Error" },
+          },
         },
       },
       "/v1/employers/associate": {
@@ -345,6 +373,27 @@ export const GET: APIRoute = () => {
           properties: {
             identity: { $ref: "#/components/schemas/PlatformIdentity" },
             nzbn: { type: "string", pattern: "^[0-9]{13}$" },
+          },
+        },
+        EmployerRefreshRequest: {
+          type: "object",
+          additionalProperties: false,
+          required: ["identity", "nzbn", "manual"],
+          properties: {
+            identity: { $ref: "#/components/schemas/PlatformIdentity" },
+            nzbn: { type: "string", pattern: "^[0-9]{13}$" },
+            manual: { type: "boolean" },
+          },
+        },
+        EmployerRefreshAuthorizationResponse: {
+          type: "object",
+          additionalProperties: false,
+          required: ["state", "resolution", "inzQuery", "retryAt"],
+          properties: {
+            state: { type: "string", enum: ["authorized", "cooldown", "not_required"] },
+            resolution: { $ref: "#/components/schemas/EmployerResolutionResponse" },
+            inzQuery: { type: ["string", "null"] },
+            retryAt: { type: ["string", "null"], format: "date-time" },
           },
         },
         WaitlistRequest: {

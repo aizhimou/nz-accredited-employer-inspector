@@ -148,7 +148,7 @@ const chapters = [
               <div class="path-copy">
                 <p class="path-question">Is the observation still useful?</p>
                 <h3>Show freshness instead of hiding age</h3>
-                <p>Selected positive records are treated as fresh for up to 30 days. Older records trigger a new INZ lookup. A no-result name search lasts for up to seven days and is scoped to that exact page identity and query.</p>
+                <p>Selected positive records are reused for up to 30 days, but a stored expiry triggers a new INZ lookup on the next eligible check. Per-employer cooldowns prevent duplicate calls, and every result can also be refreshed manually.</p>
                 <span class="path-note">“No published INZ match” records a search result; it does not prove non-accreditation.</span>
               </div>
             </li>
@@ -314,6 +314,10 @@ const chapters = [
               <div>
                 <dt><span class="notice-sample warning">Live verification needs review</span></dt>
                 <dd>The latest lookup did not confirm an older selected record. The dated record remains visible but is not treated as current.</dd>
+              </div>
+              <div>
+                <dt><span class="notice-sample neutral">Recent INZ attempt</span></dt>
+                <dd>A refresh was attempted recently, so another INZ request is deferred until the per-employer cooldown expires.</dd>
               </div>
               <div>
                 <dt><span class="notice-sample neutral">Live INZ · Shared data · Verified</span></dt>

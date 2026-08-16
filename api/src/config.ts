@@ -1,11 +1,15 @@
 export interface FreshnessPolicy {
   positiveTtlSeconds: number;
   negativeTtlSeconds: number;
+  refreshAttemptCooldownSeconds: number;
+  refreshNoMatchCooldownSeconds: number;
 }
 
 interface FreshnessEnv {
   POSITIVE_TTL_SECONDS: unknown;
   NEGATIVE_TTL_SECONDS: unknown;
+  REFRESH_ATTEMPT_COOLDOWN_SECONDS: unknown;
+  REFRESH_NO_MATCH_COOLDOWN_SECONDS: unknown;
 }
 
 function parseTtlSeconds(name: string, value: unknown): number {
@@ -30,6 +34,14 @@ export function readFreshnessPolicy(env: FreshnessEnv): FreshnessPolicy {
     negativeTtlSeconds: parseTtlSeconds(
       "NEGATIVE_TTL_SECONDS",
       env.NEGATIVE_TTL_SECONDS,
+    ),
+    refreshAttemptCooldownSeconds: parseTtlSeconds(
+      "REFRESH_ATTEMPT_COOLDOWN_SECONDS",
+      env.REFRESH_ATTEMPT_COOLDOWN_SECONDS,
+    ),
+    refreshNoMatchCooldownSeconds: parseTtlSeconds(
+      "REFRESH_NO_MATCH_COOLDOWN_SECONDS",
+      env.REFRESH_NO_MATCH_COOLDOWN_SECONDS,
     ),
   };
 }

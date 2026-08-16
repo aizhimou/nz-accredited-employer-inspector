@@ -390,6 +390,15 @@ def generate_sql(
                   last_verified_source = CASE
                     WHEN excluded.last_verified_at >= employers.last_verified_at
                     THEN excluded.last_verified_source ELSE employers.last_verified_source END,
+                  last_refresh_attempt_at = CASE
+                    WHEN excluded.last_verified_at >= employers.last_verified_at
+                    THEN NULL ELSE employers.last_refresh_attempt_at END,
+                  last_refresh_outcome = CASE
+                    WHEN excluded.last_verified_at >= employers.last_verified_at
+                    THEN NULL ELSE employers.last_refresh_outcome END,
+                  refresh_not_before = CASE
+                    WHEN excluded.last_verified_at >= employers.last_verified_at
+                    THEN NULL ELSE employers.refresh_not_before END,
                   accreditation_type = CASE
                     WHEN employers.official_snapshot_date IS NULL
                       OR excluded.official_snapshot_date >= employers.official_snapshot_date

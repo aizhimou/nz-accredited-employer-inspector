@@ -87,3 +87,10 @@ export interface EmployerSearchResponse {
   query: string;
   candidates: AccreditedEmployer[];
 }
+
+export interface EmployerRefreshAuthorizationResponse {
+  state: "authorized" | "cooldown" | "not_required";
+  resolution: EmployerResolutionResponse;
+  inzQuery: string | null;
+  retryAt: string | null;
+}

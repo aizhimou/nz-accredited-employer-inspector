@@ -38,11 +38,12 @@ The shared adapter harness waits for asynchronous rendering, restores the Shadow
 5. Click the control once.
 6. Inspect requests from the extension service worker DevTools, not the SEEK tab's Network panel.
 7. Confirm the first call is `POST /v1/employers/resolve`.
-8. If live verification is required, confirm exactly one INZ call and one positive-only `POST /v1/employers/ingest`.
+8. If employer refresh is required, confirm `/refresh` authorizes it before exactly one INZ call and positive `/ingest` or NZBN `/no-match` submission.
 9. For recognised display-name `400 No Results`, confirm `/no-match` stores the exact strong/weak SEEK identity and a repeat check inside the configured negative TTL does not call INZ.
 10. Confirm choosing a candidate calls `POST /v1/employers/associate` and the selected NZBN is shown as community association data.
-11. When exactly one NZBN's official `employerName` or `tradingName` equals the SEEK advertiser name after normalisation, confirm the result is shown directly as `Exact match` and `Not community-confirmed`, with no `/associate` call. Additional fuzzy candidates must not block it; duplicated exact names must still require confirmation.
-12. Open `https://nz.seek.com/`, click a Recommended job, and confirm the control appears on its own row immediately below the employer row in the sidebar header.
-13. Select a different Recommended job without closing the sidebar and confirm the widget resets to the new advertiser identity without reloading the page.
-14. Close and reopen the sidebar and confirm the widget is removed and restored with no duplicate controls.
-15. Open `/jobs`, `/rush-jobs`, and `/Java-Developer-jobs`, select different result cards, and confirm the same stacked widget placement and identity reset behaviour in the right-hand detail pane.
+11. Confirm each candidate's `Refresh from INZ` action targets only that NZBN and does not create an association.
+12. When exactly one NZBN's official `employerName` or `tradingName` equals the SEEK advertiser name after normalisation, confirm the result is shown directly as `Exact match` and `Not community-confirmed`, with no `/associate` call. Additional fuzzy candidates must not block it; duplicated exact names must still require confirmation.
+13. Open `https://nz.seek.com/`, click a Recommended job, and confirm the control appears on its own row immediately below the employer row in the sidebar header.
+14. Select a different Recommended job without closing the sidebar and confirm the widget resets to the new advertiser identity without reloading the page.
+15. Close and reopen the sidebar and confirm the widget is removed and restored with no duplicate controls.
+16. Open `/jobs`, `/rush-jobs`, and `/Java-Developer-jobs`, select different result cards, and confirm the same stacked widget placement and identity reset behaviour in the right-hand detail pane.

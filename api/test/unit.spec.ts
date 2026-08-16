@@ -252,9 +252,13 @@ describe("freshness configuration", () => {
     expect(readFreshnessPolicy({
       POSITIVE_TTL_SECONDS: 2592000,
       NEGATIVE_TTL_SECONDS: "604800",
+      REFRESH_ATTEMPT_COOLDOWN_SECONDS: 900,
+      REFRESH_NO_MATCH_COOLDOWN_SECONDS: "86400",
     })).toEqual({
       positiveTtlSeconds: 2592000,
       negativeTtlSeconds: 604800,
+      refreshAttemptCooldownSeconds: 900,
+      refreshNoMatchCooldownSeconds: 86400,
     });
   });
 
@@ -264,6 +268,8 @@ describe("freshness configuration", () => {
       expect(() => readFreshnessPolicy({
         POSITIVE_TTL_SECONDS: value,
         NEGATIVE_TTL_SECONDS: 604800,
+        REFRESH_ATTEMPT_COOLDOWN_SECONDS: 900,
+        REFRESH_NO_MATCH_COOLDOWN_SECONDS: 86400,
       })).toThrowError("POSITIVE_TTL_SECONDS must be a positive integer");
     },
   );
