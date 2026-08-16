@@ -6,7 +6,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "ENVIRONMENT": "development",
-    "SERVICE_VERSION": "0.6.0",
+    "SERVICE_VERSION": "0.7.1",
     "POSITIVE_TTL_SECONDS": 2592000,
     "NEGATIVE_TTL_SECONDS": 604800
   },
@@ -50,7 +50,7 @@
       ],
       "vars": {
         "ENVIRONMENT": "production",
-        "SERVICE_VERSION": "0.6.0",
+        "SERVICE_VERSION": "0.7.1",
         "POSITIVE_TTL_SECONDS": 2592000,
         "NEGATIVE_TTL_SECONDS": 604800
       },

@@ -2,10 +2,16 @@ import type { FreshnessPolicy } from "./config";
 import { ApiError, InzResponseError } from "./errors";
 import { parseInzResponse } from "./inz-response";
 import { getAccreditationStatus, isRecentlyVerified } from "./time";
+import {
+  buildEmployerFtsQuery,
+  isPlausibleEmployerNameScore,
+  scoreEmployerCandidate,
+} from "./name-matching";
 import type {
   AccreditedEmployer,
   EmployerAssociation,
   EmployerResolutionResponse,
+  EmployerSearchResponse,
   NoMatchObservation,
   ParsedInzEmployer,
   PlatformIdentity,
@@ -31,6 +37,11 @@ interface EmployerCandidate extends AccreditedEmployer {
   verificationSource: VerificationSource;
 }
 
+interface LocalCandidateResult {
+  candidates: EmployerCandidate[];
+  exactNameEmployer: EmployerCandidate | null;
+}
+
 interface PlatformEntityRow {
   id: number;
   identity_strength: "strong" | "weak";
@@ -52,6 +63,10 @@ interface AssociationResolution {
   noMatchAt: number | null;
 }
 
+const DIRECT_CANDIDATE_LIMIT = 20;
+const FTS_CANDIDATE_LIMIT = 100;
+const MAX_RETURNED_CANDIDATES = 10;
+
 function rowToEmployer(row: EmployerRow, nowMilliseconds: number): EmployerCandidate {
   return {
     employerName: row.employer_name,
@@ -70,6 +85,10 @@ function rowToEmployer(row: EmployerRow, nowMilliseconds: number): EmployerCandi
 function toPublicEmployer(candidate: EmployerCandidate): AccreditedEmployer {
   const { verificationSource: _, ...employer } = candidate;
   return employer;
+}
+
+function compareText(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function isCandidateRecentlyVerified(
@@ -91,9 +110,9 @@ async function findLocalCandidates(
   db: D1Database,
   displayName: string,
   nowMilliseconds: number,
-): Promise<EmployerCandidate[]> {
+): Promise<LocalCandidateResult> {
   const normalized = normalizeName(displayName);
-  const rows = await db
+  const directRowsPromise = db
     .prepare(
       `SELECT employer_name, trading_name, nzbn,
               expiry_date_of_accreditation, last_verified_at,
@@ -113,12 +132,70 @@ async function findLocalCandidates(
                  length(employer_name),
                  employer_name,
                  nzbn
-        LIMIT 20`,
+        LIMIT ${DIRECT_CANDIDATE_LIMIT}`,
     )
     .bind(/^\d{13}$/u.test(normalized) ? normalized : "", normalized)
     .all<EmployerRow>();
 
-  return rows.results.map((row) => rowToEmployer(row, nowMilliseconds));
+  const ftsQuery = buildEmployerFtsQuery(displayName);
+  const fuzzyRowsPromise = ftsQuery === null
+    ? Promise.resolve({ results: [] as EmployerRow[] })
+    : db
+        .prepare(
+          `SELECT employers.employer_name, employers.trading_name, employers.nzbn,
+                  employers.expiry_date_of_accreditation, employers.last_verified_at,
+                  employers.last_verified_source
+             FROM employer_names_fts
+             JOIN employers ON employers.nzbn = employer_names_fts.nzbn
+            WHERE employer_names_fts MATCH ?1
+            ORDER BY bm25(employer_names_fts)
+            LIMIT ${FTS_CANDIDATE_LIMIT}`,
+        )
+        .bind(ftsQuery)
+        .all<EmployerRow>();
+
+  const [directRows, fuzzyRows] = await Promise.all([directRowsPromise, fuzzyRowsPromise]);
+  const directNzbns = new Set(directRows.results.map((row) => row.nzbn));
+  const exactNameRows = directRows.results.filter((row) =>
+    normalizeName(row.employer_name) === normalized ||
+    (row.trading_name !== null && normalizeName(row.trading_name) === normalized)
+  );
+  const exactNameNzbns = new Set(exactNameRows.map((row) => row.nzbn));
+  const exactNameRow = exactNameNzbns.size === 1 ? exactNameRows[0] ?? null : null;
+  const rowsByNzbn = new Map<string, EmployerRow>();
+  for (const row of [...directRows.results, ...fuzzyRows.results]) {
+    rowsByNzbn.set(row.nzbn, row);
+  }
+
+  const candidates = [...rowsByNzbn.values()]
+    .map((row) => ({
+      row,
+      score: scoreEmployerCandidate(displayName, row.employer_name, row.trading_name),
+    }))
+    .filter(({ row, score }) => directNzbns.has(row.nzbn) || isPlausibleEmployerNameScore(score))
+    .sort((left, right) =>
+      Number(directNzbns.has(right.row.nzbn)) - Number(directNzbns.has(left.row.nzbn)) ||
+      right.score - left.score ||
+      compareText(left.row.employer_name, right.row.employer_name) ||
+      compareText(left.row.nzbn, right.row.nzbn),
+    )
+    .slice(0, MAX_RETURNED_CANDIDATES)
+    .map(({ row }) => rowToEmployer(row, nowMilliseconds));
+
+  return {
+    candidates,
+    exactNameEmployer:
+      exactNameRow === null ? null : rowToEmployer(exactNameRow, nowMilliseconds),
+  };
+}
+
+export async function searchEmployerCandidates(
+  db: D1Database,
+  query: string,
+  nowMilliseconds = Date.now(),
+): Promise<EmployerSearchResponse> {
+  const { candidates } = await findLocalCandidates(db, query, nowMilliseconds);
+  return { query, candidates: candidates.map(toPublicEmployer) };
 }
 
 async function findEmployer(
@@ -277,7 +354,7 @@ function mergeCandidates(
   const merged: EmployerCandidate[] = [];
   for (const group of groups) {
     for (const employer of group) {
-      if (!seen.has(employer.nzbn) && merged.length < 50) {
+      if (!seen.has(employer.nzbn) && merged.length < MAX_RETURNED_CANDIDATES) {
         seen.add(employer.nzbn);
         merged.push(employer);
       }
@@ -319,7 +396,7 @@ export async function resolveEmployer(
   allowExactNameMatch = true,
 ): Promise<EmployerResolutionResponse> {
   const association = await readAssociation(db, identity, clientIdHash);
-  const [preferred, confirmed, local, selectedEmployer] = await Promise.all([
+  const [preferred, confirmed, localResult, selectedEmployer] = await Promise.all([
     findEmployers(db, preferredNzbns, nowMilliseconds),
     findEmployers(db, association.confirmedNzbns, nowMilliseconds),
     findLocalCandidates(db, identity.displayName, nowMilliseconds),
@@ -329,7 +406,16 @@ export async function resolveEmployer(
   ]);
 
   const selected = selectedEmployer === null ? [] : [selectedEmployer];
-  const candidates = mergeCandidates([selected, preferred, confirmed, local]);
+  const exactNameEmployer =
+    allowExactNameMatch ? localResult.exactNameEmployer : null;
+  const exact = exactNameEmployer === null ? [] : [exactNameEmployer];
+  const candidates = mergeCandidates([
+    selected,
+    exact,
+    preferred,
+    confirmed,
+    localResult.candidates,
+  ]);
   const publicCandidates = candidates.map(toPublicEmployer);
 
   if (selectedEmployer !== null) {
@@ -349,14 +435,7 @@ export async function resolveEmployer(
     };
   }
 
-  const exactNameEmployer =
-    allowExactNameMatch &&
-    candidates.length === 1 &&
-    normalizeName(candidates[0]?.employerName ?? "") ===
-      normalizeName(identity.displayName)
-      ? candidates[0]
-      : undefined;
-  if (exactNameEmployer !== undefined) {
+  if (exactNameEmployer !== null) {
     const fresh = isCandidateRecentlyVerified(
       exactNameEmployer,
       nowMilliseconds,

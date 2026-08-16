@@ -5,7 +5,7 @@ export const GET: APIRoute = () => {
 title: NZ Accredited Employer Inspector
 description: Check whether employers on SEEK and LinkedIn are accredited with Immigration New Zealand before you apply.
 language: en-NZ
-version: 0.6.0
+version: 0.7.1
 author: Zemo Ai
 author_url: https://zemo.bio/
 ---
@@ -27,7 +27,7 @@ No lookup runs automatically on page load. One click may perform at most one liv
 
 - **Accreditation:** Official employer name, trading name, NZBN, expiry and verification time are INZ facts.
 - **Platform association:** A mapping between a LinkedIn or SEEK identity and an NZBN is user-confirmed community data.
-- **Exact legal-name match:** A sole candidate may be derived automatically only when its normalised official employer name exactly matches the platform display name. It is not community-confirmed.
+- **Exact INZ name match:** A match may be derived automatically only when the normalised official employer or trading name of exactly one NZBN matches the platform display name. It is not community-confirmed.
 - **No published match:** An exact platform-and-query observation uses the configured negative TTL, currently seven days. It is not proof that an employer is unaccredited.
 
 Accreditation status and platform association confidence are separate dimensions.

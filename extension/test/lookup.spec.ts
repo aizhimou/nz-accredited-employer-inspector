@@ -9,6 +9,7 @@ import {
   type FetchLike,
   INZ_API_URL,
   lookupEmployer,
+  searchEmployers,
 } from "../lib/lookup";
 
 const CLIENT_ID = "11111111-1111-4111-8111-111111111111";
@@ -166,6 +167,42 @@ describe("employer lookup orchestration", () => {
       data: { state: "confirmation_required", selectedEmployer: null },
     });
     expect(callCount).toBe(1);
+  });
+
+  it("searches local employer candidates with an independent query", async () => {
+    let submitted: unknown;
+    const fetchFn: FetchLike = async (_input, init) => {
+      submitted = JSON.parse(String(init?.body));
+      return Response.json(
+        { query: "ABC Consulting", candidates: [employer] },
+        { headers: { "X-Request-ID": "search-request" } },
+      );
+    };
+
+    const result = await searchEmployers(identity, "ABC Consulting", CLIENT_ID, fetchFn);
+
+    expect(result).toMatchObject({
+      ok: true,
+      identity,
+      query: "ABC Consulting",
+      candidates: [{ nzbn: employer.nzbn }],
+      requestId: "search-request",
+    });
+    expect(submitted).toEqual({ query: "ABC Consulting" });
+  });
+
+  it("rejects malformed local employer search responses", async () => {
+    const result = await searchEmployers(
+      identity,
+      "ABC Consulting",
+      CLIENT_ID,
+      async () => Response.json({ query: "ABC Consulting", candidates: [{}] }),
+    );
+
+    expect(result).toMatchObject({
+      ok: false,
+      error: { code: "invalid_api_response" },
+    });
   });
 
   it("calls INZ once when instructed and submits the untouched positive response", async () => {

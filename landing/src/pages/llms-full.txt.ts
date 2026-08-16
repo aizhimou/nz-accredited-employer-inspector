@@ -7,7 +7,7 @@ export const GET: APIRoute = () => {
 
 - Product: NZ Accredited Employer Inspector
 - Type: Open-source Chrome extension plus Cloudflare Worker and D1 API
-- Current service version: 0.6.0
+- Current service version: 0.7.1
 - Primary audience: People assessing New Zealand job opportunities on LinkedIn and SEEK
 - Primary task: Check whether the legal employer associated with a platform page appears on the Immigration New Zealand accredited employer list
 - Creator and maintainer: Zemo Ai
@@ -28,6 +28,8 @@ The project is independently created and maintained by Zemo Ai in Auckland, New 
 The extension inserts a compact **Check NZ accreditation** control into supported LinkedIn and SEEK pages. It waits for an explicit user click. It does not crawl lists, pre-warm searches, make automatic page-load lookups, or paginate INZ results automatically. One click may make at most one live request to INZ.
 
 The result can show a selected employer, several candidates requiring confirmation, a fresh no-match observation, or a request to retry/review verification. The UI shows legal name, optional trading name, 13-digit NZBN, accreditation expiry, last verification time, status, and matching provenance.
+
+Candidate discovery uses a bounded 100-row internal pool from the local official employer dataset with generic token, prefix, abbreviation, and dynamically derived acronym similarity. At most 10 candidates are returned. Fuzzy candidates are never automatically associated. No-match and candidate notes offer a collapsed local employer-search disclosure; submitted recovery results replace the current candidate list.
 
 ## Supported platform surfaces
 
@@ -50,7 +52,7 @@ Mappings from a LinkedIn company or SEEK advertiser/profile to an NZBN are commu
 
 ### Automatic exact-name match
 
-When no stored platform association is selected, the Worker may derive a match only if exactly one candidate exists and the normalised official INZ employer name exactly equals the normalised platform display name. Normalisation uses Unicode NFKC, trimmed and collapsed whitespace, and lowercase. Company suffixes and punctuation are not removed. Trading-name equality, containment, fuzzy similarity, and multiple candidates never auto-select.
+When no stored platform association is selected, the Worker may derive a match only if the normalised official INZ employer name or trading name of exactly one NZBN equals the normalised platform display name. Normalisation uses Unicode NFKC, trimmed and collapsed whitespace, and lowercase. Company suffixes and punctuation are not removed. A duplicated exact name, containment, or fuzzy similarity never auto-selects; additional fuzzy candidates do not block a unique exact-name match. The backward-compatible exact_employer_name method value covers both exact official and trading names.
 
 ### No published match
 
@@ -92,6 +94,7 @@ All POST routes require JSON. Employer routes require an X-Client-ID UUID header
 
 - GET /health — public service health; no client ID required
 - POST /v1/employers/resolve — read-only platform identity resolution
+- POST /v1/employers/search — read-only local candidate recovery search using an independent query
 - POST /v1/employers/ingest — validate and atomically store a positive INZ response
 - POST /v1/employers/no-match — store a recognised exact no-match observation for the configured negative TTL
 - POST /v1/employers/associate — confirm or change this installation's platform-to-NZBN mapping

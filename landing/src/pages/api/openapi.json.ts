@@ -66,7 +66,7 @@ const responseSchema = {
       enum: ["platform_association", "exact_employer_name", null],
     },
     selectedEmployer: { anyOf: [{ $ref: "#/components/schemas/AccreditedEmployer" }, { type: "null" }] },
-    candidates: { type: "array", maxItems: 50, items: { $ref: "#/components/schemas/AccreditedEmployer" } },
+    candidates: { type: "array", maxItems: 10, items: { $ref: "#/components/schemas/AccreditedEmployer" } },
     association: {
       anyOf: [
         { $ref: "#/components/schemas/EmployerAssociation" },
@@ -103,7 +103,7 @@ export const GET: APIRoute = () => {
     openapi: "3.1.0",
     info: {
       title: "NZ Accredited Employer API",
-      version: "0.6.0",
+      version: "0.7.1",
       description:
         "Product API for resolving platform employers, accepting validated INZ observations, storing user-confirmed associations, and collecting the temporary Chrome Web Store notification list. The Worker does not call INZ.",
       license: {
@@ -160,6 +160,31 @@ export const GET: APIRoute = () => {
             },
           },
           responses: operationResponses,
+        },
+      },
+      "/v1/employers/search": {
+        post: {
+          operationId: "searchEmployers",
+          summary: "Search local official employer candidates",
+          description: "Read-only recovery search. Uses an independent query, never calls INZ, and never creates an association.",
+          parameters: [clientHeader],
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": { schema: { $ref: "#/components/schemas/EmployerSearchRequest" } },
+            },
+          },
+          responses: {
+            "200": {
+              description: "Ranked local employer candidates",
+              content: {
+                "application/json": { schema: { $ref: "#/components/schemas/EmployerSearchResponse" } },
+              },
+            },
+            "400": { $ref: "#/components/responses/Error" },
+            "429": { $ref: "#/components/responses/Error" },
+            "500": { $ref: "#/components/responses/Error" },
+          },
         },
       },
       "/v1/employers/ingest": {
@@ -266,6 +291,27 @@ export const GET: APIRoute = () => {
           type: "object",
           required: ["identity"],
           properties: { identity: { $ref: "#/components/schemas/PlatformIdentity" } },
+        },
+        EmployerSearchRequest: {
+          type: "object",
+          additionalProperties: false,
+          required: ["query"],
+          properties: {
+            query: { type: "string", minLength: 3, maxLength: 100 },
+          },
+        },
+        EmployerSearchResponse: {
+          type: "object",
+          additionalProperties: false,
+          required: ["query", "candidates"],
+          properties: {
+            query: { type: "string" },
+            candidates: {
+              type: "array",
+              maxItems: 10,
+              items: { $ref: "#/components/schemas/AccreditedEmployer" },
+            },
+          },
         },
         IngestRequest: {
           type: "object",

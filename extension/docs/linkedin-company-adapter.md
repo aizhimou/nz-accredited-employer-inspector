@@ -37,12 +37,12 @@ LinkedIn may render the company header after `document_idle`. The content script
 1. `Check NZ accreditation`: no network call has happened.
 2. `Checking INZ…`: background orchestration is active.
 3. `Confirm employer match`: D1 or live INZ returned official employer candidates, but no platform association can be assumed.
-4. `Accredited in NZ` / `Accreditation expired`: the selected employer's official expiry evaluation. Selection may be a stored platform association or a unique exact official-name match.
+4. `Accredited in NZ` / `Accreditation expired`: the selected employer's official expiry evaluation. Selection may be a stored platform association or a unique exact official/trading-name match.
 5. `No published INZ match`: recognised live INZ `400 No Results`; the exact platform identity/query observation is reused for the configured negative TTL and its check/expiry times are shown.
 6. `Live verification needs review`: an associated NZBN could not be republished by INZ; the old row is only dated context.
 7. `Try again`: API, INZ, or extension background failure.
 
-The result panel shows the selected employer and all API candidates (up to 50), with legal name, optional trading name, NZBN, accreditation expiry, INZ verification date, match provenance, and explicit `Use this employer` controls. Automatic exact-name matches are labelled `Exact match` and `Not community-confirmed`; they are never presented as a community association.
+The result panel shows the selected employer and API candidates (up to 10), with legal name, optional trading name, NZBN, accreditation expiry, INZ verification date, match provenance, and explicit `Use this employer` controls. Automatic exact-name matches are labelled `Exact match` and `Not community-confirmed`; they are never presented as a community association. Manual recovery searches replace the current candidate list rather than appending another list.
 
 ## Manual verification
 

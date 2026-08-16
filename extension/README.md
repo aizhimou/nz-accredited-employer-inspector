@@ -8,6 +8,8 @@ The public extension privacy policy is available at `https://nzaei.zemo.bio/priv
 
 The extension follows [`../docs/extension-api-ssot.md`](../docs/extension-api-ssot.md) for platform identity, API orchestration, candidate confirmation, provenance, and fields.
 
+When automatic lookup returns no match or incomplete candidates, the result note offers an expandable local employer search. A submitted search replaces the current candidate list instead of appending another list. Search results are suggestions only; selecting one creates the normal user-confirmed association.
+
 ## Development
 
 ```bash

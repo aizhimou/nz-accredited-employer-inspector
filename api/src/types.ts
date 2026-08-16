@@ -82,3 +82,8 @@ export interface EmployerResolutionResponse {
   noMatch: NoMatchObservation | null;
   inzQuery: string | null;
 }
+
+export interface EmployerSearchResponse {
+  query: string;
+  candidates: AccreditedEmployer[];
+}

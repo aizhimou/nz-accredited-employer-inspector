@@ -6,10 +6,12 @@ import {
   ingestEmployers,
   joinExtensionWaitlist,
   resolveEmployer,
+  searchEmployerCandidates,
   storeNoMatchObservation,
 } from "./service";
 import {
   parseAssociationRequest,
+  parseEmployerSearchRequest,
   parseIngestRequest,
   parseNoMatchRequest,
   parseResolveRequest,
@@ -18,6 +20,7 @@ import {
 } from "./validation";
 
 const RESOLVE_PATH = "/v1/employers/resolve";
+const SEARCH_PATH = "/v1/employers/search";
 const INGEST_PATH = "/v1/employers/ingest";
 const NO_MATCH_PATH = "/v1/employers/no-match";
 const ASSOCIATE_PATH = "/v1/employers/associate";
@@ -175,6 +178,7 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
 
     if (
       pathname !== RESOLVE_PATH &&
+      pathname !== SEARCH_PATH &&
       pathname !== INGEST_PATH &&
       pathname !== NO_MATCH_PATH &&
       pathname !== ASSOCIATE_PATH &&
@@ -240,6 +244,19 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
         platform: input.identity.platform,
         identityStrength: input.identity.strength,
         state: result.state,
+        candidateCount: result.candidates.length,
+        durationMs: Date.now() - startedAt,
+      });
+      return jsonResponse(result, 200, requestId);
+    }
+
+    if (pathname === SEARCH_PATH) {
+      const input = parseEmployerSearchRequest(body);
+      const result = await searchEmployerCandidates(env.DB, input.query);
+      logEvent("info", {
+        event: "employer_search",
+        requestId,
+        queryLength: input.query.length,
         candidateCount: result.candidates.length,
         durationMs: Date.now() - startedAt,
       });

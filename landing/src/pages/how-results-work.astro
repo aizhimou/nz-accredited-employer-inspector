@@ -139,8 +139,8 @@ const chapters = [
               <div class="path-copy">
                 <p class="path-question">Which legal employer belongs to the page?</p>
                 <h3>Use the safest available connection</h3>
-                <p>Your saved choice takes priority for you. Without one, a clear community winner can be used. Automatic selection happens only when there is one candidate and its official legal name exactly matches the page name; an immediate live search must also report one total result.</p>
-                <span class="path-note">Trading-name, similar-name and multiple-candidate matches are never silently selected.</span>
+                <p>Your saved choice takes priority for you. Without one, a clear community winner can be used. Automatic selection happens only when one NZBN’s official employer or trading name exactly matches the page name; an immediate live search must also report one total result.</p>
+                <span class="path-note">Duplicated exact names and similar-name matches are never silently selected.</span>
               </div>
             </li>
             <li>
@@ -157,11 +157,11 @@ const chapters = [
           <div class="decision-ledger" aria-label="Automatic selection safeguards">
             <section>
               <span class="ledger-label safe">Can select</span>
-              <h3>A known association or one exact legal-name candidate</h3>
+              <h3>A known association or one unique exact INZ name</h3>
             </section>
             <section>
               <span class="ledger-label ask">Must ask you</span>
-              <h3>Similar names, trading names, ties or several candidates</h3>
+              <h3>Similar names, duplicated exact names or association ties</h3>
             </section>
             <section>
               <span class="ledger-label never">Never changes</span>
@@ -286,8 +286,8 @@ const chapters = [
                 <dd>The SEEK page did not provide a strong company profile identity. Similar advertiser names require extra care.</dd>
               </div>
               <div>
-                <dt><span class="notice-sample exact">Automatic exact official-name match</span></dt>
-                <dd>Exactly one candidate met the narrow official legal-name rule. No community confirmation was created.</dd>
+                <dt><span class="notice-sample exact">Automatic exact INZ name match</span></dt>
+                <dd>One NZBN uniquely matched the page by its official employer or trading name. No community confirmation was created.</dd>
               </div>
             </dl>
           </section>

@@ -1,6 +1,6 @@
 {
   "name": "nz-accredited-employer-inspector-extension",
-  "version": "0.6.1",
+  "version": "0.7.1",
   "private": true,
   "type": "module",
   "engines": {

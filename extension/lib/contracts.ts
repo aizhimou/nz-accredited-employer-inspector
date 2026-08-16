@@ -64,7 +64,16 @@ export interface AssociateEmployerMessage {
   nzbn: string;
 }
 
-export type ExtensionMessage = CheckEmployerMessage | AssociateEmployerMessage;
+export interface SearchEmployersMessage {
+  type: "search-employers";
+  identity: PlatformIdentity;
+  query: string;
+}
+
+export type ExtensionMessage =
+  | CheckEmployerMessage
+  | AssociateEmployerMessage
+  | SearchEmployersMessage;
 
 export type LiveLookupStatus =
   | "not_needed"
@@ -90,6 +99,16 @@ export interface LookupFailure {
 }
 
 export type LookupResponse = LookupSuccess | LookupFailure;
+
+export interface EmployerSearchSuccess {
+  ok: true;
+  identity: PlatformIdentity;
+  query: string;
+  candidates: AccreditedEmployer[];
+  requestId: string | null;
+}
+
+export type EmployerSearchResponse = EmployerSearchSuccess | LookupFailure;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -118,10 +137,39 @@ export function isExtensionMessage(value: unknown): value is ExtensionMessage {
   if (value.type === "check-employer") {
     return true;
   }
+  if (value.type === "search-employers") {
+    return (
+      typeof value.query === "string" &&
+      value.query.trim().length >= 3 &&
+      value.query.trim().length <= 100
+    );
+  }
   return (
     value.type === "associate-employer" &&
     typeof value.nzbn === "string" &&
     /^\d{13}$/u.test(value.nzbn)
+  );
+}
+
+export function isEmployerSearchResponse(value: unknown): value is EmployerSearchResponse {
+  if (!isRecord(value)) {
+    return false;
+  }
+  if (value.ok === true) {
+    return (
+      isPlatformIdentity(value.identity) &&
+      typeof value.query === "string" &&
+      Array.isArray(value.candidates) &&
+      value.candidates.every(isAccreditedEmployer) &&
+      (value.requestId === null || typeof value.requestId === "string")
+    );
+  }
+  return (
+    value.ok === false &&
+    isRecord(value.error) &&
+    typeof value.error.code === "string" &&
+    typeof value.error.message === "string" &&
+    (value.error.requestId === null || typeof value.error.requestId === "string")
   );
 }
 

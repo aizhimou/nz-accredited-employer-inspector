@@ -17,6 +17,12 @@ import {
   parseWaitlistRequest,
   validateClientId,
 } from "../src/validation";
+import {
+  buildEmployerFtsQuery,
+  scoreEmployerCandidate,
+  scoreEmployerName,
+  tokenizeEmployerName,
+} from "../src/name-matching";
 import { CLIENT_ID, createInzResponse } from "./fixtures";
 
 const linkedinIdentity = {
@@ -119,6 +125,48 @@ describe("request validation", () => {
       .toEqual({ email: "user+nz@example.com", website: "" });
     expect(() => parseWaitlistRequest({ email: "not-an-email" }))
       .toThrowError("valid email address");
+  });
+});
+
+describe("generic employer name matching", () => {
+  it("tokenizes Unicode names without an abbreviation dictionary", () => {
+    expect(tokenizeEmployerName("  Āporo & Sons (NZ) Ltd. ")).toEqual([
+      "āporo",
+      "sons",
+      "nz",
+      "ltd",
+    ]);
+    expect(buildEmployerFtsQuery("Woolworths NZ Ltd")).toBe(
+      '"woolworths"* OR "nz" OR "ltd"*',
+    );
+  });
+
+  it("aligns initials and abbreviated tokens generically", () => {
+    expect(
+      scoreEmployerName(
+        "Woolworths NZ Ltd",
+        "WOOLWORTHS NEW ZEALAND LIMITED",
+      ),
+    ).toBeGreaterThan(0.8);
+    expect(
+      scoreEmployerName(
+        "ABC Consulting",
+        "Alpha Beta Consulting Limited",
+      ),
+    ).toBeGreaterThan(0.65);
+  });
+
+  it("uses the better official or trading name and rejects unrelated names", () => {
+    expect(
+      scoreEmployerCandidate(
+        "Blue Kiwi",
+        "BLUE KIWI HOLDINGS LIMITED",
+        "Blue Kiwi",
+      ),
+    ).toBe(1);
+    expect(
+      scoreEmployerName("Pacific Business Trust", "Information Technology Services Limited"),
+    ).toBeLessThan(0.5);
   });
 });
 

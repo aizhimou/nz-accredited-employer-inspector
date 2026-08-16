@@ -2,10 +2,13 @@ import {
   type AccreditedEmployer,
   type AssociateEmployerMessage,
   type CheckEmployerMessage,
+  type EmployerSearchResponse,
+  isEmployerSearchResponse,
   isLookupResponse,
   type LookupResponse,
   type LookupSuccess,
   type PlatformIdentity,
+  type SearchEmployersMessage,
 } from "../../lib/contracts";
 
 export interface WidgetController {
@@ -86,7 +89,7 @@ function appendChevron(button: HTMLButtonElement): void {
   button.append(chevron);
 }
 
-async function sendMessage(message: CheckEmployerMessage | AssociateEmployerMessage) {
+async function sendLookupMessage(message: CheckEmployerMessage | AssociateEmployerMessage) {
   const response: unknown = await browser.runtime.sendMessage(message);
   if (!isLookupResponse(response)) {
     return {
@@ -97,6 +100,21 @@ async function sendMessage(message: CheckEmployerMessage | AssociateEmployerMess
         requestId: null,
       },
     } satisfies LookupResponse;
+  }
+  return response;
+}
+
+async function sendSearchMessage(message: SearchEmployersMessage): Promise<EmployerSearchResponse> {
+  const response: unknown = await browser.runtime.sendMessage(message);
+  if (!isEmployerSearchResponse(response)) {
+    return {
+      ok: false,
+      error: {
+        code: "invalid_background_response",
+        message: "The extension background service returned an invalid response.",
+        requestId: null,
+      },
+    };
   }
   return response;
 }
@@ -326,11 +344,11 @@ export function mountCompanyWidget(
       const provenance = createElement("div", "provenance exact-match-provenance");
       provenance.append(
         createElement("strong", "provenance-label", "Employer match"),
-        createElement("span", "provenance-value", "Automatic exact official-name match"),
+        createElement("span", "provenance-value", "Automatic exact INZ name match"),
         createElement(
           "span",
           "provenance-note",
-          "The company name on this page exactly matches the official INZ Employer Name. This match is not community-confirmed.",
+          "The company name on this page exactly matches the official INZ Employer Name or Trading Name. This match is not community-confirmed.",
         ),
       );
       panel.append(provenance);
@@ -355,14 +373,17 @@ export function mountCompanyWidget(
       panel.append(provenance);
     }
 
+    let manualSearchNote: HTMLElement | null = null;
     if (noPublished) {
-      panel.append(
-        createElement(
-          "p",
-          "empty-state",
-          "INZ returned no published match for this company name. This is not proof that the employer is unaccredited; verify the legal name or ask the employer directly.",
-        ),
+      const note = createElement("div", "empty-state recovery-note");
+      const copy = createElement(
+        "p",
+        "recovery-note-copy",
+        "INZ found no published match for this page name. This does not prove the employer is unaccredited.",
       );
+      note.append(copy);
+      panel.append(note);
+      manualSearchNote = copy;
     } else if (needsReview) {
       panel.append(
         createElement(
@@ -374,19 +395,29 @@ export function mountCompanyWidget(
         ),
       );
     } else if (needsConfirmation) {
-      panel.append(
-        createElement(
-          "p",
-          "confirmation-note",
-          "INZ names and this page’s company name may differ. Choose the correct legal employer; this association is community data and can be changed later.",
-        ),
+      const note = createElement("div", "confirmation-note recovery-note");
+      const copy = createElement(
+        "p",
+        "recovery-note-copy",
+        "INZ names may differ from this page. Confirm the correct legal employer; you can change it later.",
       );
+      note.append(copy);
+      panel.append(note);
+      manualSearchNote = copy;
     }
 
-    const visibleCandidates = response.data.candidates;
-    if (visibleCandidates.length > 0) {
+    const candidateResults = createElement("div", "candidate-results");
+    candidateResults.setAttribute("aria-live", "polite");
+    const renderCandidates = (
+      candidates: readonly AccreditedEmployer[],
+      summary?: string,
+    ): void => {
+      clear(candidateResults);
+      if (summary !== undefined) {
+        candidateResults.append(createElement("p", "manual-search-summary", summary));
+      }
       const list = createElement("ul", "result-list");
-      for (const employer of visibleCandidates) {
+      for (const employer of candidates) {
         list.append(
           renderEmployer(
             employer,
@@ -398,8 +429,121 @@ export function mountCompanyWidget(
           ),
         );
       }
-      panel.append(list);
+      candidateResults.append(list);
+    };
+
+    const visibleCandidates = response.data.candidates;
+    if (visibleCandidates.length > 0) {
+      renderCandidates(visibleCandidates);
     }
+
+    if (noPublished || needsConfirmation) {
+      const searchSection = createElement("section", "manual-search");
+      searchSection.id = "manual-employer-search";
+      searchSection.hidden = true;
+      searchSection.append(
+        createElement(
+          "span",
+          "manual-search-note",
+          "Search the official employer dataset using a legal name, trading name, or abbreviation.",
+        ),
+      );
+      const form = createElement("form", "manual-search-form");
+      const input = createElement("input", "manual-search-input") as HTMLInputElement;
+      input.type = "search";
+      input.name = "employerName";
+      input.placeholder = "Employer or trading name";
+      input.value = response.identity.displayName;
+      input.minLength = 3;
+      input.maxLength = 100;
+      input.setAttribute("aria-label", "Employer or trading name");
+      const submit = createElement("button", "manual-search-button", "Search") as HTMLButtonElement;
+      submit.type = "submit";
+      const searchFeedback = createElement("div", "manual-search-feedback");
+      searchFeedback.setAttribute("aria-live", "polite");
+      form.append(input, submit);
+      searchSection.append(form, searchFeedback);
+
+      const toggleSearch = createElement(
+        "button",
+        "manual-search-toggle",
+      ) as HTMLButtonElement;
+      toggleSearch.type = "button";
+      toggleSearch.append(
+        createElement("span", "manual-search-toggle-label", "Search another name"),
+      );
+      toggleSearch.setAttribute("aria-expanded", "false");
+      toggleSearch.setAttribute("aria-controls", searchSection.id);
+      toggleSearch.addEventListener("click", () => {
+        const expanded = toggleSearch.getAttribute("aria-expanded") !== "true";
+        toggleSearch.setAttribute("aria-expanded", String(expanded));
+        searchSection.hidden = !expanded;
+        candidateResults.classList.toggle("after-manual-search", expanded);
+        if (expanded) {
+          input.focus();
+        }
+      });
+      manualSearchNote?.append(document.createTextNode(" "), toggleSearch);
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const query = input.value.trim();
+        if (query.length < 3) {
+          searchFeedback.textContent = "Enter at least 3 characters.";
+          return;
+        }
+        input.disabled = true;
+        submit.disabled = true;
+        submit.textContent = "Searching…";
+        clear(searchFeedback);
+        clear(candidateResults);
+        candidateResults.append(
+          createElement("p", "manual-search-loading", `Searching for “${query}”…`),
+        );
+        void sendSearchMessage({ type: "search-employers", identity: response.identity, query })
+          .then((searchResponse) => {
+            clear(candidateResults);
+            if (!searchResponse.ok) {
+              candidateResults.append(
+                createElement("p", "manual-search-error", searchResponse.error.message),
+              );
+              return;
+            }
+            if (searchResponse.candidates.length === 0) {
+              candidateResults.append(
+                createElement(
+                  "p",
+                  "manual-search-empty",
+                  `No plausible local candidates for “${searchResponse.query}”. Try another name.`,
+                ),
+              );
+              return;
+            }
+            renderCandidates(
+              searchResponse.candidates,
+              `Possible employers for “${searchResponse.query}”`,
+            );
+          })
+          .catch(() => {
+            clear(candidateResults);
+            candidateResults.append(
+              createElement(
+                "p",
+                "manual-search-error",
+                "The extension background service is unavailable. Reload the page and try again.",
+              ),
+            );
+          })
+          .finally(() => {
+            input.disabled = false;
+            submit.disabled = false;
+            submit.textContent = "Search";
+          });
+      });
+      panel.append(searchSection);
+    }
+
+    panel.append(candidateResults);
 
     const footer = createElement("footer", "panel-footer");
     footer.append(
@@ -426,7 +570,7 @@ export function mountCompanyWidget(
     loading = true;
     renderLoading("Saving association…");
     try {
-      const response = await sendMessage({ type: "associate-employer", identity, nzbn });
+      const response = await sendLookupMessage({ type: "associate-employer", identity, nzbn });
       response.ok ? renderSuccess(response) : renderError(response);
     } catch {
       renderError({
@@ -451,7 +595,7 @@ export function mountCompanyWidget(
     hasResult = false;
     renderLoading();
     try {
-      const response = await sendMessage({ type: "check-employer", identity });
+      const response = await sendLookupMessage({ type: "check-employer", identity });
       response.ok ? renderSuccess(response) : renderError(response);
     } catch {
       renderError({

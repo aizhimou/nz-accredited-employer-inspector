@@ -1,7 +1,10 @@
 import {
   type EmployerResolutionResponse,
+  type EmployerSearchResponse,
+  isEmployerSearchResponse,
   isEmployerResolutionResponse,
   type LiveLookupStatus,
+  type LookupFailure,
   type LookupResponse,
   type LookupSuccess,
   type PlatformIdentity,
@@ -200,7 +203,7 @@ function toSuccess(
   };
 }
 
-function toFailure(error: unknown): LookupResponse {
+function toFailure(error: unknown): LookupFailure {
   if (error instanceof LookupError) {
     return {
       ok: false,
@@ -321,6 +324,56 @@ export async function associateEmployer(
       }
       throw error;
     }
+  } catch (error) {
+    return toFailure(error);
+  }
+}
+
+export async function searchEmployers(
+  identity: PlatformIdentity,
+  query: string,
+  clientId: string,
+  fetchFn: FetchLike = fetch,
+): Promise<EmployerSearchResponse> {
+  try {
+    let response: Response;
+    try {
+      response = await fetchFn(`${API_BASE_URL}/v1/employers/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Client-ID": clientId },
+        body: JSON.stringify({ query }),
+      });
+    } catch {
+      throw new LookupError("api_unavailable", "Could not reach the accreditation service.");
+    }
+    if (!response.ok) {
+      throw await toApiError(response);
+    }
+
+    let body: unknown;
+    try {
+      body = await response.json();
+    } catch {
+      throw new LookupError(
+        "invalid_api_response",
+        "The accreditation service returned invalid JSON.",
+        response.headers.get("X-Request-ID"),
+      );
+    }
+    const result: unknown = {
+      ok: true,
+      identity,
+      ...(isRecord(body) ? body : {}),
+      requestId: response.headers.get("X-Request-ID"),
+    };
+    if (!isEmployerSearchResponse(result) || !result.ok) {
+      throw new LookupError(
+        "invalid_api_response",
+        "The accreditation service returned an invalid employer search result.",
+        response.headers.get("X-Request-ID"),
+      );
+    }
+    return result;
   } catch (error) {
     return toFailure(error);
   }

@@ -12,6 +12,10 @@ export interface ResolveRequest {
   identity: PlatformIdentity;
 }
 
+export interface EmployerSearchRequest {
+  query: string;
+}
+
 export interface IngestRequest extends ResolveRequest {
   query: string;
   page: number;
@@ -189,6 +193,11 @@ function parseEnvelope(value: unknown): Record<string, unknown> {
 export function parseResolveRequest(value: unknown): ResolveRequest {
   const record = parseEnvelope(value);
   return { identity: parseIdentity(record.identity) };
+}
+
+export function parseEmployerSearchRequest(value: unknown): EmployerSearchRequest {
+  const record = parseEnvelope(value);
+  return { query: validateQuery(record.query) };
 }
 
 export function parseIngestRequest(value: unknown): IngestRequest {
