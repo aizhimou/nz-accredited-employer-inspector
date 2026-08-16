@@ -20,6 +20,8 @@ export const GET: APIRoute = () => {
 - Privacy policy as Markdown: https://nzaei.zemo.bio/privacy.md
 - Plain-language result guide: https://nzaei.zemo.bio/how-results-work/
 - Agent-readable result guide: https://nzaei.zemo.bio/how-results-work.md
+- Public changelog: https://nzaei.zemo.bio/changelog/
+- Changelog as Markdown: https://nzaei.zemo.bio/changelog.md
 
 The project is independently created and maintained by Zemo Ai in Auckland, New Zealand. The author homepage is the canonical identity page and links back to this product.
 

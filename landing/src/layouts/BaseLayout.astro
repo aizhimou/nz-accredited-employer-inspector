@@ -6,7 +6,7 @@ import "../styles/global.css";
 interface Props {
   title?: string;
   description?: string;
-  pageKind?: "product" | "privacy" | "guide";
+  pageKind?: "product" | "privacy" | "guide" | "changelog";
   markdownAlternate?: string;
 }
 
@@ -165,11 +165,45 @@ const guideStructuredData = {
     },
   ],
 };
+const changelogStructuredData = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "CollectionPage",
+      name: title,
+      description,
+      url: canonicalUrl.href,
+      dateModified: "2026-08-16",
+      inLanguage: "en-NZ",
+      isPartOf: {
+        "@type": "WebSite",
+        name: "NZ Accredited Employer Inspector",
+        url: canonicalUrl.origin,
+      },
+      author: { "@id": `${authorUrl}#person` },
+      about: {
+        "@type": "SoftwareApplication",
+        name: "NZ Accredited Employer Inspector",
+        softwareVersion: "0.7.1",
+        applicationCategory: "BrowserApplication",
+        operatingSystem: "Chrome",
+      },
+    },
+    {
+      "@type": "Person",
+      "@id": `${authorUrl}#person`,
+      name: "Zemo Ai",
+      url: authorUrl,
+    },
+  ],
+};
 const structuredData = pageKind === "privacy"
   ? privacyStructuredData
   : pageKind === "guide"
     ? guideStructuredData
-    : productStructuredData;
+    : pageKind === "changelog"
+      ? changelogStructuredData
+      : productStructuredData;
 ---
 
 <!doctype html>
@@ -219,6 +253,7 @@ const structuredData = pageKind === "privacy"
         </a>
         <nav aria-label="Primary navigation">
           <a href="/how-results-work/">How results work</a>
+          <a href="/changelog/">Changelog</a>
           <a href="/#demo">Demo</a>
           <a href="/#trust">Trust model</a>
           <a href="/#agents">For agents</a>
@@ -241,6 +276,7 @@ const structuredData = pageKind === "privacy"
           <a href={`${repositoryUrl}/blob/main/docs/extension-api-ssot.md`}>Technical contract</a>
           <a href="https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/">Official INZ list</a>
           <a href="/how-results-work/">How results work</a>
+          <a href="/changelog/">Changelog</a>
           <a href="/privacy/">Privacy policy</a>
           <a href={markdownAlternate}>Read as Markdown</a>
         </div>

@@ -3,9 +3,11 @@ import type { APIRoute } from "astro";
 const paths = [
   "/",
   "/how-results-work/",
+  "/changelog/",
   "/privacy/",
   "/index.md",
   "/how-results-work.md",
+  "/changelog.md",
   "/privacy.md",
   "/llms.txt",
   "/llms-full.txt",

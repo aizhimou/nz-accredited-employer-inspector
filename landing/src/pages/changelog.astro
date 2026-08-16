@@ -1,0 +1,386 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import { releases } from "../data/changelog";
+
+const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
+---
+
+<BaseLayout
+  title="Changelog | NZ Accredited Employer Inspector"
+  description="A public record of product releases, user-visible improvements and the source changes behind NZ Accredited Employer Inspector."
+  pageKind="changelog"
+  markdownAlternate="/changelog.md"
+>
+  <section class="changelog-hero" aria-labelledby="changelog-title">
+    <div class="shell changelog-hero-grid">
+      <div>
+        <p class="eyebrow">Public release ledger</p>
+        <h1 id="changelog-title">Built in public. <em>Improved in the open.</em></h1>
+      </div>
+      <div class="changelog-intro">
+        <p>
+          A plain record of what changed, when it changed, and why it matters to people checking New Zealand employers.
+        </p>
+        <div class="ledger-status" aria-label={`Current release ${releases[0].version}`}>
+          <span class="status-pulse" aria-hidden="true"></span>
+          <div>
+            <small>Current release</small>
+            <strong>v{releases[0].version}</strong>
+          </div>
+          <time datetime={releases[0].isoDate}>{releases[0].date}</time>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="ledger-rule" aria-hidden="true">
+    <div class="shell"><span>Product changes</span><span>Newest first</span></div>
+  </div>
+
+  <section class="release-ledger" aria-label="Product releases">
+    <div class="shell">
+      {releases.map((release, index) => (
+        <article class="release" id={`v${release.version}`} aria-labelledby={`release-${release.version}`}>
+          <div class="release-meta">
+            <div class="version-mark">
+              <span>{String(releases.length - index).padStart(2, "0")}</span>
+              <strong>v{release.version}</strong>
+            </div>
+            <time datetime={release.isoDate}>{release.date}</time>
+            {release.status && <span class="current-badge">{release.status}</span>}
+          </div>
+
+          <div class="release-content">
+            <header>
+              <h2 id={`release-${release.version}`}>{release.headline}</h2>
+              <p>{release.summary}</p>
+            </header>
+
+            <ul class="change-list">
+              {release.changes.map((change) => (
+                <li>
+                  <span aria-hidden="true">+</span>
+                  <div>
+                    <h3>{change.title}</h3>
+                    <p>{change.detail}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </article>
+      ))}
+    </div>
+  </section>
+
+  <aside class="ledger-note" aria-labelledby="ledger-note-title">
+    <div class="shell ledger-note-grid">
+      <div>
+        <p class="eyebrow">How this log stays honest</p>
+        <h2 id="ledger-note-title">Claims should leave a trail.</h2>
+      </div>
+      <div>
+        <p>
+          Each entry describes a user-visible outcome and names the release that introduced it. The repository remains the complete technical record for anyone who wants to go deeper.
+        </p>
+        <div class="button-row">
+          <a class="button button-primary" href={repositoryUrl}>Browse the source <span aria-hidden="true">↗</span></a>
+          <a class="button button-secondary" href={`${repositoryUrl}/commits/main/`}>View every commit <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+    </div>
+  </aside>
+</BaseLayout>
+
+<style>
+  .changelog-hero {
+    padding-block: clamp(4rem, 7vw, 6rem);
+    background:
+      radial-gradient(circle at 86% 18%, rgb(223 242 235 / 88%), transparent 25rem),
+      var(--cloud);
+  }
+
+  .changelog-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 0.75fr);
+    align-items: center;
+    gap: clamp(3rem, 7vw, 6rem);
+  }
+
+  .changelog-hero h1 {
+    max-width: 15ch;
+    margin-top: 1.35rem;
+    font-size: clamp(2.55rem, 4vw, 3.75rem);
+    font-weight: 620;
+    letter-spacing: -0.04em;
+    line-height: 1.08;
+  }
+
+  .changelog-hero h1 em {
+    color: var(--pounamu);
+    font-style: normal;
+  }
+
+  .changelog-intro {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .changelog-intro > p {
+    max-width: 42ch;
+    color: var(--slate);
+    font-size: 1.05rem;
+    line-height: 1.7;
+  }
+
+  .ledger-status {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.7rem;
+    background: rgb(255 255 255 / 70%);
+    box-shadow: 0 5px 18px rgb(5 45 53 / 4%);
+  }
+
+  .status-pulse {
+    width: 0.65rem;
+    height: 0.65rem;
+    border: 3px solid var(--pounamu-soft);
+    border-radius: 50%;
+    background: var(--pounamu);
+    box-sizing: content-box;
+  }
+
+  .ledger-status div {
+    display: grid;
+  }
+
+  .ledger-status small,
+  .ledger-status time {
+    color: var(--slate);
+    font-family: var(--font-utility);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .ledger-status strong {
+    color: var(--harbour);
+    font-size: 1.05rem;
+  }
+
+  .ledger-rule {
+    border-block: 1px solid var(--line);
+    background: var(--mist);
+  }
+
+  .ledger-rule .shell {
+    display: flex;
+    min-height: 3.15rem;
+    align-items: center;
+    justify-content: space-between;
+    color: var(--pounamu-dark);
+    font-family: var(--font-utility);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .release-ledger {
+    background: var(--white);
+  }
+
+  .release-ledger > .shell {
+    width: min(980px, calc(100% - 2.5rem));
+  }
+
+  .release {
+    display: grid;
+    grid-template-columns: 9.5rem minmax(0, 1fr);
+    gap: clamp(2.5rem, 6vw, 5rem);
+    padding-block: clamp(3.5rem, 7vw, 5.5rem);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .release:last-child {
+    border-bottom: 0;
+  }
+
+  .release-meta {
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .version-mark {
+    display: flex;
+    align-items: baseline;
+    gap: 0.8rem;
+  }
+
+  .version-mark > span {
+    color: var(--pounamu);
+    font-family: var(--font-utility);
+    font-size: 0.68rem;
+  }
+
+  .version-mark strong {
+    color: var(--harbour-deep);
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .release-meta time {
+    color: var(--slate);
+    font-family: var(--font-utility);
+    font-size: 0.72rem;
+  }
+
+  .current-badge {
+    margin-top: 0.5rem;
+    padding: 0.28rem 0.58rem;
+    border-radius: 999px;
+    background: var(--pounamu-soft);
+    color: var(--pounamu-dark);
+    font-family: var(--font-utility);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .release-content {
+    display: grid;
+    gap: 1.9rem;
+  }
+
+  .release-content > header {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .release-content h2 {
+    max-width: 30ch;
+    font-size: clamp(1.55rem, 2.1vw, 1.9rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+  }
+
+  .release-content > header p {
+    max-width: 66ch;
+    color: var(--ink);
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .change-list {
+    display: grid;
+    padding: 0;
+    list-style: none;
+  }
+
+  .change-list li {
+    display: grid;
+    grid-template-columns: 1.4rem 1fr;
+    gap: 0.7rem;
+    padding-block: 1.15rem;
+    border-top: 1px solid var(--line-light);
+  }
+
+  .change-list li > span {
+    color: var(--pounamu);
+    font-family: var(--font-utility);
+    font-weight: 650;
+  }
+
+  .change-list h3 {
+    margin-bottom: 0.35rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.45;
+  }
+
+  .change-list p {
+    max-width: 66ch;
+    color: var(--slate);
+    font-size: 0.98rem;
+    line-height: 1.7;
+  }
+
+  .ledger-note {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+    border-top: 1px solid var(--line);
+    background: var(--mist);
+  }
+
+  .ledger-note-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(20rem, 1.1fr);
+    gap: clamp(3rem, 8vw, 8rem);
+  }
+
+  .ledger-note h2 {
+    margin-top: 1rem;
+    font-size: clamp(2rem, 3vw, 3rem);
+    font-weight: 650;
+  }
+
+  .ledger-note-grid > div:last-child {
+    display: grid;
+    align-content: start;
+    gap: 1.6rem;
+  }
+
+  .ledger-note-grid > div:last-child > p {
+    max-width: 58ch;
+    color: var(--slate);
+    font-size: 1.05rem;
+  }
+
+  @media (max-width: 760px) {
+    .changelog-hero {
+      background:
+        radial-gradient(circle at 86% 18%, rgb(223 242 235 / 88%), transparent 20rem),
+        var(--cloud);
+    }
+
+    .changelog-hero-grid,
+    .release,
+    .ledger-note-grid {
+      grid-template-columns: 1fr;
+      gap: 2.5rem;
+    }
+
+    .ledger-status {
+      grid-template-columns: auto 1fr;
+    }
+
+    .ledger-status time {
+      grid-column: 2;
+    }
+
+    .release-ledger {
+      background: var(--white);
+    }
+
+    .release {
+      gap: 2rem;
+    }
+
+    .release-meta {
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--line-light);
+    }
+  }
+</style>

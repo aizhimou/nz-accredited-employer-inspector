@@ -64,6 +64,7 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [Architecture and API contract](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md)
 - [Official INZ accredited employer list](https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/)
 - [Privacy policy](/privacy/)
+- [Changelog](/changelog/)
 - [Built by Zemo Ai](https://zemo.bio/)
 
 ## Agent resources
@@ -71,6 +72,7 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [/llms.txt](/llms.txt): concise discovery index
 - [/llms-full.txt](/llms-full.txt): complete product context
 - [/how-results-work.md](/how-results-work.md): result interpretation rules and notice dictionary
+- [/changelog.md](/changelog.md): dated product release history
 - [/privacy.md](/privacy.md): privacy policy without presentation markup
 - [/.well-known/api-catalog](/.well-known/api-catalog): RFC 9727 API catalog
 - [/api/openapi.json](/api/openapi.json): OpenAPI 3.1 description
