@@ -2,7 +2,7 @@
 
 Status: active  
 API version: `v1`  
-Service version: `0.7.1`
+Service version: `0.8.0`
 Last updated: 2026-08-16
 Production base URL: `https://nzaei.zemo.bio/api`
 
@@ -51,7 +51,7 @@ sequenceDiagram
     User->>UI: Click Check accreditation
     UI->>Ext: platform identity
     Ext->>API: POST /resolve
-    API->>D1: association + fuzzy employer lookup
+    API->>D1: association + exact employer-name lookup
     D1-->>API: selected employer, candidates, fresh no-match, or lookup required
 
     alt Association or unique exact official/trading-name match is fresh
@@ -210,13 +210,13 @@ Rules:
 
 - `associated`: a selected employer exists, its official observation is within the configured positive TTL, and its stored accreditation expiry has not passed. Live INZ observations and complete MBIE official imports use the same 30-day window. Do not call INZ. Selection may come from a stored platform association or an automatic exact-name match; inspect `matchMethod`.
 - `refresh_required`: a selected employer exists and either the configured positive freshness window has elapsed or its stored accreditation expiry has passed. `inzQuery` is the selected employer's NZBN. Selection provenance remains in `matchMethod`.
-- `confirmation_required`: D1 has one or more plausible candidates but no usable association. The UI lists all candidates and asks the user to confirm; it must not silently pick a fuzzy match.
+- `confirmation_required`: one or more explicit candidates exist but no employer can be selected. Candidates may come from a live INZ response, duplicated exact names, preferred results, or tied community confirmations. The UI lists all candidates and asks the user to confirm.
 - `no_published_inz_match`: there is no association or positive candidate, and this exact platform identity plus normalised display-name query has a no-match observation inside the configured negative TTL, which defaults to seven days. Do not call INZ.
-- `inz_lookup_required`: neither an association nor a local candidate exists. `inzQuery` is the platform display name.
-- `candidates` are ordered with the selected employer first, followed by an automatic exact-name result, live-INZ results, community-confirmed alternatives, then fuzzy local matches. At most 10 are returned; live INZ order is preserved within the available slots.
+- `inz_lookup_required`: neither an association nor an exact local name match exists. `inzQuery` is the platform display name.
+- `candidates` are ordered with the selected employer first, followed by an automatic exact-name result, live-INZ results, then community-confirmed alternatives. At most 10 are returned; live INZ order is preserved within the available slots.
 - `matchMethod: "platform_association"` means `association` is non-null and the selected NZBN came from this installation or the unique community winner.
 - `matchMethod: "exact_employer_name"` means `association` is null and all automatic-match conditions passed: no selected platform association exists, and normalised `identity.displayName` exactly equals the normalised official `employerName` or `tradingName` of exactly one NZBN. Unicode NFKC, trim, collapsed whitespace, and lowercase are the only name normalisation; company suffixes and punctuation are not removed. The existing method value is retained for backward compatibility.
-- If the same exact official/trading name belongs to multiple NZBNs, or only containment/fuzzy similarity matches, the Worker never auto-selects an employer. Additional fuzzy candidates do not block an otherwise unique exact name match.
+- If the same exact official/trading name belongs to multiple NZBNs, the Worker never auto-selects an employer. Containment, token overlap, abbreviations, and character similarity are not part of automatic resolution.
 - Automatic exact-name selection is recalculated on every resolution. It does not create `platform_entities` or `platform_employer_confirmations`, and can disappear if the canonical exact-name result changes.
 - The extension keeps every alternative candidate returned by the API visible. Each non-selected candidate has a `Use this employer` action, which changes this installation's association. `confirmation_required` and `no_published_inz_match` notes also provide an inline, collapsed `Search another name` disclosure; opening it reveals the editable local search, and a submitted search replaces the currently displayed candidate set rather than appending a second list.
 - `disputed` is true when confirmations for the same platform identity point to more than one NZBN.
@@ -224,9 +224,9 @@ Rules:
 
 Accreditation is current while the Auckland calendar date is not later than the date portion of `expiryDateOfAccreditation`. Association confidence and accreditation status are separate; an accurately associated employer may be expired.
 
-An expired candidate that has not been selected remains `confirmation_required`; the Worker never refreshes every fuzzy candidate. Selecting it or using its explicit manual refresh action targets only that NZBN.
+An expired candidate that has not been selected remains `confirmation_required`; the Worker never refreshes every candidate. Selecting it or using its explicit manual refresh action targets only that NZBN.
 
-Resolution precedence is strict: selected manual/community association, unique exact official/trading-name match, other positive canonical candidates requiring confirmation, fresh exact no-match observation, then live INZ lookup. Positive official data therefore always overrides a previous no-match observation, and a stored association always overrides an automatic match.
+Resolution precedence is strict: selected manual/community association, unique exact official/trading-name match, explicit preferred/community candidates requiring confirmation, fresh exact no-match observation, then live INZ lookup. Positive official data therefore always overrides a previous no-match observation, and a stored association always overrides an automatic match.
 
 ## 6. Public API
 
@@ -241,7 +241,7 @@ No `X-Client-ID`, D1 access, or rate limit.
 ```json
 {
   "service": "nz-accredited-employer-api",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "environment": "production",
   "status": "ok"
 }
@@ -272,19 +272,7 @@ Request:
 
 Success: `200 EmployerResolutionResponse`.
 
-This endpoint is read-only. It searches `employers.normalized_employer_name`, `normalized_trading_name`, and the FTS5-backed `employer_names_fts` index using:
-
-1. exact NZBN/name/trading-name match;
-2. for platform display names of at least four characters, the official normalised legal or trading name containing the complete normalised display name;
-3. a bounded 100-row FTS candidate pool using Unicode tokens and prefixes;
-4. deterministic Worker ranking across exact tokens, prefixes, ordered-character abbreviations, and dynamically derived multi-token acronyms;
-5. a minimum plausibility score, stable ordering, and a final 10-row limit.
-
-The matcher does not contain company-specific aliases or an abbreviation dictionary. It derives similarities from the two names. A candidate must still share an indexed token or prefix to enter the bounded FTS pool; arbitrary brand/legal-name relationships require a prior association or manual search.
-
-A fuzzy candidate is never automatically written as an association.
-
-After applying association precedence, `/resolve` automatically selects a candidate when normalised `identity.displayName` exactly equals the normalised official `employerName` or `tradingName` of exactly one NZBN. Fuzzy alternatives do not block the exact match; a duplicated exact name across NZBNs does. The response uses the existing freshness state (`associated` or `refresh_required`), sets the backward-compatible `matchMethod: "exact_employer_name"`, keeps `association: null`, and performs no D1 write. Containment and fuzzy-only matches still return `confirmation_required`.
+This endpoint is read-only. Automatic resolution does not query the FTS5 index and does not calculate string similarity. After applying association precedence, `/resolve` automatically selects a candidate only when normalised `identity.displayName` exactly equals the normalised official `employerName` or `tradingName` of exactly one NZBN. A duplicated exact name across NZBNs requires confirmation. Containment, token overlap, abbreviation expansion, and approximate character matching do not produce candidates. The response uses the existing freshness state (`associated` or `refresh_required`), sets the backward-compatible `matchMethod: "exact_employer_name"`, keeps `association: null`, and performs no D1 write.
 
 If no association/candidate exists, the Worker compares `(platform, externalKey)` and the normalised current `displayName` with the stored no-match observation. A matching observation is fresh for `NEGATIVE_TTL_SECONDS` from Worker `checkedAt`; at the boundary it is expired and `/resolve` returns `inz_lookup_required`.
 
@@ -307,7 +295,7 @@ interface EmployerSearchResponse {
 }
 ```
 
-This endpoint is read-only and uses the same candidate retrieval and ranking pipeline as `/resolve`, but the query is independent of `identity.displayName` and sends no platform identity. It does not consult or update platform associations or no-match observations, call INZ, or auto-select a candidate. The extension exposes it as a recovery path and requires `Use this employer` before `/associate` is called.
+This endpoint is read-only and separate from `/resolve`. It tokenises the user-entered query with Unicode rules, removes duplicate tokens, and requires every token of at least two characters to match the same FTS5 row. Tokens of at least three characters use prefix matching. Results are ordered by FTS5 BM25 rank with stable employer-name and NZBN tie-breakers, then limited to 10. The endpoint performs no abbreviation expansion, subsequence/bigram comparison, similarity scoring, or automatic selection. It does not consult or update platform associations or no-match observations, call INZ, or auto-select a candidate. The extension requires `Use this employer` before `/associate` is called.
 
 ### 6.4 Ingest a successful INZ response
 
@@ -417,7 +405,7 @@ For each explicit user click:
 2. Call `/resolve`.
 3. Branch on `state`:
    - `associated`: render selected employer, accreditation status, official data timestamp, match provenance, and alternatives. For `platform_association`, show association source/count. For `exact_employer_name`, show `Automatic exact INZ name match` and `Not community-confirmed`. No INZ request.
-   - `confirmation_required`: render every candidate with a confirm action and a collapsed local employer-search disclosure in the explanatory note. Do not call INZ because D1 already has plausible official records.
+   - `confirmation_required`: render every explicit candidate with a confirm action and a collapsed local employer-search disclosure in the explanatory note. Do not call INZ because the response already contains records from an exact-name ambiguity, community confirmation, or live result set.
    - `no_published_inz_match`: render `noMatch.checkedAt`/`expiresAt`, provide the same collapsed local employer-search disclosure, and do not call INZ.
    - `inz_lookup_required`: make exactly one INZ request using `inzQuery`; positive → `/ingest`; recognised no-result → `/no-match` with the raw envelope, then render the returned resolution.
    - `refresh_required`: call `/refresh` with the selected NZBN and `manual: false`. When authorized, make exactly one INZ request; positive → `/ingest`; recognised no-result → `/no-match` with the NZBN, then render `verification_required` while retaining the clearly dated record. During cooldown, make no INZ request and show `retryAt`.
@@ -511,9 +499,9 @@ One row per NZBN:
 
 Official bulk data is staged and validated before one canonical upsert into this table with `last_verified_source = 'inz_official_import'`. Live user-driven INZ results continuously supplement and update the same rows. A newer live observation is never overwritten by an older snapshot.
 
-### `employer_names_fts` — candidate retrieval index
+### `employer_names_fts` — manual keyword-search index
 
-An FTS5 index mirrors `employer_name` and `trading_name` for every NZBN. D1 triggers update it after inserts, relevant updates, and deletes, so official imports and live ingests use the same index. FTS only generates a bounded candidate pool; Worker scoring filters and orders that pool, and no fuzzy result is automatically associated.
+An FTS5 index mirrors `employer_name` and `trading_name` for every NZBN. D1 triggers update it after inserts, relevant updates, and deletes, so official imports and live ingests use the same index. It is queried only by the user-initiated `/search` endpoint. FTS5 retrieves rows containing every requested keyword or prefix and orders them by BM25; it does not participate in automatic platform-to-employer resolution.
 
 ### `official_employer_imports` and `official_employer_import_rows` — import audit
 
@@ -591,8 +579,8 @@ Cloudflare platform failures may be non-JSON. For a non-JSON API failure, the ex
 ## 12. Compatibility
 
 - The six employer `v1` routes are `/v1/employers/resolve`, `/v1/employers/search`, `/v1/employers/ingest`, `/v1/employers/no-match`, `/v1/employers/refresh`, and `/v1/employers/associate`.
-- Additive fields are allowed in `v1`; clients ignore unknown response fields. Service `0.7.0` introduced generic local candidate retrieval and the read-only manual-search endpoint. Service `0.7.1` limits responses to 10 candidates and broadens the existing `exact_employer_name` method to a unique exact official or trading name, without adding response states or method values.
+- Additive fields are allowed in `v1`; clients ignore unknown response fields. Service `0.7.0` introduced generic local candidate retrieval and the read-only manual-search endpoint. Service `0.7.1` limited responses to 10 candidates and broadened the existing `exact_employer_name` method to a unique exact official or trading name. Service `0.8.0` removes fuzzy candidates from `/resolve` and defines `/search` as an all-keywords FTS5 query without similarity scoring.
 - Removing/renaming fields or changing orchestration semantics requires a new API version.
 - INZ `Title` and `Type` metadata are documentation only and are not stored.
-- The Worker owns normalisation, fuzzy lookup, exact official/trading-name selection, official payload parsing, timestamps, freshness, accreditation evaluation, aggregation, and D1 writes.
+- The Worker owns normalisation, exact official/trading-name selection, manual keyword search, official payload parsing, timestamps, freshness, accreditation evaluation, aggregation, and D1 writes.
 - The extension owns source-page identity extraction, user-triggered INZ calls, recognised no-result handling, manual recovery search, candidate confirmation/change UI, and provenance display.

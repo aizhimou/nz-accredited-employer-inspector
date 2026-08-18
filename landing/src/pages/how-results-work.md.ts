@@ -5,8 +5,8 @@ export const GET: APIRoute = () => {
 title: How NZ Accredited Employer Inspector results work
 description: Agent-readable explanation of official employer data, platform associations, community confirmations, candidate selection, freshness, notices, and interpretation limits.
 language: en-NZ
-version: 0.7.1
-last_updated: 2026-08-10
+version: 0.9.0
+last_updated: 2026-08-18
 canonical: https://nzaei.zemo.bio/how-results-work/
 human_readable: https://nzaei.zemo.bio/how-results-work/
 ---
@@ -59,8 +59,8 @@ The service resolves a result in this order:
 
 1. Use the current installation's saved association, if one exists.
 2. Otherwise use a unique community winner, if one exists.
-3. Otherwise auto-select only when the normalised platform display name exactly equals one NZBN's official employer name or trading name. Additional fuzzy candidates do not block this exact match. An immediate live result additionally requires INZ to report exactly one total result.
-4. Otherwise return all plausible positive candidates and require user confirmation.
+3. Otherwise auto-select only when the normalised platform display name exactly equals one NZBN's official employer name or trading name. An immediate live result additionally requires INZ to report exactly one total result.
+4. Otherwise return explicit candidates from a live INZ response, duplicated exact names, or community confirmations and require user confirmation.
 5. If there are no positive candidates, reuse a fresh exact no-match observation for this platform identity and display-name query.
 6. Otherwise permit one user-triggered live INZ name lookup.
 
@@ -75,13 +75,13 @@ Automatic selection is intentionally narrow. It requires equality between the pl
 - collapsing repeated whitespace; and
 - lowercasing.
 
-The rule does not remove punctuation or company suffixes. If the same exact name belongs to multiple NZBNs, or only containment/fuzzy similarity matches, the service does not auto-select an employer. Additional fuzzy candidates do not block a unique exact-name match. For an immediate live lookup, INZ must also report exactly one total result. An automatic exact-name match is derived on every resolution, is not stored as an association, and does not increase community confirmation counts.
+The rule does not remove punctuation or company suffixes. If the same exact name belongs to multiple NZBNs, the service does not auto-select an employer. Containment, shared keywords, abbreviations, and approximate character similarity do not produce automatic candidates. For an immediate live lookup, INZ must also report exactly one total result. An automatic exact-name match is derived on every resolution, is not stored as an association, and does not increase community confirmation counts.
 
 ## Meaning of multiple employer results
 
-Multiple results are separate plausible official employer records, normally with different NZBNs. They are not necessarily duplicates and do not mean one company holds several accreditations. Multiple candidates can occur because a platform brand differs from the legal employer name, related legal entities have similar names, an advertiser name is short, or an INZ lookup returns several results.
+Multiple results are separate official employer records, normally with different NZBNs. They are not necessarily duplicates and do not mean one company holds several accreditations. Multiple candidates can come from a live INZ lookup, duplicated exact official/trading names, or competing community confirmations.
 
-The user should compare legal name and NZBN with the job ad, employment agreement, employer website, or information from the employer. The product intentionally does not choose a fuzzy candidate.
+The user should compare legal name and NZBN with the job ad, employment agreement, employer website, or information from the employer. Name similarity alone is not treated as evidence that two records describe the same employer.
 
 ## Meaning of “Use this employer”
 

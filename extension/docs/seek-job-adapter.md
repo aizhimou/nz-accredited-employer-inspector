@@ -42,7 +42,7 @@ The shared adapter harness waits for asynchronous rendering, restores the Shadow
 9. For recognised display-name `400 No Results`, confirm `/no-match` stores the exact strong/weak SEEK identity and a repeat check inside the configured negative TTL does not call INZ.
 10. Confirm choosing a candidate calls `POST /v1/employers/associate` and the selected NZBN is shown as community association data.
 11. Confirm each candidate's `Refresh from INZ` action targets only that NZBN and does not create an association.
-12. When exactly one NZBN's official `employerName` or `tradingName` equals the SEEK advertiser name after normalisation, confirm the result is shown directly as `Exact match` and `Not community-confirmed`, with no `/associate` call. Additional fuzzy candidates must not block it; duplicated exact names must still require confirmation.
+12. When exactly one NZBN's official `employerName` or `tradingName` equals the SEEK advertiser name after normalisation, confirm the result is shown directly as `Exact match` and `Not community-confirmed`, with no `/associate` call. Partial or keyword-only matches must not appear during resolution; duplicated exact names must still require confirmation.
 13. Open `https://nz.seek.com/`, click a Recommended job, and confirm the control appears on its own row immediately below the employer row in the sidebar header.
 14. Select a different Recommended job without closing the sidebar and confirm the widget resets to the new advertiser identity without reloading the page.
 15. Close and reopen the sidebar and confirm the widget is removed and restored with no duplicate controls.

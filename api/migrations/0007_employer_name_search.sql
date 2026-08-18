@@ -1,7 +1,7 @@
 PRAGMA foreign_keys = ON;
 
--- FTS is only a candidate generator. The Worker applies deterministic name
--- scoring and never turns an FTS hit into an automatic association.
+-- FTS supports user-initiated keyword search only. Automatic resolution uses
+-- platform associations and exact official or trading-name equality.
 CREATE VIRTUAL TABLE employer_names_fts USING fts5(
   nzbn UNINDEXED,
   employer_name,

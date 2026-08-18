@@ -6,7 +6,7 @@ import "../styles/global.css";
 interface Props {
   title?: string;
   description?: string;
-  pageKind?: "product" | "privacy" | "guide" | "changelog";
+  pageKind?: "product" | "privacy" | "guide" | "changelog" | "insights";
   markdownAlternate?: string;
 }
 
@@ -24,6 +24,14 @@ const chromeWebStoreUrl = "https://chromewebstore.google.com/detail/nz-accredite
 const authorUrl = "https://zemo.bio/";
 const videoUrl = "https://www.youtube.com/watch?v=85SEJU-aHrQ";
 const videoEmbedUrl = "https://www.youtube-nocookie.com/embed/85SEJU-aHrQ";
+const primaryNavigation = [
+  { href: "/how-results-work/", label: "How results work", current: Astro.url.pathname.startsWith("/how-results-work") },
+  { href: "/insights/", label: "Insights", current: Astro.url.pathname.startsWith("/insights") },
+  { href: "/changelog/", label: "Changelog", current: Astro.url.pathname.startsWith("/changelog") },
+  { href: "/#demo", label: "Demo", current: false },
+  { href: "/#trust", label: "Trust model", current: false },
+  { href: "/#agents", label: "For agents", current: false },
+];
 const productStructuredData = {
   "@context": "https://schema.org",
   "@graph": [
@@ -37,7 +45,7 @@ const productStructuredData = {
       image: socialImageUrl.href,
       codeRepository: repositoryUrl,
       downloadUrl: chromeWebStoreUrl,
-      softwareVersion: "0.7.1",
+      softwareVersion: "0.9.0",
       isAccessibleForFree: true,
       author: { "@id": `${authorUrl}#person` },
       sameAs: [repositoryUrl, chromeWebStoreUrl, videoUrl],
@@ -184,7 +192,7 @@ const changelogStructuredData = {
       about: {
         "@type": "SoftwareApplication",
         name: "NZ Accredited Employer Inspector",
-        softwareVersion: "0.7.1",
+        softwareVersion: "0.9.0",
         applicationCategory: "BrowserApplication",
         operatingSystem: "Chrome",
       },
@@ -197,13 +205,34 @@ const changelogStructuredData = {
     },
   ],
 };
+const insightsStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: title,
+  description,
+  url: canonicalUrl.href,
+  dateModified: "2026-08-18",
+  inLanguage: "en-NZ",
+  isPartOf: {
+    "@type": "WebSite",
+    name: "NZ Accredited Employer Inspector",
+    url: canonicalUrl.origin,
+  },
+  about: {
+    "@type": "Dataset",
+    name: "New Zealand accredited employer insights",
+    creator: { "@type": "Organization", name: "Immigration New Zealand" },
+  },
+};
 const structuredData = pageKind === "privacy"
   ? privacyStructuredData
   : pageKind === "guide"
     ? guideStructuredData
     : pageKind === "changelog"
       ? changelogStructuredData
-      : productStructuredData;
+      : pageKind === "insights"
+        ? insightsStructuredData
+        : productStructuredData;
 ---
 
 <!doctype html>
@@ -251,15 +280,19 @@ const structuredData = pageKind === "privacy"
         <a class="brand-link" href="/" aria-label="NZ Accredited Employer Inspector home">
           <BrandMark />
         </a>
-        <nav aria-label="Primary navigation">
-          <a href="/how-results-work/">How results work</a>
-          <a href="/changelog/">Changelog</a>
-          <a href="/#demo">Demo</a>
-          <a href="/#trust">Trust model</a>
-          <a href="/#agents">For agents</a>
+        <nav class="desktop-nav" aria-label="Primary navigation">
+          {primaryNavigation.map((link) => (
+            <a href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</a>
+          ))}
           <a class="nav-cta" href={repositoryUrl}>GitHub <span aria-hidden="true">↗</span></a>
         </nav>
       </div>
+      <nav class="mobile-nav shell" aria-label="Primary navigation">
+        {primaryNavigation.map((link) => (
+          <a href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</a>
+        ))}
+        <a href={repositoryUrl}>GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
     </header>
     <main id="main-content">
       <slot />
@@ -276,6 +309,7 @@ const structuredData = pageKind === "privacy"
           <a href={`${repositoryUrl}/blob/main/docs/extension-api-ssot.md`}>Technical contract</a>
           <a href="https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/">Official INZ list</a>
           <a href="/how-results-work/">How results work</a>
+          <a href="/insights/">Insights</a>
           <a href="/changelog/">Changelog</a>
           <a href="/privacy/">Privacy policy</a>
           <a href={markdownAlternate}>Read as Markdown</a>

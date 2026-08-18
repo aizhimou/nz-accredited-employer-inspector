@@ -16,6 +16,14 @@ npm run build
 npm run preview
 ```
 
+Refresh the static insights aggregate after preparing a new official employer import:
+
+```bash
+python3 scripts/generate-insights-data.py
+```
+
+The generator reads `../api/.generated/official-employer-import.sql`, normalises region labels, and writes the compact chart cube to `src/data/insights.json`.
+
 ## Cloudflare Pages
 
 The Pages project builds from the `landing` monorepo root with `npm run build` and publishes `dist`. Cloudflare Git integration automatically builds and deploys pushes to `main`; the one-time dashboard settings and deployment order are documented in [`../docs/cloudflare-deployment.md`](../docs/cloudflare-deployment.md).
@@ -42,6 +50,7 @@ The hero CTA links directly to the approved Chrome Web Store listing. The pre-re
 - `/llms-full.txt` contains detailed product, architecture, trust, privacy, and API context.
 - `/index.md` mirrors the core landing-page content as Markdown.
 - `/privacy/` is the public Chrome Web Store privacy policy, with `/privacy.md` as its agent-readable equivalent.
+- `/insights/` is the interactive official-snapshot overview, with `/insights.md` as its agent-readable summary.
 - `/.well-known/api-catalog` is an RFC 9727 `application/linkset+json` catalog.
 - `/api/openapi.json` describes the production extension API using OpenAPI 3.1.
 - HTML includes semantic landmarks, JSON-LD, canonical metadata, and alternate-resource links.
@@ -67,7 +76,7 @@ The visual language is based on an Aotearoa evidence trail:
 - kōwhai (`#e5b647`) for caution and important distinctions;
 - mist (`#edf5f3`) for the quiet page surface.
 
-The hero's provenance path and the trust-model grid are the primary visual signatures. The page uses no UI framework, external font request, or client-side JavaScript.
+The hero's provenance path and the trust-model grid are the primary visual signatures. The site uses no UI framework or external font request; the Insights page uses Observable Plot for its client-side charts.
 
 ## Demo video
 

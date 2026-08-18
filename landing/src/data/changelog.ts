@@ -15,10 +15,70 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "0.9.0",
+    date: "18 August 2026",
+    isoDate: "2026-08-18",
+    status: "Current",
+    headline: "A wider view, with clearer recovery paths.",
+    summary:
+      "The Inspector now links to a dedicated accredited-employer insights view, refreshes ageing official records more deliberately and gives LinkedIn users a practical recovery step when the page loads out of order.",
+    changes: [
+      {
+        title: "Accredited employer insights",
+        detail:
+          "Explore the official snapshot by region, sector, subsector and scheduled accreditation expiry without querying the live service.",
+      },
+      {
+        title: "LinkedIn loading guidance",
+        detail:
+          "The popup now explains that refreshing the page usually restores a missing Inspector button when LinkedIn loads elements unpredictably.",
+      },
+      {
+        title: "Expiry-aware refresh controls",
+        detail:
+          "Stale or expired employer records use explicit refresh leases and cooldowns before another user-triggered INZ check.",
+      },
+      {
+        title: "Better project navigation",
+        detail:
+          "Insights are linked from the extension popup and the landing site now keeps its full navigation available on mobile.",
+      },
+    ],
+  },
+  {
+    version: "0.8.0",
+    date: "17 August 2026",
+    isoDate: "2026-08-17",
+    headline: "A clearer answer, with less guessing.",
+    summary:
+      "Automatic checks now rely on known associations and exact official names. When names differ, a separate keyword search keeps the user in control without presenting similarity as identity evidence.",
+    changes: [
+      {
+        title: "Conservative automatic resolution",
+        detail:
+          "Saved and community associations still resolve immediately, while automatic name matching now requires one exact official employer or trading name.",
+      },
+      {
+        title: "Fuzzy candidates removed",
+        detail:
+          "Partial spelling, abbreviations and shared words such as Group or Limited no longer fill automatic results with weak candidates.",
+      },
+      {
+        title: "Predictable keyword search",
+        detail:
+          "Manual search requires every entered keyword, supports prefix matching and returns no more than 10 official records for explicit review.",
+      },
+      {
+        title: "Compact recovery controls",
+        detail:
+          "Search another name stays collapsed beside the result note until needed, then replaces the current candidate list instead of extending the card.",
+      },
+    ],
+  },
+  {
     version: "0.7.1",
     date: "16 August 2026",
     isoDate: "2026-08-16",
-    status: "Current",
     headline: "A better way back when the first name does not match.",
     summary:
       "The Inspector now lets you search its local employer records by another legal or trading name, without changing the original page identity or making another live INZ request.",

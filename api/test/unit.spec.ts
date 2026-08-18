@@ -19,10 +19,8 @@ import {
 } from "../src/validation";
 import {
   buildEmployerFtsQuery,
-  scoreEmployerCandidate,
-  scoreEmployerName,
-  tokenizeEmployerName,
-} from "../src/name-matching";
+  tokenizeEmployerSearch,
+} from "../src/employer-search";
 import { CLIENT_ID, createInzResponse } from "./fixtures";
 
 const linkedinIdentity = {
@@ -128,45 +126,22 @@ describe("request validation", () => {
   });
 });
 
-describe("generic employer name matching", () => {
-  it("tokenizes Unicode names without an abbreviation dictionary", () => {
-    expect(tokenizeEmployerName("  Āporo & Sons (NZ) Ltd. ")).toEqual([
+describe("employer keyword search", () => {
+  it("tokenizes Unicode names and requires every search term", () => {
+    expect(tokenizeEmployerSearch("  Āporo & Sons (NZ) Ltd. ")).toEqual([
       "āporo",
       "sons",
       "nz",
       "ltd",
     ]);
     expect(buildEmployerFtsQuery("Woolworths NZ Ltd")).toBe(
-      '"woolworths"* OR "nz" OR "ltd"*',
+      '"woolworths"* AND "nz" AND "ltd"*',
     );
   });
 
-  it("aligns initials and abbreviated tokens generically", () => {
-    expect(
-      scoreEmployerName(
-        "Woolworths NZ Ltd",
-        "WOOLWORTHS NEW ZEALAND LIMITED",
-      ),
-    ).toBeGreaterThan(0.8);
-    expect(
-      scoreEmployerName(
-        "ABC Consulting",
-        "Alpha Beta Consulting Limited",
-      ),
-    ).toBeGreaterThan(0.65);
-  });
-
-  it("uses the better official or trading name and rejects unrelated names", () => {
-    expect(
-      scoreEmployerCandidate(
-        "Blue Kiwi",
-        "BLUE KIWI HOLDINGS LIMITED",
-        "Blue Kiwi",
-      ),
-    ).toBe(1);
-    expect(
-      scoreEmployerName("Pacific Business Trust", "Information Technology Services Limited"),
-    ).toBeLessThan(0.5);
+  it("deduplicates terms and rejects queries without searchable tokens", () => {
+    expect(buildEmployerFtsQuery("Alpha alpha NZ")).toBe('"alpha"* AND "nz"');
+    expect(buildEmployerFtsQuery("A")).toBeNull();
   });
 });
 

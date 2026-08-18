@@ -466,7 +466,7 @@ export function mountCompanyWidget(
         createElement(
           "span",
           "manual-search-note",
-          "Search the official employer dataset using a legal name, trading name, or abbreviation.",
+          "Search official employer and trading names using one or more keywords. Try the main brand name.",
         ),
       );
       const form = createElement("form", "manual-search-form");
@@ -535,7 +535,7 @@ export function mountCompanyWidget(
                 createElement(
                   "p",
                   "manual-search-empty",
-                  `No plausible local candidates for “${searchResponse.query}”. Try another name.`,
+                  `No official names matched every keyword in “${searchResponse.query}”. Try fewer keywords.`,
                 ),
               );
               return;

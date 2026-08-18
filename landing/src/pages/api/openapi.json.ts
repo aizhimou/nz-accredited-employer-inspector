@@ -104,7 +104,7 @@ export const GET: APIRoute = () => {
     openapi: "3.1.0",
     info: {
       title: "NZ Accredited Employer API",
-      version: "0.7.1",
+      version: "0.8.0",
       description:
         "Product API for resolving platform employers, accepting validated INZ observations, storing user-confirmed associations, and collecting the temporary Chrome Web Store notification list. The Worker does not call INZ.",
       license: {
@@ -167,7 +167,7 @@ export const GET: APIRoute = () => {
         post: {
           operationId: "searchEmployers",
           summary: "Search local official employer candidates",
-          description: "Read-only recovery search. Uses an independent query, never calls INZ, and never creates an association.",
+          description: "Read-only recovery search. Requires every user-entered keyword to match an official or trading name, never calls INZ, and never creates an association.",
           parameters: [clientHeader],
           requestBody: {
             required: true,
@@ -177,7 +177,7 @@ export const GET: APIRoute = () => {
           },
           responses: {
             "200": {
-              description: "Ranked local employer candidates",
+              description: "BM25-ranked all-keyword employer results",
               content: {
                 "application/json": { schema: { $ref: "#/components/schemas/EmployerSearchResponse" } },
               },

@@ -1,0 +1,586 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import insightsData from "../data/insights.json";
+
+const title = "Accredited Employer Insights | NZ Accredited Employer Inspector";
+const description = "Explore where New Zealand accredited employers are based, their sector mix, and scheduled accreditation expiries from official INZ data.";
+const snapshotDate = new Intl.DateTimeFormat("en-NZ", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+}).format(new Date(`${insightsData.meta.snapshotDate}T00:00:00Z`));
+const initialExpiry = insightsData.overview
+  .filter((row) => row[4] === 1 || row[4] === 2)
+  .reduce((sum, row) => sum + row[5], 0);
+const sectorTotals = new Map<number, number>();
+for (const row of insightsData.overview) {
+  sectorTotals.set(row[1], (sectorTotals.get(row[1]) ?? 0) + row[5]);
+}
+const largestSector = [...sectorTotals].sort((a, b) => b[1] - a[1])[0];
+const initialSectorShare = largestSector
+  ? `${((largestSector[1] / insightsData.meta.totalRecords) * 100).toFixed(1)}%`
+  : "—";
+const number = new Intl.NumberFormat("en-NZ");
+const officialInzListUrl = "https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/";
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  pageKind="insights"
+  markdownAlternate="/insights.md"
+>
+  <section class="insights-hero" aria-labelledby="insights-title">
+    <svg class="insights-contours" viewBox="0 0 1600 420" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M-80 346C205 208 432 412 724 280S1250 181 1670 35"></path>
+      <path d="M-96 382C210 235 448 446 748 316S1275 220 1690 78"></path>
+      <path d="M-112 420C221 267 468 478 775 354S1301 260 1710 122"></path>
+    </svg>
+    <div class="shell insights-hero-inner">
+      <p class="eyebrow">Accredited employer insights</p>
+      <h1 id="insights-title">The accredited employer landscape, <em>at a glance.</em></h1>
+      <p class="insights-lede">
+        Explore where accredited employers are based, which sectors they represent, and when current accreditations are scheduled to expire.
+      </p>
+      <div class="snapshot-actions">
+        <p class="snapshot-pill"><span aria-hidden="true"></span> Official snapshot · {snapshotDate}</p>
+        <a
+          class="live-query-link"
+          href={officialInzListUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Search the live INZ accredited employer list (opens in a new tab)"
+        >
+          Search the live INZ list <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="insights-main" id="insights-dashboard" aria-label="Accredited employer dashboard">
+    <div class="shell">
+      <div class="insights-filters" role="group" aria-label="Filter employer insights">
+        <label>
+          <span>Region</span>
+          <select id="insights-region">
+            <option value="all">All New Zealand</option>
+            {insightsData.regions.map((region, index) => <option value={index}>{region}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Sector</span>
+          <select id="insights-sector">
+            <option value="all">All sectors</option>
+            {insightsData.sectors.map((sector, index) => <option value={index}>{sector}</option>)}
+          </select>
+        </label>
+        <label>
+          <span>Accreditation type</span>
+          <select id="insights-type">
+            <option value="all">All types</option>
+            {insightsData.accreditationTypes.map((type, index) => <option value={index}>{type}</option>)}
+          </select>
+        </label>
+        <button type="button" id="insights-reset">Reset filters</button>
+      </div>
+
+      <p class="filter-status" id="insights-filter-status" aria-live="polite">
+        Showing all {number.format(insightsData.meta.totalRecords)} records in the official snapshot.
+      </p>
+
+      <dl class="insights-kpis">
+        <div>
+          <dd id="kpi-records">{number.format(insightsData.meta.totalRecords)}</dd>
+          <dt>Official records</dt>
+        </div>
+        <div>
+          <dd id="kpi-regions">{insightsData.meta.canonicalRegionCount}</dd>
+          <dt id="kpi-region-label">NZ regions represented</dt>
+        </div>
+        <div>
+          <dd id="kpi-sector-share">{initialSectorShare}</dd>
+          <dt id="kpi-sector-label">Largest sector share</dt>
+        </div>
+        <div>
+          <dd id="kpi-expiry">{number.format(initialExpiry)}</dd>
+          <dt>Expiring within 90 days</dt>
+        </div>
+      </dl>
+
+      <div class="insights-grid">
+        <article class="insight-panel insight-panel-region">
+          <header>
+            <div>
+              <h2 id="region-chart-title">Where accredited employers are based</h2>
+              <p id="region-chart-description">Number of official records by region</p>
+            </div>
+          </header>
+          <div class="insights-chart" id="chart-region" aria-busy="true"></div>
+          <p class="chart-callout" id="region-callout"></p>
+        </article>
+
+        <article class="insight-panel insight-panel-sector">
+          <header>
+            <div>
+              <h2 id="sector-chart-title">Sector composition</h2>
+              <p id="sector-chart-description">Share of official records</p>
+            </div>
+            <span class="panel-hint" id="sector-panel-hint">Choose a sector to see subsectors</span>
+          </header>
+          <div class="insights-chart" id="chart-sector" aria-busy="true"></div>
+        </article>
+
+        <article class="insight-panel insight-panel-matrix">
+          <header class="matrix-header">
+            <div>
+              <p class="panel-index">Region × sector</p>
+              <h2>How location and industry overlap</h2>
+              <p>Darker cells contain more accredited employer records.</p>
+            </div>
+            <div class="matrix-key" aria-hidden="true">
+              <span>Fewer</span><i></i><i></i><i></i><span>More</span>
+            </div>
+          </header>
+          <div class="insights-chart matrix-chart" id="chart-matrix" aria-busy="true"></div>
+        </article>
+
+        <article class="insight-panel insight-panel-expiry">
+          <header class="expiry-header">
+            <div>
+              <p class="panel-index">Forward view</p>
+              <h2>Accreditation expiry outlook</h2>
+              <p>Scheduled expiry dates over the next 12 complete calendar months.</p>
+            </div>
+            <p class="expiry-note"><strong id="expiry-note-count">{number.format(initialExpiry)}</strong> within 90 days of the snapshot</p>
+          </header>
+          <div class="insights-chart expiry-chart" id="chart-expiry" aria-busy="true"></div>
+          <p class="chart-footnote">
+            An expiry date is not a forecast that an employer will lose accreditation. Employers may renew before the date shown.
+          </p>
+        </article>
+      </div>
+
+      <aside class="insights-method" aria-labelledby="method-title">
+        <div>
+          <p class="eyebrow">About this view</p>
+          <h2 id="method-title">A dated picture, not a live guarantee.</h2>
+        </div>
+        <div>
+          <p>
+            These charts aggregate {number.format(insightsData.meta.totalRecords)} records published by Immigration New Zealand as at {snapshotDate}. They describe the official snapshot and may not reflect changes made after that date.
+          </p>
+          <p>
+            Region labels are normalised for case and obvious place-name variants. {number.format(insightsData.meta.unknownRegionRecords)} records with missing or non-standard region values are grouped as “Unknown / other”.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <script is:inline id="insights-data" type="application/json" set:html={JSON.stringify(insightsData)}></script>
+  <script>
+    import { initInsights } from "../scripts/insights";
+    initInsights();
+  </script>
+</BaseLayout>
+
+<style>
+  .insights-hero {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(4.5rem, 8vw, 7.5rem) clamp(3.5rem, 6vw, 5.5rem);
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, white 0%, var(--cloud) 100%);
+  }
+
+  .insights-contours {
+    position: absolute;
+    inset: auto -2% -14% auto;
+    width: min(72rem, 75vw);
+    height: 86%;
+    color: var(--pounamu);
+    opacity: 0.12;
+  }
+
+  .insights-contours path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.2;
+  }
+
+  .insights-hero-inner {
+    position: relative;
+    display: grid;
+    gap: 1.15rem;
+  }
+
+  .insights-hero h1 {
+    max-width: 18ch;
+    font-size: clamp(2.8rem, 6vw, 5.4rem);
+  }
+
+  .insights-hero h1 em {
+    color: var(--pounamu);
+    font-style: normal;
+  }
+
+  .insights-lede {
+    max-width: 69ch;
+    color: var(--slate);
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+  }
+
+  .snapshot-pill {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 0.4rem;
+    padding: 0.38rem 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 74%);
+    color: var(--harbour);
+    font-size: 0.82rem;
+    font-weight: 650;
+  }
+
+  .snapshot-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.65rem;
+    margin-top: 0.4rem;
+  }
+
+  .snapshot-actions .snapshot-pill { margin-top: 0; }
+
+  .live-query-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.38rem 0.7rem;
+    border-radius: 999px;
+    color: var(--pounamu-dark);
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .live-query-link:hover {
+    background: var(--pounamu-soft);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .snapshot-pill span {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--pounamu);
+  }
+
+  .insights-main {
+    padding-block: clamp(2.5rem, 6vw, 5.5rem) clamp(5rem, 8vw, 8rem);
+    background: var(--cloud);
+  }
+
+  .insights-filters {
+    display: grid;
+    grid-template-columns: 1fr 1.25fr 1fr auto;
+    align-items: end;
+    gap: 1rem;
+    padding: 1.1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    background: rgb(255 255 255 / 78%);
+    box-shadow: 0 10px 30px rgb(5 45 53 / 5%);
+  }
+
+  .insights-filters label {
+    display: grid;
+    gap: 0.35rem;
+    color: var(--slate);
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+
+  .insights-filters select {
+    appearance: none;
+    width: 100%;
+    min-height: 2.8rem;
+    padding: 0.58rem 2.75rem 0.58rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 0.4rem;
+    background-color: white;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='8' viewBox='0 0 14 8' fill='none'%3E%3Cpath d='M1 1L7 7L13 1' stroke='%23083b45' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 0.78rem auto;
+    color: var(--harbour);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .insights-filters button {
+    min-height: 2.8rem;
+    padding-inline: 0.7rem;
+    border: 0;
+    background: transparent;
+    color: var(--pounamu-dark);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 750;
+  }
+
+  .insights-filters button:hover { text-decoration: underline; }
+
+  .filter-status {
+    min-height: 1.4rem;
+    margin-top: 0.55rem;
+    color: var(--slate);
+    font-size: 0.76rem;
+  }
+
+  .insights-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 1rem;
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    background: white;
+  }
+
+  .insights-kpis > div {
+    display: grid;
+    justify-items: center;
+    gap: 0.12rem;
+    padding: 1.05rem 1rem;
+    text-align: center;
+  }
+
+  .insights-kpis > div + div { border-left: 1px solid var(--line); }
+
+  .insights-kpis dd {
+    margin: 0;
+    color: var(--harbour-deep);
+    font-family: var(--font-display);
+    font-size: clamp(1.7rem, 3vw, 2.45rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 720;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .insights-kpis dt {
+    color: var(--slate);
+    font-size: 0.78rem;
+    line-height: 1.3;
+  }
+
+  .insights-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .insight-panel {
+    min-width: 0;
+    padding: clamp(1rem, 2vw, 1.45rem);
+    border: 1px solid var(--line);
+    border-radius: 0.65rem;
+    background: white;
+    box-shadow: 0 1px 1px rgb(5 45 53 / 3%);
+  }
+
+  .insight-panel > header {
+    display: flex;
+    min-height: 3.6rem;
+    align-items: start;
+    justify-content: space-between;
+    gap: 1.5rem;
+  }
+
+  .insight-panel h2 {
+    max-width: none;
+    font-size: clamp(1.22rem, 2vw, 1.55rem);
+    letter-spacing: -0.03em;
+  }
+
+  .insight-panel header p:not(.panel-index, .expiry-note) {
+    margin-top: 0.24rem;
+    color: var(--slate);
+    font-size: 0.78rem;
+  }
+
+  .panel-hint {
+    max-width: 12rem;
+    color: var(--pounamu-dark);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .insights-chart {
+    min-height: 310px;
+    margin-top: 0.3rem;
+    color: var(--slate);
+  }
+
+  .insights-chart[aria-busy="true"] {
+    background: linear-gradient(90deg, transparent, var(--mist), transparent);
+    background-size: 200% 100%;
+    animation: chart-loading 1.3s ease-in-out infinite;
+  }
+
+  :global(.insights-chart svg),
+  :global(.insights-chart figure) {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0;
+    font-size: 11px;
+  }
+
+  .chart-callout {
+    min-height: 1.3rem;
+    margin-top: -0.2rem;
+    padding-top: 0.65rem;
+    border-top: 1px solid var(--line-light);
+    color: var(--pounamu-dark);
+    font-size: 0.76rem;
+    font-weight: 650;
+  }
+
+  .insight-panel-matrix,
+  .insight-panel-expiry {
+    grid-column: 1 / -1;
+  }
+
+  .insight-panel-matrix {
+    overflow: hidden;
+    border-color: var(--harbour);
+    background: var(--harbour-deep);
+    color: white;
+  }
+
+  .insight-panel-matrix h2,
+  .insight-panel-matrix header p:not(.panel-index) { color: white; }
+
+  .insight-panel-matrix header p:not(.panel-index) { opacity: 0.72; }
+
+  .panel-index {
+    margin-bottom: 0.3rem;
+    color: var(--kōwhai);
+    font-family: var(--font-utility);
+    font-size: 0.66rem;
+    font-weight: 750;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .matrix-key {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: rgb(255 255 255 / 70%);
+    font-size: 0.68rem;
+  }
+
+  .matrix-key i {
+    width: 1.5rem;
+    height: 0.42rem;
+    background: var(--mist);
+  }
+
+  .matrix-key i:nth-of-type(2) { background: var(--pounamu); }
+  .matrix-key i:nth-of-type(3) { background: #03463f; }
+
+  .matrix-chart { min-height: 360px; }
+
+  .insight-panel-expiry {
+    margin-top: 1.5rem;
+    padding-block: clamp(1.3rem, 2.5vw, 2rem);
+  }
+
+  .expiry-header { align-items: center !important; }
+
+  .expiry-note {
+    display: grid;
+    justify-items: end;
+    color: var(--slate);
+    font-size: 0.74rem;
+    line-height: 1.25;
+    text-align: right;
+  }
+
+  .expiry-note strong {
+    color: #b68613;
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.04em;
+  }
+
+  .expiry-chart { min-height: 330px; }
+
+  .chart-footnote {
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--line-light);
+    color: var(--slate);
+    font-size: 0.74rem;
+  }
+
+  .insights-method {
+    display: grid;
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+    gap: 3rem;
+    margin-top: clamp(4rem, 8vw, 7rem);
+    padding-top: 2rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .insights-method h2 {
+    max-width: 14ch;
+    margin-top: 0.8rem;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+  }
+
+  .insights-method > div:last-child {
+    display: grid;
+    gap: 1rem;
+    color: var(--slate);
+  }
+
+  @keyframes chart-loading {
+    to { background-position: -200% 0; }
+  }
+
+  @media (max-width: 900px) {
+    .insights-filters { grid-template-columns: 1fr 1fr; }
+    .insights-filters button { justify-self: start; }
+    .insights-grid { grid-template-columns: 1fr; }
+    .insight-panel-matrix,
+    .insight-panel-expiry { grid-column: auto; }
+    .insight-panel-expiry { margin-top: 0.5rem; }
+  }
+
+  @media (max-width: 620px) {
+    .insights-hero { padding-block: 3.5rem 3rem; }
+    .insights-hero h1 { font-size: clamp(2.55rem, 13vw, 4rem); }
+    .insights-filters { grid-template-columns: 1fr; }
+    .insights-kpis { grid-template-columns: 1fr 1fr; }
+    .insights-kpis > div + div { border-left: 0; }
+    .insights-kpis > div:nth-child(even) { border-left: 1px solid var(--line); }
+    .insights-kpis > div:nth-child(n + 3) { border-top: 1px solid var(--line); }
+    .insight-panel > header,
+    .expiry-header { display: grid; }
+    .panel-hint { text-align: left; }
+    .matrix-key { display: none; }
+    .expiry-note { justify-items: start; text-align: left; }
+    .insights-method { grid-template-columns: 1fr; gap: 1.5rem; }
+  }
+</style>

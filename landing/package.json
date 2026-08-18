@@ -13,10 +13,14 @@
     "check": "astro check"
   },
   "dependencies": {
+    "@observablehq/plot": "^0.6.17",
     "astro": "7.1.6"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.6",
     "typescript": "5.9.3"
+  },
+  "overrides": {
+    "nanoid": "3.3.18"
   }
 }

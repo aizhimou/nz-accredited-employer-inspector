@@ -41,6 +41,7 @@ const agentResources = [
   ["/llms.txt", "Short machine-readable site map"],
   ["/llms-full.txt", "Complete product context in Markdown"],
   ["/how-results-work.md", "Result interpretation and notice dictionary"],
+  ["/insights.md", "Accredited employer snapshot insights"],
   ["/changelog.md", "Dated product release history"],
   ["/index.md", "Landing page without presentation markup"],
   ["/privacy.md", "Extension privacy policy in Markdown"],
@@ -213,12 +214,12 @@ const agentResources = [
         <p class="eyebrow">Built for the messy middle</p>
         <h2 id="coverage-title">Company names rarely line up perfectly.</h2>
         <p>
-          A trading name on a job ad can differ from the legal employer published by INZ. The Inspector keeps plausible candidates visible and asks you to confirm rather than silently guessing.
+          A trading name on a job ad can differ from the legal employer published by INZ. The Inspector resolves only known associations and exact official names, then lets you search manually when the names differ.
         </p>
         <ul class="feature-list">
           <li><span aria-hidden="true">✓</span> Exact legal-name matches are labelled as automatic</li>
-          <li><span aria-hidden="true">✓</span> Fuzzy candidates always require a person’s choice</li>
-          <li><span aria-hidden="true">✓</span> Every alternative stays available to inspect or select</li>
+          <li><span aria-hidden="true">✓</span> Partial and similar names are not automatic candidates</li>
+          <li><span aria-hidden="true">✓</span> Manual keyword results require your explicit choice</li>
         </ul>
       </div>
       <div class="match-sheet" aria-label="Example of matching a platform name to official employer candidates">
@@ -341,7 +342,7 @@ const agentResources = [
         </details>
         <details>
           <summary>Why can a result require confirmation?</summary>
-          <p>The brand or advertiser name on a platform may map to several legal employers. The extension shows candidates instead of turning a fuzzy match into a fact.</p>
+          <p>A live INZ lookup, duplicated exact name, or community tie may produce several legal employers. The extension asks you to choose instead of silently selecting one.</p>
         </details>
         <details>
           <summary>Is this an official Immigration New Zealand product?</summary>

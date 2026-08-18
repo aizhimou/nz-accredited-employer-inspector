@@ -33,7 +33,7 @@ function createTestEnv(
     CLIENT_RATE_LIMITER: overrides.CLIENT_RATE_LIMITER ?? allowRateLimit(),
     SUBMISSION_RATE_LIMITER: overrides.SUBMISSION_RATE_LIMITER ?? allowRateLimit(),
     ENVIRONMENT: "development",
-    SERVICE_VERSION: "0.7.1",
+    SERVICE_VERSION: "0.8.0",
     POSITIVE_TTL_SECONDS: 2592000,
     NEGATIVE_TTL_SECONDS: 604800,
     REFRESH_ATTEMPT_COOLDOWN_SECONDS: 900,
@@ -100,7 +100,7 @@ describe("HTTP routing and controls", () => {
       createExecutionContext(),
     );
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ version: "0.7.1", status: "ok" });
+    expect(await response.json()).toMatchObject({ version: "0.8.0", status: "ok" });
     expect(limiter.limit).not.toHaveBeenCalled();
   });
 
@@ -268,7 +268,7 @@ describe("canonical employers and resolution", () => {
     expect(count?.count).toBe(2);
   });
 
-  it("finds canonical employers when a legal name contains the full page name", async () => {
+  it("does not treat a containing legal name as an automatic candidate", async () => {
     await call("/v1/employers/ingest", ingestBody([{
       employerName: "ONE NEW ZEALAND GROUP LIMITED",
       tradingName: "One NZ",
@@ -285,12 +285,13 @@ describe("canonical employers and resolution", () => {
     };
     const response = await call("/v1/employers/resolve", { identity: seekIdentity });
     expect(await response.json()).toMatchObject({
-      state: "confirmation_required",
-      candidates: [{ nzbn: "9429034908822", tradingName: "One NZ" }],
+      state: "inz_lookup_required",
+      candidates: [],
+      inzQuery: "One New Zealand",
     });
   });
 
-  it("returns a generic fuzzy candidate for abbreviated advertiser names", async () => {
+  it("keeps abbreviated advertiser names unresolved until the user searches", async () => {
     const woolworthsIdentity = {
       platform: "seek",
       externalKey: "advertiser:woolworths nz ltd",
@@ -313,14 +314,20 @@ describe("canonical employers and resolution", () => {
 
     const response = await call("/v1/employers/resolve", { identity: woolworthsIdentity });
     expect(await response.json()).toMatchObject({
-      state: "confirmation_required",
+      state: "inz_lookup_required",
       matchMethod: null,
       selectedEmployer: null,
+      candidates: [],
+      inzQuery: "Woolworths NZ Ltd",
+    });
+
+    const search = await call("/v1/employers/search", { query: "Woolworths" });
+    expect(await search.json()).toMatchObject({
+      query: "Woolworths",
       candidates: [{
         employerName: "WOOLWORTHS NEW ZEALAND LIMITED",
         nzbn: "9429040683379",
       }],
-      inzQuery: null,
     });
   });
 
@@ -331,12 +338,13 @@ describe("canonical employers and resolution", () => {
       expiryDateOfAccreditation: "2028-01-01T00:00:00",
     }]));
 
-    const response = await call("/v1/employers/search", {
-      query: "ABC Consulting",
-    });
+    const abbreviation = await call("/v1/employers/search", { query: "ABC Consulting" });
+    expect(await abbreviation.json()).toMatchObject({ candidates: [] });
+
+    const response = await call("/v1/employers/search", { query: "Alpha Consulting" });
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({
-      query: "ABC Consulting",
+      query: "Alpha Consulting",
       candidates: [{
         employerName: "ALPHA BETA CONSULTING LIMITED",
         nzbn: "9429000000010",
@@ -359,6 +367,46 @@ describe("canonical employers and resolution", () => {
     });
     const searchedBody = await searched.json<{ candidates: unknown[] }>();
     expect(searchedBody.candidates).toHaveLength(10);
+  });
+
+  it("requires all keywords and does not return candidates for a shared generic term", async () => {
+    await call("/v1/employers/ingest", ingestBody([
+      {
+        employerName: "ECL GROUP LIMITED",
+        tradingName: "ECL Group",
+        nzbn: "9429000000030",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+      },
+      {
+        employerName: "EDUCARE GROUP LIMITED",
+        tradingName: "Educare Group Limited",
+        nzbn: "9429000000031",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+      },
+      {
+        employerName: "PIONEER GROUP 2012 LIMITED",
+        tradingName: "Pioneer Group",
+        nzbn: "9429000000032",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+      },
+    ]));
+
+    const resolution = await call("/v1/employers/resolve", {
+      identity: {
+        ...linkedinIdentity,
+        externalKey: "company:carecone-group",
+        displayName: "CareCone Group",
+        publicUrl: "https://www.linkedin.com/company/carecone-group/",
+      },
+    });
+    expect(await resolution.json()).toMatchObject({
+      state: "inz_lookup_required",
+      candidates: [],
+      inzQuery: "CareCone Group",
+    });
+
+    const search = await call("/v1/employers/search", { query: "CareCone Group" });
+    expect(await search.json()).toMatchObject({ candidates: [] });
   });
 
   it("keeps the employer FTS index synchronized after a canonical name change", async () => {
@@ -467,7 +515,7 @@ describe("canonical employers and resolution", () => {
     expect(entity).toBeNull();
   });
 
-  it("auto-selects a unique exact official or trading name despite fuzzy alternatives", async () => {
+  it("auto-selects a unique exact official or trading name", async () => {
     await call("/v1/employers/ingest", ingestBody([
       {
         employerName: "UNIVERSITY OF AUCKLAND",

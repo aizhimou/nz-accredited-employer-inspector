@@ -7,7 +7,7 @@ export const GET: APIRoute = () => {
 
 - Product: NZ Accredited Employer Inspector
 - Type: Open-source Chrome extension plus Cloudflare Worker and D1 API
-- Current service version: 0.7.1
+- Current service version: 0.8.0
 - Primary audience: People assessing New Zealand job opportunities on LinkedIn and SEEK
 - Primary task: Check whether the legal employer associated with a platform page appears on the Immigration New Zealand accredited employer list
 - Creator and maintainer: Zemo Ai
@@ -31,7 +31,7 @@ The extension inserts a compact **Check NZ accreditation** control into supporte
 
 The result can show a selected employer, several candidates requiring confirmation, a fresh no-match observation, or a request to retry/review verification. The UI shows legal name, optional trading name, 13-digit NZBN, accreditation expiry, last verification time, status, and matching provenance.
 
-Candidate discovery uses a bounded 100-row internal pool from the local official employer dataset with generic token, prefix, abbreviation, and dynamically derived acronym similarity. At most 10 candidates are returned. Fuzzy candidates are never automatically associated. No-match and candidate notes offer a collapsed local employer-search disclosure; submitted recovery results replace the current candidate list.
+Automatic resolution does not use fuzzy retrieval. It considers saved/community associations and exact normalised official or trading-name equality. A collapsed manual-search disclosure provides a separate FTS5 keyword search: every entered token must match the same official employer row, tokens of at least three characters support prefix matching, BM25 orders the results, and at most 10 are returned. Submitted recovery results replace the current candidate list and require an explicit user choice.
 
 ## Supported platform surfaces
 
@@ -54,7 +54,7 @@ Mappings from a LinkedIn company or SEEK advertiser/profile to an NZBN are commu
 
 ### Automatic exact-name match
 
-When no stored platform association is selected, the Worker may derive a match only if the normalised official INZ employer name or trading name of exactly one NZBN equals the normalised platform display name. Normalisation uses Unicode NFKC, trimmed and collapsed whitespace, and lowercase. Company suffixes and punctuation are not removed. A duplicated exact name, containment, or fuzzy similarity never auto-selects; additional fuzzy candidates do not block a unique exact-name match. The backward-compatible exact_employer_name method value covers both exact official and trading names.
+When no stored platform association is selected, the Worker may derive a match only if the normalised official INZ employer name or trading name of exactly one NZBN equals the normalised platform display name. Normalisation uses Unicode NFKC, trimmed and collapsed whitespace, and lowercase. Company suffixes and punctuation are not removed. A duplicated exact name requires confirmation; containment, token overlap, abbreviations, and approximate character similarity do not produce automatic candidates. The backward-compatible exact_employer_name method value covers both exact official and trading names.
 
 ### No published match
 
@@ -64,7 +64,7 @@ A recognised INZ no-results response is stored only for the exact platform ident
 
 - **associated:** A selected employer exists, is inside the configured positive TTL, and its stored accreditation expiry has not passed.
 - **refresh_required:** A selected employer is outside the 30-day TTL or its stored expiry has passed. The extension requests a per-NZBN refresh lease before making one INZ lookup.
-- **confirmation_required:** One or more plausible official candidates exist, but no association or safe exact-name rule selects one.
+- **confirmation_required:** One or more explicit official candidates exist from an exact-name ambiguity, community confirmation, or live result set, but no safe rule selects one.
 - **no_published_inz_match:** No positive candidate exists and an exact no-match observation is inside the configured negative TTL, currently seven days.
 - **inz_lookup_required:** No association, candidate, or fresh no-match exists. The extension may make one display-name lookup.
 

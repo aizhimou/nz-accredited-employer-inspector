@@ -5,7 +5,7 @@ export const GET: APIRoute = () => {
 title: NZ Accredited Employer Inspector
 description: Check whether employers on SEEK and LinkedIn are accredited with Immigration New Zealand before you apply.
 language: en-NZ
-version: 0.7.1
+version: 0.9.0
 author: Zemo Ai
 author_url: https://zemo.bio/
 ---
@@ -37,7 +37,8 @@ Accreditation status and platform association confidence are separate dimensions
 - No LinkedIn or SEEK account identity is used.
 - A random extension installation UUID is stored locally and hashed by the API.
 - The Worker does not call INZ. A live INZ lookup happens in the extension background only after a user action.
-- Fuzzy candidates are never silently selected.
+- Partial, similar, or abbreviated names do not produce automatic candidates.
+- Manual keyword-search results require an explicit user choice.
 - The implementation and API contract are public.
 
 ## Supported surfaces
@@ -64,6 +65,7 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [Architecture and API contract](https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md)
 - [Official INZ accredited employer list](https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/)
 - [Privacy policy](/privacy/)
+- [Accredited employer insights](/insights/)
 - [Changelog](/changelog/)
 - [Built by Zemo Ai](https://zemo.bio/)
 
@@ -72,6 +74,7 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [/llms.txt](/llms.txt): concise discovery index
 - [/llms-full.txt](/llms-full.txt): complete product context
 - [/how-results-work.md](/how-results-work.md): result interpretation rules and notice dictionary
+- [/insights.md](/insights.md): aggregate regional, sector, and expiry-date insights
 - [/changelog.md](/changelog.md): dated product release history
 - [/privacy.md](/privacy.md): privacy policy without presentation markup
 - [/.well-known/api-catalog](/.well-known/api-catalog): RFC 9727 API catalog

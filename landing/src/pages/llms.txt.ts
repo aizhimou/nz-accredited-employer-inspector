@@ -17,6 +17,8 @@ export const GET: APIRoute = ({ site }) => {
 - [Product overview](${link("/index.md")}): What the product does, how a check works, trust boundaries, privacy, and supported platforms.
 - [How results work](${link("/how-results-work/")}): Plain-language explanation of official data, matching, multiple candidates, community confirmations, notices, and limitations.
 - [How results work — agent version](${link("/how-results-work.md")}): Machine-readable interpretation rules and notice dictionary for accurate downstream answers.
+- [Accredited employer insights](${link("/insights/")}): Interactive regional, sector, and accreditation-expiry overview from the dated official INZ snapshot.
+- [Accredited employer insights as Markdown](${link("/insights.md")}): Machine-readable aggregate counts and interpretation notes.
 - [Changelog](${link("/changelog/")}): Public release ledger with dates and user-visible improvements.
 - [Changelog as Markdown](${link("/changelog.md")}): Machine-readable product release history.
 - [Privacy policy](${link("/privacy/")}): Public Chrome extension privacy policy covering data collection, use, sharing, retention, security, and deletion requests.

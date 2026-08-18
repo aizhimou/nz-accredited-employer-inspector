@@ -2,11 +2,7 @@ import type { FreshnessPolicy } from "./config";
 import { ApiError, InzResponseError } from "./errors";
 import { parseInzResponse } from "./inz-response";
 import { getAccreditationStatus, isRecentlyVerified } from "./time";
-import {
-  buildEmployerFtsQuery,
-  isPlausibleEmployerNameScore,
-  scoreEmployerCandidate,
-} from "./name-matching";
+import { buildEmployerFtsQuery } from "./employer-search";
 import type {
   AccreditedEmployer,
   EmployerAssociation,
@@ -45,7 +41,7 @@ interface EmployerRefreshControlRow {
   refresh_not_before: number | null;
 }
 
-interface LocalCandidateResult {
+interface ExactNameResult {
   candidates: EmployerCandidate[];
   exactNameEmployer: EmployerCandidate | null;
 }
@@ -71,9 +67,8 @@ interface AssociationResolution {
   noMatchAt: number | null;
 }
 
-const DIRECT_CANDIDATE_LIMIT = 20;
-const FTS_CANDIDATE_LIMIT = 100;
 const MAX_RETURNED_CANDIDATES = 10;
+const EXACT_LOOKUP_LIMIT = MAX_RETURNED_CANDIDATES + 1;
 
 function rowToEmployer(row: EmployerRow, nowMilliseconds: number): EmployerCandidate {
   return {
@@ -93,10 +88,6 @@ function rowToEmployer(row: EmployerRow, nowMilliseconds: number): EmployerCandi
 function toPublicEmployer(candidate: EmployerCandidate): AccreditedEmployer {
   const { verificationSource: _, ...employer } = candidate;
   return employer;
-}
-
-function compareText(left: string, right: string): number {
-  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function isCandidateRecentlyVerified(
@@ -123,13 +114,13 @@ function refreshRetryAt(refreshNotBefore: number | null): string | null {
     : new Date(refreshNotBefore * 1000).toISOString();
 }
 
-async function findLocalCandidates(
+async function findExactNameCandidates(
   db: D1Database,
   displayName: string,
   nowMilliseconds: number,
-): Promise<LocalCandidateResult> {
+): Promise<ExactNameResult> {
   const normalized = normalizeName(displayName);
-  const directRowsPromise = db
+  const rows = await db
     .prepare(
       `SELECT employer_name, trading_name, nzbn,
               expiry_date_of_accreditation, last_verified_at,
@@ -138,66 +129,28 @@ async function findLocalCandidates(
         WHERE nzbn = ?1
            OR normalized_employer_name = ?2
            OR normalized_trading_name = ?2
-           OR (length(?2) >= 4 AND instr(normalized_employer_name, ?2) > 0)
-           OR (length(?2) >= 4 AND normalized_trading_name IS NOT NULL AND instr(normalized_trading_name, ?2) > 0)
         ORDER BY CASE
                    WHEN nzbn = ?1 THEN 0
                    WHEN normalized_employer_name = ?2 THEN 1
                    WHEN normalized_trading_name = ?2 THEN 2
-                   ELSE 3
                  END,
                  length(employer_name),
                  employer_name,
                  nzbn
-        LIMIT ${DIRECT_CANDIDATE_LIMIT}`,
+        LIMIT ${EXACT_LOOKUP_LIMIT}`,
     )
     .bind(/^\d{13}$/u.test(normalized) ? normalized : "", normalized)
     .all<EmployerRow>();
 
-  const ftsQuery = buildEmployerFtsQuery(displayName);
-  const fuzzyRowsPromise = ftsQuery === null
-    ? Promise.resolve({ results: [] as EmployerRow[] })
-    : db
-        .prepare(
-          `SELECT employers.employer_name, employers.trading_name, employers.nzbn,
-                  employers.expiry_date_of_accreditation, employers.last_verified_at,
-                  employers.last_verified_source
-             FROM employer_names_fts
-             JOIN employers ON employers.nzbn = employer_names_fts.nzbn
-            WHERE employer_names_fts MATCH ?1
-            ORDER BY bm25(employer_names_fts)
-            LIMIT ${FTS_CANDIDATE_LIMIT}`,
-        )
-        .bind(ftsQuery)
-        .all<EmployerRow>();
-
-  const [directRows, fuzzyRows] = await Promise.all([directRowsPromise, fuzzyRowsPromise]);
-  const directNzbns = new Set(directRows.results.map((row) => row.nzbn));
-  const exactNameRows = directRows.results.filter((row) =>
+  const exactNameRows = rows.results.filter((row) =>
     normalizeName(row.employer_name) === normalized ||
     (row.trading_name !== null && normalizeName(row.trading_name) === normalized)
   );
   const exactNameNzbns = new Set(exactNameRows.map((row) => row.nzbn));
   const exactNameRow = exactNameNzbns.size === 1 ? exactNameRows[0] ?? null : null;
-  const rowsByNzbn = new Map<string, EmployerRow>();
-  for (const row of [...directRows.results, ...fuzzyRows.results]) {
-    rowsByNzbn.set(row.nzbn, row);
-  }
-
-  const candidates = [...rowsByNzbn.values()]
-    .map((row) => ({
-      row,
-      score: scoreEmployerCandidate(displayName, row.employer_name, row.trading_name),
-    }))
-    .filter(({ row, score }) => directNzbns.has(row.nzbn) || isPlausibleEmployerNameScore(score))
-    .sort((left, right) =>
-      Number(directNzbns.has(right.row.nzbn)) - Number(directNzbns.has(left.row.nzbn)) ||
-      right.score - left.score ||
-      compareText(left.row.employer_name, right.row.employer_name) ||
-      compareText(left.row.nzbn, right.row.nzbn),
-    )
+  const candidates = rows.results
     .slice(0, MAX_RETURNED_CANDIDATES)
-    .map(({ row }) => rowToEmployer(row, nowMilliseconds));
+    .map((row) => rowToEmployer(row, nowMilliseconds));
 
   return {
     candidates,
@@ -211,7 +164,34 @@ export async function searchEmployerCandidates(
   query: string,
   nowMilliseconds = Date.now(),
 ): Promise<EmployerSearchResponse> {
-  const { candidates } = await findLocalCandidates(db, query, nowMilliseconds);
+  const ftsQuery = buildEmployerFtsQuery(query);
+  if (ftsQuery === null) {
+    return { query, candidates: [] };
+  }
+
+  const normalized = normalizeName(query);
+  const [exactNzbn, keywordRows] = await Promise.all([
+    /^\d{13}$/u.test(normalized)
+      ? findEmployer(db, normalized, nowMilliseconds)
+      : Promise.resolve(null),
+    db
+      .prepare(
+        `SELECT employers.employer_name, employers.trading_name, employers.nzbn,
+                employers.expiry_date_of_accreditation, employers.last_verified_at,
+                employers.last_verified_source
+           FROM employer_names_fts
+           JOIN employers ON employers.nzbn = employer_names_fts.nzbn
+          WHERE employer_names_fts MATCH ?1
+          ORDER BY bm25(employer_names_fts), employers.employer_name, employers.nzbn
+          LIMIT ${MAX_RETURNED_CANDIDATES}`,
+      )
+      .bind(ftsQuery)
+      .all<EmployerRow>(),
+  ]);
+  const candidates = mergeCandidates([
+    exactNzbn === null ? [] : [exactNzbn],
+    keywordRows.results.map((row) => rowToEmployer(row, nowMilliseconds)),
+  ]);
   return { query, candidates: candidates.map(toPublicEmployer) };
 }
 
@@ -416,7 +396,7 @@ export async function resolveEmployer(
   const [preferred, confirmed, localResult, selectedEmployer] = await Promise.all([
     findEmployers(db, preferredNzbns, nowMilliseconds),
     findEmployers(db, association.confirmedNzbns, nowMilliseconds),
-    findLocalCandidates(db, identity.displayName, nowMilliseconds),
+    findExactNameCandidates(db, identity.displayName, nowMilliseconds),
     association.selectedNzbn === null
       ? Promise.resolve(null)
       : findEmployer(db, association.selectedNzbn, nowMilliseconds),
