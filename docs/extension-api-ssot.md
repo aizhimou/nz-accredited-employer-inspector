@@ -501,7 +501,7 @@ Official bulk data is staged and validated before one canonical upsert into this
 
 ### `employer_names_fts` — manual keyword-search index
 
-An FTS5 index mirrors `employer_name` and `trading_name` for every NZBN. D1 triggers update it after inserts, relevant updates, and deletes, so official imports and live ingests use the same index. It is queried only by the user-initiated `/search` endpoint. FTS5 retrieves rows containing every requested keyword or prefix and orders them by BM25; it does not participate in automatic platform-to-employer resolution.
+An FTS5 index mirrors `employer_name` and `trading_name` for every NZBN. Each FTS row reuses the corresponding `employers` rowid, and D1 triggers update it after inserts, relevant updates, and deletes by locating the mirrored row with `WHERE rowid = OLD.rowid` — a direct lookup rather than a scan of the `UNINDEXED` `nzbn` column. Official imports and live ingests use the same index. It is queried only by the user-initiated `/search` endpoint. FTS5 retrieves rows containing every requested keyword or prefix and orders them by BM25; it does not participate in automatic platform-to-employer resolution.
 
 ### `official_employer_imports` and `official_employer_import_rows` — import audit
 

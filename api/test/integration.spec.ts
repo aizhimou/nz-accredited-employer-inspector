@@ -430,6 +430,54 @@ describe("canonical employers and resolution", () => {
     });
   });
 
+  it("keeps employer_names_fts rowids aligned with employers across changes", async () => {
+    await call("/v1/employers/ingest", ingestBody([
+      {
+        employerName: "MANUKAU HARBOUR LIMITED",
+        nzbn: "9429000000012",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+      },
+      {
+        employerName: "RANGITOTO ISLAND TOURS LIMITED",
+        nzbn: "9429000000013",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+      },
+    ]));
+
+    const missingRows = await env.DB.prepare(
+      `SELECT COUNT(*) AS count
+         FROM employers e
+         LEFT JOIN employer_names_fts f ON f.rowid = e.rowid
+        WHERE f.rowid IS NULL`,
+    ).first<{ count: number }>();
+    expect(missingRows?.count).toBe(0);
+
+    await env.DB.prepare(
+      `UPDATE employers
+          SET employer_name = 'HARBOUR EDGE CONSULTING LIMITED',
+              normalized_employer_name = 'harbour edge consulting limited'
+        WHERE nzbn = '9429000000012'`,
+    ).run();
+
+    const renamed = await env.DB.prepare(
+      `SELECT f.employer_name
+         FROM employer_names_fts f
+         JOIN employers e ON e.rowid = f.rowid
+        WHERE e.nzbn = '9429000000012'`,
+    ).first<{ employer_name: string }>();
+    expect(renamed?.employer_name).toBe("HARBOUR EDGE CONSULTING LIMITED");
+
+    await env.DB.prepare(`DELETE FROM employers WHERE nzbn = '9429000000013'`).run();
+
+    const orphanRows = await env.DB.prepare(
+      `SELECT COUNT(*) AS count
+         FROM employer_names_fts f
+         LEFT JOIN employers e ON e.rowid = f.rowid
+        WHERE e.rowid IS NULL`,
+    ).first<{ count: number }>();
+    expect(orphanRows?.count).toBe(0);
+  });
+
   it("does not match short trading-name acronyms inside unrelated page words", async () => {
     const acronymEmployers = [
       {
