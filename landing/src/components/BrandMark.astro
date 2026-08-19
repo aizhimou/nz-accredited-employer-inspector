@@ -56,7 +56,7 @@ const { compact = false } = Astro.props;
 
   strong {
     font-family: var(--font-display);
-    font-size: 0.86rem;
+    font-size: var(--text-sm);
     letter-spacing: -0.015em;
   }
 
@@ -64,7 +64,7 @@ const { compact = false } = Astro.props;
     margin-top: 0.27rem;
     color: var(--slate);
     font-family: var(--font-utility);
-    font-size: 0.57rem;
+    font-size: var(--text-micro);
     font-weight: 700;
     letter-spacing: 0.13em;
     text-transform: uppercase;
@@ -82,12 +82,12 @@ const { compact = false } = Astro.props;
     }
 
     strong {
-      font-size: 0.67rem;
+      font-size: var(--text-micro);
     }
 
     small {
       margin-top: 0.2rem;
-      font-size: 0.43rem;
+      font-size: var(--text-micro);
     }
   }
 </style>

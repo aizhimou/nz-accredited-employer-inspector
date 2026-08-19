@@ -278,7 +278,7 @@ const contactEmail = "aizhimoug@gmail.com";
   .policy-lede {
     max-width: 60ch;
     color: var(--slate);
-    font-size: clamp(1.08rem, 1.8vw, 1.3rem);
+    font-size: var(--text-lede);
   }
 
   .policy-meta {
@@ -288,7 +288,7 @@ const contactEmail = "aizhimoug@gmail.com";
     gap: 0.45rem 1.5rem;
     padding-top: 1.2rem;
     border-top: 1px solid var(--line);
-    font-size: 0.75rem;
+    font-size: var(--text-sm);
   }
 
   .policy-meta div { display: contents; }
@@ -310,7 +310,7 @@ const contactEmail = "aizhimoug@gmail.com";
     border-bottom: 1px solid #28515a;
     color: #8ed3bd;
     font-family: var(--font-utility);
-    font-size: 0.62rem;
+    font-size: var(--text-micro);
     font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -340,7 +340,7 @@ const contactEmail = "aizhimoug@gmail.com";
     content: counter(route-step, decimal-leading-zero);
     counter-increment: route-step;
     font-family: var(--font-utility);
-    font-size: 0.46rem;
+    font-size: var(--text-micro);
   }
 
   .data-route li:not(:last-child)::after {
@@ -353,9 +353,9 @@ const contactEmail = "aizhimoug@gmail.com";
     font-size: 0.75rem;
   }
 
-  .data-route li b { font-size: 0.88rem; }
-  .data-route li span { color: #a9c0bb; font-size: 0.7rem; }
-  .data-route > p { padding: 1rem 1.2rem; color: #b6cbc6; font-size: 0.7rem; }
+  .data-route li b { font-size: var(--text-sm); }
+  .data-route li span { color: #a9c0bb; font-size: var(--text-micro); }
+  .data-route > p { padding: 1rem 1.2rem; color: #b6cbc6; font-size: var(--text-sm); }
 
   .policy-layout {
     display: grid;
@@ -375,7 +375,7 @@ const contactEmail = "aizhimoug@gmail.com";
     margin-bottom: 1rem;
     color: var(--pounamu-dark);
     font-family: var(--font-utility);
-    font-size: 0.62rem;
+    font-size: var(--text-micro);
     font-weight: 700;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -391,7 +391,7 @@ const contactEmail = "aizhimoug@gmail.com";
     padding-block: 0.7rem;
     border-bottom: 1px solid var(--line);
     color: var(--slate);
-    font-size: 0.75rem;
+    font-size: var(--text-sm);
     text-decoration: none;
   }
 
@@ -413,7 +413,7 @@ const contactEmail = "aizhimoug@gmail.com";
     margin-bottom: 1rem;
     color: var(--pounamu-dark);
     font-family: var(--font-utility);
-    font-size: 0.65rem;
+    font-size: var(--text-micro);
     font-weight: 700;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -427,7 +427,7 @@ const contactEmail = "aizhimoug@gmail.com";
 
   .policy-copy h3 {
     margin-bottom: 0.65rem;
-    font-size: 1.2rem;
+    font-size: var(--text-xl);
     letter-spacing: -0.025em;
   }
 
@@ -450,7 +450,7 @@ const contactEmail = "aizhimoug@gmail.com";
   .summary-grid div:nth-child(even) { border-left: 1px solid var(--line); }
   .summary-grid div:nth-child(n + 3) { border-top: 1px solid var(--line); }
   .summary-grid strong { display: block; margin-bottom: 0.55rem; color: var(--harbour); }
-  .summary-grid p { font-size: 0.82rem; }
+  .summary-grid p { font-size: var(--text-sm); }
 
   .data-list { display: grid; gap: 2rem; }
   .data-list > div { padding-left: 1.3rem; border-left: 2px solid var(--pounamu-soft); }
@@ -468,7 +468,7 @@ const contactEmail = "aizhimoug@gmail.com";
   .not-collected h3,
   .promise strong { color: var(--pounamu-dark); }
   .not-collected p,
-  .promise p { font-size: 0.86rem; }
+  .promise p { font-size: var(--text-sm); }
 
   .purpose-list { margin-bottom: 1.5rem; padding: 0; list-style: none; }
   .purpose-list li { padding: 1rem 0 1rem 1.6rem; border-bottom: 1px solid var(--line); }
@@ -489,10 +489,10 @@ const contactEmail = "aizhimoug@gmail.com";
   }
 
   .retention-table > div + div { border-top: 1px solid var(--line); }
-  .retention-head { background: var(--harbour-deep); color: white; font-family: var(--font-utility); font-size: 0.62rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
-  .retention-table strong { color: var(--harbour); font-size: 0.86rem; }
-  .retention-table p { margin: 0; font-size: 0.8rem; }
-  .retention-note { margin-top: 1rem; font-size: 0.72rem; }
+  .retention-head { background: var(--harbour-deep); color: white; font-family: var(--font-utility); font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; }
+  .retention-table strong { color: var(--harbour); font-size: var(--text-sm); }
+  .retention-table p { margin: 0; font-size: var(--text-sm); }
+  .retention-note { margin-top: 1rem; font-size: var(--text-sm); }
 
   .contact-card {
     display: flex;
@@ -509,10 +509,10 @@ const contactEmail = "aizhimoug@gmail.com";
   .contact-card > div { display: grid; }
   .contact-card span,
   .contact-card small { color: #9fbbb5; }
-  .contact-card span { font-family: var(--font-utility); font-size: 0.58rem; text-transform: uppercase; }
+  .contact-card span { font-family: var(--font-utility); font-size: var(--text-micro); text-transform: uppercase; }
   .contact-card strong { margin-top: 0.3rem; }
-  .contact-card small { font-size: 0.68rem; }
-  .contact-card a { color: #9ee0cc; font-size: 0.8rem; font-weight: 700; }
+  .contact-card small { font-size: var(--text-micro); }
+  .contact-card a { color: #9ee0cc; font-size: var(--text-sm); font-weight: 700; }
 
   .source-link { display: inline-flex; margin-top: 1.5rem; font-weight: 700; }
 

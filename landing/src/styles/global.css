@@ -54,6 +54,17 @@
     --font-display: "Avenir Next", Avenir, "Segoe UI Variable Display", "Segoe UI", sans-serif;
     --font-body: "Segoe UI Variable Text", "Avenir Next", Avenir, system-ui, sans-serif;
     --font-utility: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    /* Type scale: six reading sizes plus fluid display headings.
+       Never go below --text-micro for real content. */
+    --text-micro: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: 1.125rem;
+    --text-lede: clamp(1.08rem, 1.7vw, 1.32rem);
+    --text-xl: 1.25rem;
+    --text-h1: clamp(2.5rem, 5.55vw, 5.25rem);
+    --text-h2: clamp(2.2rem, 4.5vw, 4.25rem);
+    --text-h3: clamp(1.25rem, 2vw, 1.6rem);
     --shadow-card: 0 1px 1px rgb(5 45 53 / 5%), 0 20px 50px rgb(5 45 53 / 10%);
   }
 
@@ -62,7 +73,7 @@
     background: var(--cloud);
     color: var(--ink);
     font-family: var(--font-body);
-    font-size: 1rem;
+    font-size: var(--text-base);
     line-height: 1.6;
     text-rendering: optimizeLegibility;
   }
@@ -95,16 +106,16 @@
 
   h1 {
     max-width: 12ch;
-    font-size: clamp(2.5rem, 5.55vw, 5.25rem);
+    font-size: var(--text-h1);
   }
 
   h2 {
     max-width: 16ch;
-    font-size: clamp(2.2rem, 4.5vw, 4.25rem);
+    font-size: var(--text-h2);
   }
 
   h3 {
-    font-size: clamp(1.25rem, 2vw, 1.6rem);
+    font-size: var(--text-h3);
   }
 
   ::selection {
@@ -166,7 +177,7 @@
 
   nav a {
     color: var(--slate);
-    font-size: 0.88rem;
+    font-size: var(--text-sm);
     font-weight: 650;
     text-decoration: none;
   }
@@ -201,7 +212,7 @@
     gap: 0.6rem;
     color: var(--pounamu-dark);
     font-family: var(--font-utility);
-    font-size: 0.72rem;
+    font-size: var(--text-micro);
     font-weight: 700;
     letter-spacing: 0.09em;
     text-transform: uppercase;
@@ -222,7 +233,7 @@
   .section-heading > p:last-child {
     max-width: 59ch;
     color: var(--slate);
-    font-size: 1.06rem;
+    font-size: var(--text-lg);
   }
 
   .button-row {
@@ -287,7 +298,7 @@
   .footer-grid > div:first-child > .maker {
     margin-top: 0.55rem;
     color: var(--harbour);
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
   }
 
   .maker a { font-weight: 750; }
@@ -301,7 +312,7 @@
 
   .footer-links a {
     color: var(--harbour);
-    font-size: 0.9rem;
+    font-size: var(--text-sm);
     font-weight: 650;
   }
 
@@ -311,7 +322,7 @@
     padding-top: 1.5rem;
     border-top: 1px solid var(--line);
     color: var(--slate);
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
   }
 }
 
@@ -353,7 +364,7 @@
     border: 1px solid var(--line);
     border-radius: 999px;
     background: rgb(255 255 255 / 72%);
-    font-size: 0.78rem;
+    font-size: var(--text-sm);
     white-space: nowrap;
   }
 
