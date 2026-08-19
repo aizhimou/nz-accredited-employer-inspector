@@ -16,6 +16,8 @@ No live lookup runs when a page loads. A check starts only after the user select
 - Product site: [nzaei.zemo.bio](https://nzaei.zemo.bio)
 - Chrome Web Store: [Install the extension](https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg)
 - Extension API: `https://nzaei.zemo.bio/api`
+- Public read-only API: [`https://nzaei.zemo.bio/api/public/v1`](https://nzaei.zemo.bio/api/public/v1)
+- Public API guide: [nzaei.zemo.bio/public-api](https://nzaei.zemo.bio/public-api/)
 - Open-data catalog: [data.nzaei.zemo.bio/catalog.json](https://data.nzaei.zemo.bio/catalog.json)
 
 ## What is supported
@@ -54,9 +56,10 @@ Chrome extension ─────► Cloudflare Worker + D1
 
 Cloudflare scheduled handler ─────► R2 dated open-data snapshots
 Operator refresh script ──────────► INZ + production D1
+Public integrations ──────────────► read-only Worker routes + D1
 ```
 
-The Worker validates and stores browser-submitted INZ payloads but never calls INZ itself. The separate operator refresh script is intentionally outside the extension request path.
+The Worker validates and stores browser-submitted INZ payloads but never calls INZ itself. The separate operator refresh script is intentionally outside the extension request path. Public integrations can only read employer records by NZBN or bounded name search; they cannot access platform identities, community associations, refresh controls, or any write route.
 
 ## Development
 
@@ -85,9 +88,9 @@ For local extension work, run `npm run dev` from `extension/` and load `extensio
 
 `employers` is the canonical NZBN-keyed dataset. It is populated by validated official MBIE imports and user-triggered INZ observations. Platform associations are community data, not INZ facts; a unique exact name match is derived on demand and never persisted as a confirmation.
 
-The Worker publishes a fixed, privacy-safe projection of the canonical dataset as immutable dated CSV snapshots to R2. It also lists an original MBIE OIA workbook for download. These files use `NOASSERTION` licence status and are dated observations, not a live official register.
+The Worker publishes a fixed, privacy-safe projection of the canonical dataset as immutable dated CSV snapshots to R2. It also lists an original MBIE OIA workbook for download. These files use `NOASSERTION` licence status and are dated observations, not a live official register. Use those snapshots for bulk integrations; the public API is deliberately limited to individual lookup and bounded search.
 
-For the complete extension contract, data model, freshness rules, API error semantics, and provenance model, read [`docs/extension-api-ssot.md`](./docs/extension-api-ssot.md). For a public machine-readable reference, see [OpenAPI 3.1](https://nzaei.zemo.bio/api/openapi.json) and the [open-data guide](https://nzaei.zemo.bio/open-data/).
+For the complete extension contract, data model, freshness rules, API error semantics, and provenance model, read [`docs/extension-api-ssot.md`](./docs/extension-api-ssot.md). For machine-readable references, see the [extension OpenAPI 3.1 document](https://nzaei.zemo.bio/api/openapi.json), [public API OpenAPI 3.1 document](https://nzaei.zemo.bio/api/public/openapi.json), [public API guide](https://nzaei.zemo.bio/public-api/), and [open-data guide](https://nzaei.zemo.bio/open-data/).
 
 ## Privacy and disclaimer
 

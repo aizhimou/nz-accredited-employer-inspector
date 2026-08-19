@@ -15,10 +15,45 @@ export interface Release {
 
 export const releases: Release[] = [
   {
+    version: "1.0.0",
+    date: "19 August 2026",
+    isoDate: "2026-08-19",
+    status: "Current",
+    headline: "A dependable public data foundation.",
+    summary:
+      "The Inspector now offers a bounded public API alongside reproducible open-data snapshots, while the underlying search, refresh operations and site reading experience have been strengthened for everyday use.",
+    changes: [
+      {
+        title: "Read-only public API",
+        detail:
+          "Look up one employer by NZBN or search legal and trading names without an account. The new API is rate-limited, cacheable, documented with OpenAPI, and cannot write data or expose platform/community records.",
+      },
+      {
+        title: "Dated open-data releases",
+        detail:
+          "Download immutable, checksummed employer CSV snapshots with field definitions and provenance. The release catalog updates only after a validated scheduled publication succeeds, making bulk analysis reproducible.",
+      },
+      {
+        title: "Faster employer-name search",
+        detail:
+          "The Worker now keeps its FTS index aligned with canonical employer rows more efficiently, reducing the work required when official employer data changes.",
+      },
+      {
+        title: "More deliberate record maintenance",
+        detail:
+          "The operator refresh workflow and schedule were tightened so records nearing expiry can be refreshed sequentially with clearer safeguards outside the extension request path.",
+      },
+      {
+        title: "Clearer public documentation",
+        detail:
+          "A dedicated public API guide, machine-readable references, refined typography and a cleaned-up asset set make the product and its data boundaries easier to understand.",
+      },
+    ],
+  },
+  {
     version: "0.9.0",
     date: "18 August 2026",
     isoDate: "2026-08-18",
-    status: "Current",
     headline: "A wider view, with clearer recovery paths.",
     summary:
       "The Inspector now links to a dedicated accredited-employer insights view, refreshes ageing official records more deliberately and gives LinkedIn users a practical recovery step when the page loads out of order.",

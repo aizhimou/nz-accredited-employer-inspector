@@ -8,7 +8,9 @@ Production base URL: `https://nzaei.zemo.bio/api`
 
 This document is the single source of truth (SSOT) for the browser extension and Worker contract. Extension code must not infer behaviour by reading the `api/` implementation.
 
-It covers the six employer routes and their extension orchestration. The Worker also exposes the landing-only `POST /v1/waitlist` endpoint; it does not use `X-Client-ID` and is deliberately outside this extension contract. The public [OpenAPI document](https://nzaei.zemo.bio/api/openapi.json) includes that endpoint and the health route.
+It covers the six extension employer routes and their orchestration. The Worker also exposes the landing-only `POST /v1/waitlist` endpoint; it does not use `X-Client-ID` and is deliberately outside this extension contract. The extension [OpenAPI document](https://nzaei.zemo.bio/api/openapi.json) includes that endpoint and the health route.
+
+The separate public read-only API at `/public/v1` is not an extension contract. It has its own [guide](https://nzaei.zemo.bio/public-api/) and [OpenAPI document](https://nzaei.zemo.bio/api/public/openapi.json); its scope and boundaries are recorded in section 6.8 so the two API surfaces are never conflated.
 
 ## 1. Product model
 
@@ -37,7 +39,7 @@ These independent truth and provenance dimensions must stay visible in code and 
 
 - Content script: identifies the current platform entity, injects the widget, renders candidates, and captures an explicit association choice.
 - Extension background service worker: owns `X-Client-ID`, calls the Worker, calls INZ after a user click when required, and submits successful INZ results.
-- Cloudflare Worker: validates requests, searches/upserts `employers`, aggregates community confirmations, derives exact official/trading-name matches, evaluates freshness/accreditation, coordinates per-NZBN refresh leases/cooldowns, stores short-lived exact no-match observations, and rate-limits clients.
+- Cloudflare Worker: validates extension requests, searches/upserts `employers`, aggregates community confirmations, derives exact official/trading-name matches, evaluates freshness/accreditation, coordinates per-NZBN refresh leases/cooldowns, stores short-lived exact no-match observations, and rate-limits clients. Its separate public routes only read allowlisted employer fields.
 - D1: stores canonical employers, refresh coordination metadata, platform associations/confirmations, and platform-bound no-match observation fields.
 - INZ: official lookup called directly by the extension, never by the Worker.
 - Scheduled Worker handler: publishes a fixed public projection of canonical employers to R2 as immutable dated CSV snapshots and an updated catalog; it does not service extension requests.
@@ -145,7 +147,7 @@ Normalised advertiser names use Unicode NFKC, trim, collapsed whitespace, and lo
 
 ## 4. Client identity
 
-Every `/v1/*` request requires:
+Every extension `/v1/*` request requires:
 
 ```http
 X-Client-ID: 11111111-1111-4111-8111-111111111111
@@ -234,7 +236,7 @@ An expired candidate that has not been selected remains `confirmation_required`;
 
 Resolution precedence is strict: selected manual/community association, unique exact official/trading-name match, explicit preferred/community candidates requiring confirmation, fresh exact no-match observation, then live INZ lookup. Positive official data therefore always overrides a previous no-match observation, and a stored association always overrides an automatic match.
 
-## 6. Public API
+## 6. Extension API
 
 ### 6.1 Health
 
@@ -403,6 +405,17 @@ The NZBN must already exist in `employers`. The Worker atomically upserts the pl
 
 Success: `200 EmployerResolutionResponse` with `state: "associated"` or `"refresh_required"`, `matchMethod: "platform_association"`, and the employer freshness result.
 
+### 6.8 Separate public read-only API
+
+This API is for automation and system integration, not extension orchestration or bulk extraction. Its production base URL is `https://nzaei.zemo.bio/api/public/v1`; the canonical contract is the [public OpenAPI document](https://nzaei.zemo.bio/api/public/openapi.json).
+
+- `GET` and `HEAD` only; `POST`, `PUT`, `PATCH`, and `DELETE` return `405`.
+- No authentication or `X-Client-ID` is required. The Worker uses `CF-Connecting-IP` for a best-effort limit of 10 requests per 10 seconds at a Cloudflare location; rejected requests return `429` and `Retry-After: 10`.
+- `GET /employers/{nzbn}` returns one public employer record for an exact 13-digit NZBN.
+- `GET /employers/search?q={query}&limit={1..10}` performs bounded FTS employer/trading-name search. It does not expose platform identities, community confirmations, no-match observations, refresh controls, client hashes, or any write operation.
+- Successful responses use `data`; search responses add `meta.query` and `meta.count`. Errors use `error.code`, `error.message`, and `meta.requestId`. Successful responses are cacheable for 60 seconds in clients and 5 minutes at the edge.
+- Dated R2 CSV snapshots remain the bulk-data interface. Do not paginate or crawl the public API to rebuild the employer dataset.
+
 ## 7. Extension orchestration
 
 The extension has an enabled setting stored in `browser.storage.local` under `nz-aei-enabled`; it defaults to enabled. When paused, content scripts do not mount new widgets and the background rejects employer messages with `extension_paused`. The toolbar action shows an `OFF` badge. Re-enable it in the popup and refresh the page to mount the widget again.
@@ -559,9 +572,9 @@ Current controls:
 
 This is an MVP placeholder, not protection against a determined attacker fabricating a valid-looking payload. Stronger provenance requires an INZ-approved server-side integration, signed source data, or moderated import/audit workflows.
 
-## 11. Headers and errors
+## 11. Extension API headers and errors
 
-All JSON application responses include `X-Request-ID`, `Cache-Control: no-store`, `Access-Control-Allow-Origin: *`, and `X-Content-Type-Options: nosniff`. CORS permits `GET, POST, OPTIONS` and `X-Client-ID, Content-Type`. `X-Request-ID` and `Retry-After` are exposed. An `OPTIONS` request receives a global `204` preflight response with the CORS headers and `X-Request-ID`; it does not include `Cache-Control` or `X-Content-Type-Options`, and its path is not route-validated.
+All extension JSON application responses include `X-Request-ID`, `Cache-Control: no-store`, `Access-Control-Allow-Origin: *`, and `X-Content-Type-Options: nosniff`. CORS permits `GET, POST, OPTIONS` and `X-Client-ID, Content-Type`. `X-Request-ID` and `Retry-After` are exposed. An `OPTIONS` request receives a global `204` preflight response with the CORS headers and `X-Request-ID`; it does not include `Cache-Control` or `X-Content-Type-Options`, and its path is not route-validated. Section 6.8 defines the distinct public API response and cache contract.
 
 Errors use:
 
@@ -597,6 +610,7 @@ Cloudflare platform failures may be non-JSON. For a non-JSON API failure, the ex
 ## 12. Compatibility
 
 - The six employer `v1` routes are `/v1/employers/resolve`, `/v1/employers/search`, `/v1/employers/ingest`, `/v1/employers/no-match`, `/v1/employers/refresh`, and `/v1/employers/associate`.
+- The public read-only API is separately versioned at `/public/v1`; its additive fields and response schema are defined by its own OpenAPI document and must not change extension route semantics.
 - Additive fields are allowed in `v1`; clients ignore unknown response fields. Service `0.7.0` introduced generic local candidate retrieval and the read-only manual-search endpoint. Service `0.7.1` limited responses to 10 candidates and broadened the existing `exact_employer_name` method to a unique exact official or trading name. Service `0.8.0` removes fuzzy candidates from `/resolve` and defines `/search` as an all-keywords FTS5 query without similarity scoring.
 - Removing/renaming fields or changing orchestration semantics requires a new API version.
 - INZ `Title` and `Type` metadata are documentation only and are not stored.
