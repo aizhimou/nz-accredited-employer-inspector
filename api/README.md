@@ -46,6 +46,26 @@ Automatic resolution uses only saved/community associations and exact normalised
 
 Freshness is configured in `wrangler.jsonc` through `POSITIVE_TTL_SECONDS`, `NEGATIVE_TTL_SECONDS`, `REFRESH_ATTEMPT_COOLDOWN_SECONDS`, and `REFRESH_NO_MATCH_COOLDOWN_SECONDS`. All four variables are required positive integer numbers of seconds and must be declared separately for every Wrangler environment.
 
+## Open data snapshots
+
+The Worker also has a scheduled handler that publishes a fixed public projection of the `employers` table to the `OPEN_DATA_BUCKET` R2 binding. The Cron Trigger runs daily at 16:15 UTC, reads the small static catalog, and exits without querying D1 until 72 hours have passed since the previous successful publication. A failed eligible run is therefore retried the next day.
+
+Each successful publication writes:
+
+- `snapshots/YYYY-MM-DD/employers.csv` — immutable, NZBN-ordered UTF-8 CSV;
+- `snapshots/YYYY-MM-DD/metadata.json` — row count, checksum, schema version, and provenance;
+- `schema/employers-v1.json` — immutable machine-readable field definition;
+- `catalog.json` — the only mutable object, updated after all dated release objects succeed.
+
+There is no `latest.csv` and no bulk-data HTTP endpoint. The projection excludes normalised search fields, refresh controls, platform identities, installation hashes, community confirmations, no-match observations, and waitlist records. Publication stops when validation fails, the output exceeds its safety limits, or the row count changes by more than 25% from the prior release.
+
+Test a scheduled event against local D1 and R2 bindings with:
+
+```bash
+npx wrangler dev --local --test-scheduled
+curl http://localhost:8787/__scheduled
+```
+
 ## Official employer imports
 
 The importer accepts the MBIE OIA `.xlsx` appendix, validates its fixed 11-column layout and snapshot date, preserves every source row in an audit table, and generates D1-compatible SQL in batches below D1's 100 KB statement limit. Rows without a valid NZBN remain in `official_employer_import_rows` for audit but are not inserted into the NZBN-keyed `employers` table.

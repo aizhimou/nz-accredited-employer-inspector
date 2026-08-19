@@ -51,6 +51,7 @@ The hero CTA links directly to the approved Chrome Web Store listing. The pre-re
 - `/index.md` mirrors the core landing-page content as Markdown.
 - `/privacy/` is the public Chrome Web Store privacy policy, with `/privacy.md` as its agent-readable equivalent.
 - `/insights/` is the interactive official-snapshot overview, with `/insights.md` as its agent-readable summary.
+- `/open-data/` documents downloadable snapshots and source files, with `/open-data.md` as its agent-readable field and provenance guide.
 - `/.well-known/api-catalog` is an RFC 9727 `application/linkset+json` catalog.
 - `/api/openapi.json` describes the production extension API using OpenAPI 3.1.
 - HTML includes semantic landmarks, JSON-LD, canonical metadata, and alternate-resource links.
@@ -77,6 +78,10 @@ The visual language is based on an Aotearoa evidence trail:
 - mist (`#edf5f3`) for the quiet page surface.
 
 The hero's provenance path and the trust-model grid are the primary visual signatures. The site uses no UI framework or external font request; the Insights page uses Observable Plot for its client-side charts.
+
+## Open data catalog
+
+The Open Data page and homepage release ledger read the static snapshot catalog from `https://data.nzaei.zemo.bio/catalog.json`. Set `PUBLIC_OPEN_DATA_BASE_URL` to use another R2 custom domain during a deployment. If the catalog cannot be loaded, the explanatory content and original-file entry remain available and the snapshot list shows a clear temporary-unavailability message.
 
 ## Demo video
 

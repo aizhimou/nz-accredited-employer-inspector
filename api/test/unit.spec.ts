@@ -21,6 +21,11 @@ import {
   buildEmployerFtsQuery,
   tokenizeEmployerSearch,
 } from "../src/employer-search";
+import {
+  buildSnapshotCsv,
+  createEmptyCatalog,
+  isPublicationDue,
+} from "../src/open-data";
 import { CLIENT_ID, createInzResponse } from "./fixtures";
 
 const linkedinIdentity = {
@@ -248,4 +253,73 @@ describe("freshness configuration", () => {
       })).toThrowError("POSITIVE_TTL_SECONDS must be a positive integer");
     },
   );
+});
+
+describe("open-data snapshots", () => {
+  it("publishes on first run and only after 72 hours thereafter", () => {
+    const catalog = createEmptyCatalog();
+    const firstRun = Date.parse("2026-08-19T16:15:00Z");
+    expect(isPublicationDue(catalog, firstRun)).toBe(true);
+
+    catalog.snapshots.push({
+      snapshot_date: "2026-08-19",
+      generated_at: "2026-08-19T16:15:00.000Z",
+      row_count: 30_253,
+      byte_size: 1_000,
+      sha256: "a".repeat(64),
+      schema_version: 1,
+      csv_path: "/snapshots/2026-08-19/employers.csv",
+      metadata_path: "/snapshots/2026-08-19/metadata.json",
+    });
+
+    expect(isPublicationDue(catalog, firstRun + 72 * 60 * 60 * 1000 - 1)).toBe(false);
+    expect(isPublicationDue(catalog, firstRun + 72 * 60 * 60 * 1000)).toBe(true);
+  });
+
+  it("builds a quoted UTF-8 CSV with derived Auckland-date status", () => {
+    const bytes = buildSnapshotCsv([
+      {
+        employer_name: "Āporo, \"Limited\"",
+        trading_name: null,
+        nzbn: "9429034908822",
+        expiry_date_of_accreditation: "2026-08-19T00:00:00",
+        last_verified_at: Math.floor(Date.parse("2026-08-18T23:00:00Z") / 1000),
+        last_verified_source: "inz_live_lookup",
+        accreditation_type: "Standard",
+        sector: "Professional, Scientific and Technical Services",
+        subsector: null,
+        accreditation_start_date: "2024-08-19T00:00:00",
+        region: "Auckland",
+        city: "Tāmaki Makaurau",
+        official_snapshot_date: "2026-07-27",
+      },
+    ], "2026-08-19");
+    const csv = new TextDecoder().decode(bytes);
+
+    expect(bytes[0]).toBe(0xef);
+    expect(csv).toContain('"Āporo, ""Limited"""');
+    expect(csv).toContain('"accredited"');
+    expect(csv).toContain('"2026-08-18T23:00:00.000Z"');
+    expect(csv.endsWith("\r\n")).toBe(true);
+  });
+
+  it("rejects invalid public identifiers before publication", () => {
+    expect(() => buildSnapshotCsv([
+      {
+        employer_name: "Example Limited",
+        trading_name: null,
+        nzbn: "invalid",
+        expiry_date_of_accreditation: "2027-01-01",
+        last_verified_at: 1,
+        last_verified_source: "inz_official_import",
+        accreditation_type: null,
+        sector: null,
+        subsector: null,
+        accreditation_start_date: null,
+        region: null,
+        city: null,
+        official_snapshot_date: null,
+      },
+    ], "2026-08-19")).toThrowError("invalid NZBN");
+  });
 });

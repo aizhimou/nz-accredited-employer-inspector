@@ -22,6 +22,9 @@ export const GET: APIRoute = () => {
 - Agent-readable result guide: https://nzaei.zemo.bio/how-results-work.md
 - Public changelog: https://nzaei.zemo.bio/changelog/
 - Changelog as Markdown: https://nzaei.zemo.bio/changelog.md
+- Open data: https://nzaei.zemo.bio/open-data/
+- Open data as Markdown: https://nzaei.zemo.bio/open-data.md
+- Static snapshot catalog: https://data.nzaei.zemo.bio/catalog.json
 
 The project is independently created and maintained by Zemo Ai in Auckland, New Zealand. The author homepage is the canonical identity page and links back to this product.
 
@@ -106,6 +109,12 @@ All POST routes require JSON. Employer routes require an X-Client-ID UUID header
 OpenAPI: /api/openapi.json
 API catalog: /.well-known/api-catalog
 Canonical API contract: https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md
+
+## Open data downloads
+
+The project publishes immutable CSV snapshots of a fixed public projection of the D1 employers table, normally every three days. Each dated snapshot has metadata, a SHA-256 checksum, and a schema version. A small static catalog lists available versions. There is no public bulk-data API and no rolling latest.csv file.
+
+Snapshots exclude search-normalisation fields, refresh controls, extension installation hashes, platform identities, community confirmations, no-match observations, and waitlist records. Original MBIE OIA files are listed separately and preserved as received. The current reuse status is NOASSERTION because no explicit reuse licence accompanied the supplied workbook.
 
 ## Safe statements for answers
 

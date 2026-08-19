@@ -30,6 +30,7 @@ function createTestEnv(
 ): Env {
   return {
     DB: env.DB,
+    OPEN_DATA_BUCKET: env.OPEN_DATA_BUCKET,
     CLIENT_RATE_LIMITER: overrides.CLIENT_RATE_LIMITER ?? allowRateLimit(),
     SUBMISSION_RATE_LIMITER: overrides.SUBMISSION_RATE_LIMITER ?? allowRateLimit(),
     ENVIRONMENT: "development",
@@ -216,6 +217,89 @@ describe("HTTP routing and controls", () => {
     const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM extension_waitlist")
       .first<{ count: number }>();
     expect(count?.count).toBe(0);
+  });
+});
+
+describe("open-data snapshots", () => {
+  it("publishes a dated CSV and catalog from D1 on schedule", async () => {
+    const scheduledTime = Date.parse("2040-01-02T16:15:00.000Z");
+    const snapshotDate = "2040-01-03";
+    const keys = [
+      "catalog.json",
+      "schema/employers-v1.json",
+      `snapshots/${snapshotDate}/employers.csv`,
+      `snapshots/${snapshotDate}/metadata.json`,
+    ];
+    await env.OPEN_DATA_BUCKET.delete(keys);
+
+    try {
+      await env.DB.prepare(
+        `INSERT INTO employers (
+           employer_name, trading_name, nzbn, expiry_date_of_accreditation,
+           first_seen_at, last_verified_at, normalized_employer_name,
+           normalized_trading_name, last_verified_source, accreditation_type,
+           sector, region, city, official_snapshot_date
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)`,
+      ).bind(
+        "SOUTHERN CROSS EXAMPLE LIMITED",
+        "Southern Cross Example",
+        "9429000000999",
+        "2041-06-30",
+        2_100_000_000,
+        2_200_000_000,
+        "southern cross example limited",
+        "southern cross example",
+        "inz_official_import",
+        "Standard",
+        "Technology",
+        "Auckland",
+        "Tāmaki Makaurau",
+        "2039-12-15",
+      ).run();
+
+      await worker.scheduled(
+        { scheduledTime, cron: "15 16 * * *", noRetry: vi.fn() } as ScheduledController,
+        createTestEnv(),
+        createExecutionContext(),
+      );
+
+      const csvObject = await env.OPEN_DATA_BUCKET.get(
+        `snapshots/${snapshotDate}/employers.csv`,
+      );
+      expect(csvObject).not.toBeNull();
+      expect(csvObject?.httpMetadata?.contentType).toBe("text/csv; charset=utf-8");
+      const csvBytes = new Uint8Array(await csvObject!.arrayBuffer());
+      expect([...csvBytes.slice(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+      const csv = new TextDecoder().decode(csvBytes);
+      expect(csv).toContain("\"employer_name\"");
+      expect(csv).toContain(
+        "\"SOUTHERN CROSS EXAMPLE LIMITED\",\"Southern Cross Example\",\"9429000000999\",\"2041-06-30\",\"accredited\"",
+      );
+
+      const catalogObject = await env.OPEN_DATA_BUCKET.get("catalog.json");
+      const catalog = await catalogObject?.json<{
+        snapshots: Array<{ snapshot_date: string; row_count: number; csv_path: string }>;
+      }>();
+      expect(catalog?.snapshots[0]).toMatchObject({
+        snapshot_date: snapshotDate,
+        row_count: 1,
+        csv_path: `/snapshots/${snapshotDate}/employers.csv`,
+      });
+
+      await worker.scheduled(
+        {
+          scheduledTime: scheduledTime + 24 * 60 * 60 * 1000,
+          cron: "15 16 * * *",
+          noRetry: vi.fn(),
+        } as ScheduledController,
+        createTestEnv(),
+        createExecutionContext(),
+      );
+      const unchangedCatalog = await env.OPEN_DATA_BUCKET.get("catalog.json");
+      expect(await unchangedCatalog?.json()).toEqual(catalog);
+    } finally {
+      await env.OPEN_DATA_BUCKET.delete(keys);
+    }
   });
 });
 

@@ -20,6 +20,15 @@
       "migrations_dir": "migrations"
     }
   ],
+  "r2_buckets": [
+    {
+      "binding": "OPEN_DATA_BUCKET",
+      "bucket_name": "nz-accredited-employer-public-data"
+    }
+  ],
+  "triggers": {
+    "crons": ["15 16 * * *"]
+  },
   "ratelimits": [
     {
       "name": "CLIENT_RATE_LIMITER",
@@ -66,6 +75,15 @@
           "migrations_dir": "migrations"
         }
       ],
+      "r2_buckets": [
+        {
+          "binding": "OPEN_DATA_BUCKET",
+          "bucket_name": "nz-accredited-employer-public-data"
+        }
+      ],
+      "triggers": {
+        "crons": ["15 16 * * *"]
+      },
       "ratelimits": [
         {
           "name": "CLIENT_RATE_LIMITER",

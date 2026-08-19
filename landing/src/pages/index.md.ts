@@ -66,6 +66,7 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [Official INZ accredited employer list](https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/)
 - [Privacy policy](/privacy/)
 - [Accredited employer insights](/insights/)
+- [Open data downloads](/open-data/)
 - [Changelog](/changelog/)
 - [Built by Zemo Ai](https://zemo.bio/)
 
@@ -75,6 +76,7 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [/llms-full.txt](/llms-full.txt): complete product context
 - [/how-results-work.md](/how-results-work.md): result interpretation rules and notice dictionary
 - [/insights.md](/insights.md): aggregate regional, sector, and expiry-date insights
+- [/open-data.md](/open-data.md): snapshot publication method, field dictionary, reuse status, and limitations
 - [/changelog.md](/changelog.md): dated product release history
 - [/privacy.md](/privacy.md): privacy policy without presentation markup
 - [/.well-known/api-catalog](/.well-known/api-catalog): RFC 9727 API catalog

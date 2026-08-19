@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://nzaei.zemo.bio"
+        ],
+        "methods": [
+          "GET",
+          "HEAD"
+        ]
+      },
+      "exposeHeaders": [
+        "Content-Length",
+        "ETag"
+      ],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

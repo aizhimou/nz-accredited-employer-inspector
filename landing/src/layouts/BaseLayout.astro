@@ -6,7 +6,7 @@ import "../styles/global.css";
 interface Props {
   title?: string;
   description?: string;
-  pageKind?: "product" | "privacy" | "guide" | "changelog" | "insights";
+  pageKind?: "product" | "privacy" | "guide" | "changelog" | "insights" | "open-data";
   markdownAlternate?: string;
 }
 
@@ -27,10 +27,8 @@ const videoEmbedUrl = "https://www.youtube-nocookie.com/embed/85SEJU-aHrQ";
 const primaryNavigation = [
   { href: "/how-results-work/", label: "How results work", current: Astro.url.pathname.startsWith("/how-results-work") },
   { href: "/insights/", label: "Insights", current: Astro.url.pathname.startsWith("/insights") },
+  { href: "/open-data/", label: "Open data", current: Astro.url.pathname.startsWith("/open-data") },
   { href: "/changelog/", label: "Changelog", current: Astro.url.pathname.startsWith("/changelog") },
-  { href: "/#demo", label: "Demo", current: false },
-  { href: "/#trust", label: "Trust model", current: false },
-  { href: "/#agents", label: "For agents", current: false },
 ];
 const productStructuredData = {
   "@context": "https://schema.org",
@@ -224,6 +222,23 @@ const insightsStructuredData = {
     creator: { "@type": "Organization", name: "Immigration New Zealand" },
   },
 };
+const openDataStructuredData = {
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  name: "NZ Accredited Employer Inspector employer records snapshots",
+  description,
+  url: canonicalUrl.href,
+  dateModified: "2026-08-19",
+  inLanguage: "en-NZ",
+  creator: { "@type": "Person", name: "Zemo Ai", url: authorUrl },
+  isAccessibleForFree: true,
+  distribution: {
+    "@type": "DataDownload",
+    name: "Snapshot catalog",
+    encodingFormat: "application/json",
+    contentUrl: "https://data.nzaei.zemo.bio/catalog.json",
+  },
+};
 const structuredData = pageKind === "privacy"
   ? privacyStructuredData
   : pageKind === "guide"
@@ -232,6 +247,8 @@ const structuredData = pageKind === "privacy"
       ? changelogStructuredData
       : pageKind === "insights"
         ? insightsStructuredData
+        : pageKind === "open-data"
+          ? openDataStructuredData
         : productStructuredData;
 ---
 
@@ -310,6 +327,7 @@ const structuredData = pageKind === "privacy"
           <a href="https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/">Official INZ list</a>
           <a href="/how-results-work/">How results work</a>
           <a href="/insights/">Insights</a>
+          <a href="/open-data/">Open data</a>
           <a href="/changelog/">Changelog</a>
           <a href="/privacy/">Privacy policy</a>
           <a href={markdownAlternate}>Read as Markdown</a>

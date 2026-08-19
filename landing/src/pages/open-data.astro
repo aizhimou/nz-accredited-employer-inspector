@@ -1,0 +1,295 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import {
+  openDataCatalogUrl,
+  openDataSchemaUrl,
+  originalOpenDataFile,
+} from "../data/open-data";
+
+const title = "Open Data | NZ Accredited Employer Inspector";
+const description = "Download dated employer-record snapshots and original MBIE source files, with field definitions, provenance, reuse status, and limitations.";
+const number = new Intl.NumberFormat("en-NZ");
+const fields = [
+  ["employer_name", "string", "No", "Latest accepted INZ verification", "Legal employer name"],
+  ["trading_name", "string", "Yes", "Latest accepted INZ verification", "Published trading name, when present"],
+  ["nzbn", "string", "No", "Latest accepted INZ verification", "13-digit New Zealand Business Number"],
+  ["expiry_date_of_accreditation", "date", "No", "Latest accepted INZ verification", "Accreditation expiry in YYYY-MM-DD format"],
+  ["status_as_at_snapshot", "string", "No", "Inspector-derived", "Accredited or expired on the Auckland snapshot date"],
+  ["last_verified_at", "datetime", "No", "Inspector", "UTC time when the record was accepted"],
+  ["last_verified_source", "string", "No", "Inspector", "Live INZ lookup or official import"],
+  ["accreditation_type", "string", "Yes", "MBIE OIA snapshot", "Official accreditation category"],
+  ["sector", "string", "Yes", "MBIE OIA snapshot", "Official industry sector"],
+  ["subsector", "string", "Yes", "MBIE OIA snapshot", "Official industry subsector"],
+  ["accreditation_start_date", "date", "Yes", "MBIE OIA snapshot", "Start date in YYYY-MM-DD format"],
+  ["region", "string", "Yes", "MBIE OIA snapshot", "Published region"],
+  ["city", "string", "Yes", "MBIE OIA snapshot", "Published city"],
+  ["official_snapshot_date", "date", "Yes", "Inspector", "MBIE snapshot supplying enrichment fields"],
+];
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  pageKind="open-data"
+  markdownAlternate="/open-data.md"
+>
+  <section class="data-hero" aria-labelledby="data-title">
+    <div class="shell data-hero-grid">
+      <div>
+        <p class="eyebrow">Open data</p>
+        <h1 id="data-title">Public records, published as dated files.</h1>
+      </div>
+      <div class="data-hero-copy">
+        <p>
+          Download immutable CSV snapshots of the Inspector’s public employer records, or inspect the original files received from MBIE. No account, query interface or data API is required.
+        </p>
+        <ul aria-label="Publication characteristics">
+          <li>Normally every three days</li>
+          <li>Versioned and checksummed</li>
+          <li>Community identity data excluded</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="data-section downloads" aria-labelledby="downloads-title">
+      <div class="shell">
+        <div class="data-section-heading">
+          <p class="eyebrow">Download register</p>
+          <h2 id="downloads-title">Choose a specific release.</h2>
+          <p>Generated files never change after publication. Use the snapshot date and SHA-256 checksum when you need a reproducible input.</p>
+        </div>
+
+        <div class="download-register">
+          <div class="register-heading">
+            <div>
+              <span>Generated snapshots</span>
+              <strong>Inspector employer records</strong>
+            </div>
+            <a href={openDataSchemaUrl}>Schema v1 ↗</a>
+          </div>
+          <p class="catalog-status" data-open-data-status aria-live="polite">Loading the snapshot register…</p>
+          <ol
+            class="snapshot-list snapshot-list-detailed"
+            data-open-data-snapshot-list
+            data-catalog-url={openDataCatalogUrl}
+            data-detailed="true"
+          >
+            <li class="snapshot-entry snapshot-placeholder">The first generated snapshot will appear here after publication.</li>
+          </ol>
+        </div>
+
+        <article class="original-file">
+          <div class="file-stamp">
+            <span>Original source</span>
+            <strong>As received</strong>
+          </div>
+          <div class="original-file-copy">
+            <p class="file-source">{originalOpenDataFile.source}</p>
+            <h3>{originalOpenDataFile.title}</h3>
+            <p>{number.format(originalOpenDataFile.rowCount)} rows · {number.format(originalOpenDataFile.nzbnCount)} with NZBN · XLSX · {(originalOpenDataFile.byteSize / (1024 * 1024)).toFixed(1)} MB</p>
+            <code>SHA-256 {originalOpenDataFile.sha256}</code>
+          </div>
+          <a class="button button-secondary" href={originalOpenDataFile.downloadUrl}>Download original XLSX</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="data-section method" aria-labelledby="method-title">
+      <div class="shell method-grid">
+        <div class="data-section-heading">
+          <p class="eyebrow">Publication method</p>
+          <h2 id="method-title">A small, repeatable pipeline.</h2>
+        </div>
+        <ol>
+          <li><span>01</span><div><h3>Select public fields</h3><p>A fixed allowlist is read from the production employer table. Internal search, refresh and community fields are never selected.</p></div></li>
+          <li><span>02</span><div><h3>Validate the release</h3><p>NZBNs, dates, row count and file size are checked. Unexpected changes stop publication for review.</p></div></li>
+          <li><span>03</span><div><h3>Publish immutable files</h3><p>The dated CSV and metadata are written first. The public catalog is updated only after both succeed.</p></div></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="data-section dictionary" aria-labelledby="dictionary-title">
+      <div class="shell">
+        <div class="data-section-heading dictionary-heading">
+          <div>
+            <p class="eyebrow">Field dictionary</p>
+            <h2 id="dictionary-title">Freshness belongs to each field.</h2>
+          </div>
+          <p>Names, NZBN, expiry and verification fields can be refreshed by accepted live INZ observations. Sector, region and other enrichment fields remain tied to their dated MBIE import.</p>
+        </div>
+        <div class="field-table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Type</th><th>Nullable</th><th>Source</th><th>Meaning</th></tr></thead>
+            <tbody>
+              {fields.map(([name, type, nullable, source, meaning]) => (
+                <tr><td><code>{name}</code></td><td>{type}</td><td>{nullable}</td><td>{source}</td><td>{meaning}</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="data-section boundaries" aria-labelledby="boundaries-title">
+      <div class="shell boundaries-grid">
+        <div>
+          <p class="eyebrow">Data boundaries</p>
+          <h2 id="boundaries-title">Public facts only.</h2>
+          <p>The download deliberately excludes data that exists to operate the product rather than describe an employer.</p>
+        </div>
+        <ul>
+          <li>Normalised search fields and search indexes</li>
+          <li>Refresh attempts, outcomes, leases and cooldowns</li>
+          <li>Extension installation hashes</li>
+          <li>LinkedIn and SEEK platform identities</li>
+          <li>Community confirmations and association counts</li>
+          <li>Temporary no-match observations and waitlist records</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="data-section terms" aria-labelledby="terms-title">
+      <div class="shell terms-grid">
+        <div class="data-section-heading">
+          <p class="eyebrow">Reuse and responsibility</p>
+          <h2 id="terms-title">Clear provenance, cautious claims.</h2>
+        </div>
+        <div class="terms-copy">
+          <article>
+            <h3>Reuse status</h3>
+            <p>
+              The original workbook was released by MBIE under the Official Information Act. No explicit reuse licence accompanied the supplied file, so its licence is recorded as <code>NOASSERTION</code>. The generated snapshots use the same status while source reuse rights are being clarified.
+            </p>
+            <p>
+              See the New Zealand Government’s <a href="https://www.data.govt.nz/manage-data/policies/nzgoal">NZGOAL guidance ↗</a> for how agencies license copyright works and mark non-copyright material for reuse.
+            </p>
+          </article>
+          <article>
+            <h3>Suggested attribution</h3>
+            <blockquote>NZ Accredited Employer Inspector, Employer Records Snapshot, [snapshot date]. Source data includes Immigration New Zealand information released by MBIE.</blockquote>
+          </article>
+          <article class="disclaimer">
+            <h3>Disclaimer</h3>
+            <p>
+              These files are dated observations, not a live or complete official register. Records may be stale, incomplete or incorrect, and an expiry or no-match observation is not proof of an employer’s current accreditation status. Verify important decisions with Immigration New Zealand or the employer. This independent project is not an INZ product and does not provide immigration or legal advice.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    import "../scripts/open-data";
+  </script>
+</BaseLayout>
+
+<style>
+  .data-hero {
+    padding-block: clamp(5rem, 10vw, 9rem);
+    border-bottom: 1px solid var(--line);
+    background:
+      linear-gradient(90deg, rgb(8 122 92 / 8%) 1px, transparent 1px) 0 0 / 5rem 100%,
+      linear-gradient(145deg, var(--cloud), var(--mist));
+  }
+
+  .data-hero-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: end;
+    gap: clamp(3rem, 9vw, 9rem);
+  }
+
+  .data-hero-grid > div:first-child { display: grid; gap: 1.3rem; }
+  .data-hero h1 { max-width: 13ch; }
+  .data-hero-copy { display: grid; gap: 1.5rem; }
+  .data-hero-copy > p { color: var(--slate); font-size: var(--text-lg); }
+  .data-hero-copy ul { display: flex; flex-wrap: wrap; gap: 0.65rem; padding: 0; list-style: none; }
+  .data-hero-copy li { padding: 0.35rem 0.65rem; border: 1px solid var(--line); border-radius: 999px; background: rgb(255 255 255 / 70%); color: var(--pounamu-dark); font-size: var(--text-micro); font-weight: 700; }
+
+  .data-section { padding-block: clamp(5rem, 9vw, 8rem); }
+  .data-section-heading { display: grid; gap: 1.1rem; }
+  .data-section-heading > p:last-child { max-width: 60ch; color: var(--slate); }
+
+  .downloads { background: white; }
+  .download-register { margin-top: 3.5rem; overflow: hidden; border: 1px solid var(--line); border-radius: 0.9rem; background: var(--cloud); }
+  .register-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--line); background: var(--harbour-deep); color: white; }
+  .register-heading div { display: grid; }
+  .register-heading span { color: #8ed3bd; font-family: var(--font-utility); font-size: var(--text-micro); letter-spacing: 0.08em; text-transform: uppercase; }
+  .register-heading a { color: var(--kōwhai); font-size: var(--text-sm); font-weight: 750; }
+  .catalog-status { padding: 0.8rem 1.5rem; border-bottom: 1px solid var(--line-light); color: var(--slate); font-size: var(--text-sm); }
+  .snapshot-list { margin: 0; padding: 0; list-style: none; }
+  .snapshot-list :global(.snapshot-entry) { display: grid; grid-template-columns: minmax(9rem, 0.65fr) 1.35fr auto; align-items: center; gap: 1.5rem; padding: 1.35rem 1.5rem; border-bottom: 1px solid var(--line-light); background: white; }
+  .snapshot-list :global(.snapshot-entry:last-child) { border-bottom: 0; }
+  .snapshot-list :global(.snapshot-entry time) { color: var(--harbour); font-family: var(--font-utility); font-size: var(--text-sm); font-weight: 700; }
+  .snapshot-list :global(.snapshot-entry-facts) { display: grid; min-width: 0; }
+  .snapshot-list :global(.snapshot-entry-facts strong) { font-size: var(--text-sm); }
+  .snapshot-list :global(.snapshot-entry-facts span) { color: var(--slate); font-size: var(--text-micro); }
+  .snapshot-list :global(.snapshot-entry-facts code) { overflow: hidden; color: #758984; font-size: var(--text-micro); text-overflow: ellipsis; white-space: nowrap; }
+  .snapshot-list :global(.snapshot-entry-actions) { display: flex; gap: 0.8rem; }
+  .snapshot-list :global(.snapshot-entry-actions a) { color: var(--pounamu-dark); font-size: var(--text-sm); font-weight: 750; white-space: nowrap; }
+  .snapshot-placeholder { color: var(--slate); font-size: var(--text-sm); }
+
+  .original-file { display: grid; grid-template-columns: 0.45fr 1.4fr auto; align-items: center; gap: 2rem; margin-top: 1.25rem; padding: 1.5rem; border: 1px solid #e5c878; border-radius: 0.9rem; background: #fffaf0; }
+  .file-stamp { display: grid; align-content: center; min-height: 6rem; padding: 1rem; border: 1px solid #bf8f20; color: #7f5b0b; font-family: var(--font-utility); text-align: center; text-transform: uppercase; transform: rotate(-1deg); }
+  .file-stamp span { font-size: var(--text-micro); letter-spacing: 0.08em; }
+  .file-stamp strong { font-size: var(--text-sm); }
+  .original-file-copy { display: grid; min-width: 0; gap: 0.35rem; }
+  .original-file-copy h3 { font-size: var(--text-xl); }
+  .original-file-copy > p:not(.file-source) { color: var(--slate); font-size: var(--text-sm); }
+  .file-source { color: #7f5b0b; font-family: var(--font-utility); font-size: var(--text-micro); text-transform: uppercase; }
+  .original-file-copy code { overflow: hidden; color: #7b7568; font-size: var(--text-micro); text-overflow: ellipsis; white-space: nowrap; }
+
+  .method { background: var(--mist); }
+  .method-grid { display: grid; grid-template-columns: 0.75fr 1.25fr; gap: clamp(4rem, 9vw, 9rem); }
+  .method ol { margin: 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
+  .method li { display: grid; grid-template-columns: 3rem 1fr; gap: 1.25rem; padding-block: 1.7rem; border-bottom: 1px solid var(--line); }
+  .method li > span { color: var(--pounamu); font-family: var(--font-utility); font-size: var(--text-micro); font-weight: 700; }
+  .method li div { display: grid; gap: 0.45rem; }
+  .method h3 { font-size: var(--text-xl); }
+  .method li p { color: var(--slate); font-size: var(--text-sm); }
+
+  .dictionary { background: white; }
+  .dictionary-heading { grid-template-columns: 1fr 0.8fr; align-items: end; }
+  .dictionary-heading > div { display: grid; gap: 1.1rem; }
+  .field-table-wrap { margin-top: 3.5rem; overflow-x: auto; border: 1px solid var(--line); border-radius: 0.8rem; }
+  table { width: 100%; border-collapse: collapse; background: white; font-size: var(--text-base); }
+  th, td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--line-light); text-align: left; vertical-align: top; }
+  th { background: var(--harbour-deep); color: #c9ddd8; font-family: var(--font-utility); font-size: var(--text-micro); letter-spacing: 0.04em; text-transform: uppercase; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td code { color: var(--pounamu-dark); font-size: var(--text-base); }
+  td:nth-child(2), td:nth-child(3) { font-family: var(--font-utility); font-size: var(--text-sm); }
+  td:nth-child(4), td:nth-child(5) { color: var(--slate); }
+
+  .boundaries { background: var(--harbour-deep); color: #b6cbc6; }
+  .boundaries :global(h2) { color: white; }
+  .boundaries .eyebrow { color: #8ed3bd; }
+  .boundaries-grid { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: clamp(4rem, 10vw, 10rem); }
+  .boundaries-grid > div { display: grid; align-content: start; gap: 1.2rem; }
+  .boundaries-grid > div p:last-child { max-width: 50ch; }
+  .boundaries ul { display: grid; grid-template-columns: 1fr 1fr; margin: 0; padding: 0; border-top: 1px solid #28515a; list-style: none; }
+  .boundaries li { padding: 1.2rem; border-right: 1px solid #28515a; border-bottom: 1px solid #28515a; font-size: var(--text-sm); }
+  .boundaries li:nth-child(even) { border-right: 0; }
+
+  .terms { background: var(--cloud); }
+  .terms-grid { display: grid; grid-template-columns: 0.72fr 1.28fr; gap: clamp(4rem, 10vw, 10rem); }
+  .terms-copy { display: grid; border-top: 1px solid var(--line); }
+  .terms-copy article { display: grid; gap: 0.8rem; padding-block: 1.7rem; border-bottom: 1px solid var(--line); }
+  .terms-copy h3 { font-size: var(--text-xl); }
+  .terms-copy p, blockquote { margin: 0; color: var(--slate); font-size: var(--text-sm); }
+  .terms-copy a { color: var(--pounamu-dark); font-weight: 700; }
+  blockquote { padding-left: 1rem; border-left: 3px solid var(--kōwhai); font-style: normal; }
+  .terms-copy .disclaimer { margin-top: 1rem; padding: 1.4rem; border: 1px solid #e5c878; border-radius: 0.7rem; background: #fffaf0; }
+
+  @media (max-width: 800px) {
+    .data-hero-grid, .method-grid, .dictionary-heading, .boundaries-grid, .terms-grid { grid-template-columns: 1fr; }
+    .snapshot-list :global(.snapshot-entry), .original-file { grid-template-columns: 1fr; gap: 0.5rem; }
+    .snapshot-list :global(.snapshot-entry-actions) { margin-top: 0.5rem; }
+    .file-stamp { width: 10rem; min-height: 4.5rem; }
+    .original-file > .button { justify-self: start; }
+    .boundaries ul { grid-template-columns: 1fr; }
+    .boundaries li { border-right: 0; }
+  }
+</style>
