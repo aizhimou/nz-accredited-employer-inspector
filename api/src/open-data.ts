@@ -40,14 +40,14 @@ export interface OpenDataSnapshotEntry {
 }
 
 interface OpenDataOriginalEntry {
-  snapshot_date: string | null;
+  snapshot_date: string;
   title: string;
   source: string;
   format: "XLSX";
-  row_count: number | null;
-  nzbn_count: number | null;
+  row_count: number;
+  nzbn_count: number;
   byte_size: number;
-  sha256: string | null;
+  sha256: string;
   licence: "NOASSERTION";
   download_path: string;
 }
@@ -74,118 +74,22 @@ interface PublicationResult {
   snapshotDate?: string;
   rowCount?: number;
   byteSize?: number;
-  originalsUpdated?: boolean;
 }
 
-type OriginalSeed = Omit<OpenDataOriginalEntry, "snapshot_date" | "byte_size" | "download_path">;
-
-const ORIGINAL_PREFIX = "original/";
-const DEFAULT_ORIGINAL_SOURCE = "MBIE OIA release";
-
-// Enrichment for files already analysed. Every object under the "original/"
-// prefix is listed automatically; the seed only supplies provenance details
-// that cannot be derived from the bucket (row counts, checksums, titles).
-const ORIGINAL_SEEDS: Record<string, OriginalSeed> = {
-  "2025-06-02": {
-    title: "List of Accredited Employers as at 2 June 2025",
-    source: DEFAULT_ORIGINAL_SOURCE,
-    format: "XLSX",
-    row_count: 24_202,
-    nzbn_count: 0,
-    sha256: "c59d013579632121e200116a1f2a7784f62f962d7bab667e5ce62e235bcf842b",
-    licence: "NOASSERTION",
-  },
-  "2026-07-27": {
+const ORIGINAL_FILES: OpenDataOriginalEntry[] = [
+  {
+    snapshot_date: "2026-07-27",
     title: "List of Accredited Employers as at 27 July 2026",
-    source: DEFAULT_ORIGINAL_SOURCE,
+    source: "MBIE OIA release",
     format: "XLSX",
     row_count: 30_255,
     nzbn_count: 30_253,
+    byte_size: 2_642_699,
     sha256: "4e2668ef8121bf732b1acd77fb0fb55fe97e0de83d54381322dd8b0fc603242b",
     licence: "NOASSERTION",
+    download_path: "/original/2026-07-27/mbie-accredited-employers.xlsx",
   },
-};
-
-const MONTH_INDEX: Record<string, number> = {
-  january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
-  july: 7, august: 8, september: 9, october: 10, november: 11, december: 12,
-};
-
-function isIsoDate(value: string): boolean {
-  const parsed = Date.parse(`${value}T00:00:00Z`);
-  return Number.isFinite(parsed) &&
-    new Date(parsed).toISOString().slice(0, 10) === value;
-}
-
-function deriveSnapshotDate(key: string): string | null {
-  const dashMatch = key.match(/\d{4}-\d{2}-\d{2}/u);
-  if (dashMatch !== null && isIsoDate(dashMatch[0])) {
-    return dashMatch[0];
-  }
-  const asAtMatch = key.match(/as at\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/u);
-  if (asAtMatch === null) {
-    return null;
-  }
-  const day = asAtMatch[1];
-  const monthName = asAtMatch[2];
-  const year = asAtMatch[3];
-  if (day === undefined || monthName === undefined || year === undefined) {
-    return null;
-  }
-  const month = MONTH_INDEX[monthName.toLowerCase()];
-  if (month === undefined) {
-    return null;
-  }
-  const candidate = `${year}-${String(month).padStart(2, "0")}-${day.padStart(2, "0")}`;
-  return isIsoDate(candidate) ? candidate : null;
-}
-
-function titleFromKey(key: string): string {
-  const base = key.split("/").at(-1) ?? key;
-  return base.replace(/\.xlsx$/iu, "").replace(/_/gu, " ");
-}
-
-async function listOriginalFiles(bucket: R2Bucket): Promise<OpenDataOriginalEntry[]> {
-  const entries: OpenDataOriginalEntry[] = [];
-  let cursor: string | undefined;
-  do {
-    const page = await bucket.list({
-      prefix: ORIGINAL_PREFIX,
-      limit: 1000,
-      ...(cursor === undefined ? {} : { cursor }),
-    });
-    for (const object of page.objects) {
-      const snapshotDate = deriveSnapshotDate(object.key);
-      const seed = snapshotDate === null ? undefined : ORIGINAL_SEEDS[snapshotDate];
-      entries.push({
-        snapshot_date: snapshotDate,
-        title: seed?.title ?? titleFromKey(object.key),
-        source: seed?.source ?? DEFAULT_ORIGINAL_SOURCE,
-        format: "XLSX",
-        row_count: seed?.row_count ?? null,
-        nzbn_count: seed?.nzbn_count ?? null,
-        byte_size: object.size,
-        sha256: seed?.sha256 ?? null,
-        licence: "NOASSERTION",
-        download_path: `/${object.key}`,
-      });
-    }
-    cursor = page.truncated ? page.cursor : undefined;
-  } while (cursor !== undefined);
-  entries.sort((left, right) => {
-    if (left.snapshot_date === right.snapshot_date) {
-      return left.title.localeCompare(right.title);
-    }
-    if (left.snapshot_date === null) {
-      return 1;
-    }
-    if (right.snapshot_date === null) {
-      return -1;
-    }
-    return right.snapshot_date.localeCompare(left.snapshot_date);
-  });
-  return entries;
-}
+];
 
 export const OPEN_DATA_SCHEMA = {
   title: "NZ Accredited Employer Inspector employer records snapshot",
@@ -216,7 +120,7 @@ export function createEmptyCatalog(): OpenDataCatalog {
   return {
     schema_version: SCHEMA_VERSION,
     updated_at: null,
-    originals: [],
+    originals: ORIGINAL_FILES,
     snapshots: [],
   };
 }
@@ -237,26 +141,11 @@ function isSnapshotEntry(value: unknown): value is OpenDataSnapshotEntry {
     typeof value.metadata_path === "string";
 }
 
-function isOriginalEntry(value: unknown): value is OpenDataOriginalEntry {
-  return isRecord(value) &&
-    (value.snapshot_date === null || typeof value.snapshot_date === "string") &&
-    typeof value.title === "string" &&
-    typeof value.source === "string" &&
-    value.format === "XLSX" &&
-    (value.row_count === null || typeof value.row_count === "number") &&
-    (value.nzbn_count === null || typeof value.nzbn_count === "number") &&
-    typeof value.byte_size === "number" &&
-    (value.sha256 === null || typeof value.sha256 === "string") &&
-    value.licence === "NOASSERTION" &&
-    typeof value.download_path === "string";
-}
-
 function parseCatalog(value: unknown): OpenDataCatalog {
   if (!isRecord(value) ||
       value.schema_version !== SCHEMA_VERSION ||
       !(value.updated_at === null || typeof value.updated_at === "string") ||
       !Array.isArray(value.originals) ||
-      !value.originals.every(isOriginalEntry) ||
       !Array.isArray(value.snapshots) ||
       !value.snapshots.every(isSnapshotEntry)) {
     throw new Error("The existing open-data catalog is invalid.");
@@ -264,14 +153,9 @@ function parseCatalog(value: unknown): OpenDataCatalog {
   return {
     schema_version: SCHEMA_VERSION,
     updated_at: value.updated_at,
-    originals: value.originals,
+    originals: ORIGINAL_FILES,
     snapshots: value.snapshots,
   };
-}
-
-function originalsMatch(left: OpenDataOriginalEntry[], right: OpenDataOriginalEntry[]): boolean {
-  return left.length === right.length &&
-    left.every((entry, index) => JSON.stringify(entry) === JSON.stringify(right[index]));
 }
 
 export function isPublicationDue(
@@ -472,95 +356,84 @@ export async function publishOpenDataSnapshot(
   scheduledTime: number,
 ): Promise<PublicationResult> {
   const { catalog, etag } = await readCatalog(bucket);
-  const originals = await listOriginalFiles(bucket);
-  const originalsChanged = !originalsMatch(catalog.originals, originals);
-  const due = isPublicationDue(catalog, scheduledTime);
-  if (!due && !originalsChanged) {
+  if (!isPublicationDue(catalog, scheduledTime)) {
     return { status: "not_due" };
   }
 
+  const snapshotDate = getAucklandDate(scheduledTime);
   const generatedAt = new Date(scheduledTime).toISOString();
-  let nextCatalog: OpenDataCatalog = { ...catalog, originals };
-  let result: PublicationResult;
-  if (due) {
-    const snapshotDate = getAucklandDate(scheduledTime);
-    const rows = await readAllEmployerRows(db);
-    assertReasonableRowCount(rows.length, catalog);
-    const csv = buildSnapshotCsv(rows, snapshotDate);
-    const sha256Bytes = await crypto.subtle.digest("SHA-256", csv);
-    const sha256 = bytesToHex(sha256Bytes);
-    const basePath = `snapshots/${snapshotDate}`;
-    const csvPath = `/${basePath}/employers.csv`;
-    const metadataPath = `/${basePath}/metadata.json`;
-    const entry: OpenDataSnapshotEntry = {
-      snapshot_date: snapshotDate,
-      generated_at: generatedAt,
-      row_count: rows.length,
-      byte_size: csv.byteLength,
-      sha256,
-      schema_version: SCHEMA_VERSION,
-      csv_path: csvPath,
-      metadata_path: metadataPath,
-    };
-    const metadata: SnapshotMetadata = {
-      ...entry,
-      title: "NZ Accredited Employer Inspector employer records snapshot",
-      description: "A dated public projection of employer records accepted by the Inspector.",
-      cadence: "Normally published every three days",
-      status_method: "Derived from accreditation expiry using the Pacific/Auckland calendar date",
-      source_table: "employers",
-      schema_path: `/schema/employers-v${SCHEMA_VERSION}.json`,
-      licence: "NOASSERTION",
-    };
+  const rows = await readAllEmployerRows(db);
+  assertReasonableRowCount(rows.length, catalog);
+  const csv = buildSnapshotCsv(rows, snapshotDate);
+  const sha256Bytes = await crypto.subtle.digest("SHA-256", csv);
+  const sha256 = bytesToHex(sha256Bytes);
+  const basePath = `snapshots/${snapshotDate}`;
+  const csvPath = `/${basePath}/employers.csv`;
+  const metadataPath = `/${basePath}/metadata.json`;
+  const entry: OpenDataSnapshotEntry = {
+    snapshot_date: snapshotDate,
+    generated_at: generatedAt,
+    row_count: rows.length,
+    byte_size: csv.byteLength,
+    sha256,
+    schema_version: SCHEMA_VERSION,
+    csv_path: csvPath,
+    metadata_path: metadataPath,
+  };
+  const metadata: SnapshotMetadata = {
+    ...entry,
+    title: "NZ Accredited Employer Inspector employer records snapshot",
+    description: "A dated public projection of employer records accepted by the Inspector.",
+    cadence: "Normally published every three days",
+    status_method: "Derived from accreditation expiry using the Pacific/Auckland calendar date",
+    source_table: "employers",
+    schema_path: `/schema/employers-v${SCHEMA_VERSION}.json`,
+    licence: "NOASSERTION",
+  };
 
-    await putImmutable(
-      bucket,
-      `${basePath}/employers.csv`,
-      csv,
-      {
-        contentType: "text/csv; charset=utf-8",
-        contentDisposition: `attachment; filename="nzaei-employer-records-${snapshotDate}.csv"`,
-        cacheControl: IMMUTABLE_CACHE_CONTROL,
-      },
-      sha256Bytes,
-    );
-    await putImmutable(
-      bucket,
-      `${basePath}/metadata.json`,
-      `${JSON.stringify(metadata, null, 2)}\n`,
-      {
-        contentType: "application/json; charset=utf-8",
-        cacheControl: IMMUTABLE_CACHE_CONTROL,
-      },
-    );
-    await putImmutable(
-      bucket,
-      `schema/employers-v${SCHEMA_VERSION}.json`,
-      `${JSON.stringify(OPEN_DATA_SCHEMA, null, 2)}\n`,
-      {
-        contentType: "application/schema+json; charset=utf-8",
-        cacheControl: IMMUTABLE_CACHE_CONTROL,
-      },
-    );
+  await putImmutable(
+    bucket,
+    `${basePath}/employers.csv`,
+    csv,
+    {
+      contentType: "text/csv; charset=utf-8",
+      contentDisposition: `attachment; filename="nzaei-employer-records-${snapshotDate}.csv"`,
+      cacheControl: IMMUTABLE_CACHE_CONTROL,
+    },
+    sha256Bytes,
+  );
+  await putImmutable(
+    bucket,
+    `${basePath}/metadata.json`,
+    `${JSON.stringify(metadata, null, 2)}\n`,
+    {
+      contentType: "application/json; charset=utf-8",
+      cacheControl: IMMUTABLE_CACHE_CONTROL,
+    },
+  );
+  await putImmutable(
+    bucket,
+    `schema/employers-v${SCHEMA_VERSION}.json`,
+    `${JSON.stringify(OPEN_DATA_SCHEMA, null, 2)}\n`,
+    {
+      contentType: "application/schema+json; charset=utf-8",
+      cacheControl: IMMUTABLE_CACHE_CONTROL,
+    },
+  );
 
-    nextCatalog = {
-      ...nextCatalog,
-      updated_at: generatedAt,
-      snapshots: [
-        entry,
-        ...catalog.snapshots.filter((item) => item.snapshot_date !== snapshotDate),
-      ].sort((left, right) => right.snapshot_date.localeCompare(left.snapshot_date)),
-    };
-    result = {
-      status: "published",
-      snapshotDate,
-      rowCount: rows.length,
-      byteSize: csv.byteLength,
-    };
-  } else {
-    nextCatalog.updated_at = generatedAt;
-    result = { status: "not_due", originalsUpdated: true };
-  }
+  const nextCatalog: OpenDataCatalog = {
+    ...catalog,
+    updated_at: generatedAt,
+    snapshots: [
+      entry,
+      ...catalog.snapshots.filter((item) => item.snapshot_date !== snapshotDate),
+    ].sort((left, right) => right.snapshot_date.localeCompare(left.snapshot_date)),
+  };
   await writeCatalog(bucket, etag, nextCatalog);
-  return result;
+  return {
+    status: "published",
+    snapshotDate,
+    rowCount: rows.length,
+    byteSize: csv.byteLength,
+  };
 }
