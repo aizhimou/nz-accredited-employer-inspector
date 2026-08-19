@@ -3,21 +3,25 @@
 Status: active  
 API version: `v1`  
 Service version: `0.8.0`
-Last updated: 2026-08-16
+Last updated: 2026-08-19
 Production base URL: `https://nzaei.zemo.bio/api`
 
 This document is the single source of truth (SSOT) for the browser extension and Worker contract. Extension code must not infer behaviour by reading the `api/` implementation.
+
+It covers the six employer routes and their extension orchestration. The Worker also exposes the landing-only `POST /v1/waitlist` endpoint; it does not use `X-Client-ID` and is deliberately outside this extension contract. The public [OpenAPI document](https://nzaei.zemo.bio/api/openapi.json) includes that endpoint and the health route.
 
 ## 1. Product model
 
 The product is a shared accredited-employer data source, not an INZ search-response cache.
 
 - `employers` is the canonical asset. One row represents one NZBN and the latest accepted INZ accreditation observation.
-- Immigration New Zealand (INZ) is the SSOT for employer name, trading name, NZBN, accreditation expiry, and verification time.
+- Immigration New Zealand (INZ) is the SSOT for employer name, trading name, NZBN, and accreditation expiry. The Worker owns `lastVerifiedAt`, the time it accepted an official observation.
 - LinkedIn/SEEK associations are community confirmations. They are useful identity mappings, but are not official INZ facts.
 - A unique exact official-name match is a derived resolution, not a stored association: the normalised platform `displayName` must exactly equal one NZBN's official INZ `employerName` or `tradingName`.
-- The Worker does not call INZ. A live INZ lookup only happens in the extension background after an explicit user action.
+- The Worker does not call INZ. Interactive live INZ lookups happen in the extension background only after an explicit user action.
 - The MVP has no general D1 search-cache table. It stores exact, platform-bound INZ no-match observations and per-NZBN refresh cooldown metadata; neither is an accreditation claim.
+
+An operator-run expiry refresh script also exists outside the extension/API path. It sequentially queries INZ and writes directly to production D1 for employers nearing expiry; it uses the same canonical employer and refresh-control fields but is not an extension-originated lookup.
 
 These independent truth and provenance dimensions must stay visible in code and UI:
 
@@ -36,6 +40,8 @@ These independent truth and provenance dimensions must stay visible in code and 
 - Cloudflare Worker: validates requests, searches/upserts `employers`, aggregates community confirmations, derives exact official/trading-name matches, evaluates freshness/accreditation, coordinates per-NZBN refresh leases/cooldowns, stores short-lived exact no-match observations, and rate-limits clients.
 - D1: stores canonical employers, refresh coordination metadata, platform associations/confirmations, and platform-bound no-match observation fields.
 - INZ: official lookup called directly by the extension, never by the Worker.
+- Scheduled Worker handler: publishes a fixed public projection of canonical employers to R2 as immutable dated CSV snapshots and an updated catalog; it does not service extension requests.
+- Operator refresh script: refreshes near-expiry records directly against INZ and production D1, outside the Worker request path.
 
 Worker freshness policy is configured with positive integer second values in `POSITIVE_TTL_SECONDS`, `NEGATIVE_TTL_SECONDS`, `REFRESH_ATTEMPT_COOLDOWN_SECONDS`, and `REFRESH_NO_MATCH_COOLDOWN_SECONDS`. The defaults are 30 days, seven days, 15 minutes, and 24 hours respectively. Wrangler environment variables are non-inheritable, so every named environment declares all four values explicitly.
 
@@ -101,7 +107,7 @@ sequenceDiagram
     end
 ```
 
-There is no automatic lookup on page load, automatic pagination, list traversal, pre-warming, or bulk search. A single click may perform at most one INZ request. Every displayed employer also has a manual `Refresh from INZ` action; it uses the same per-NZBN lease and cooldown and never creates an association.
+For extension page checks, there is no automatic lookup on page load, automatic pagination, list traversal, pre-warming, or bulk search. A single click may perform at most one INZ request. Every displayed employer also has a manual `Refresh from INZ` action; it uses the same per-NZBN lease and cooldown and never creates an association.
 
 ## 3. Platform identity
 
@@ -399,7 +405,9 @@ Success: `200 EmployerResolutionResponse` with `state: "associated"` or `"refres
 
 ## 7. Extension orchestration
 
-For each explicit user click:
+The extension has an enabled setting stored in `browser.storage.local` under `nz-aei-enabled`; it defaults to enabled. When paused, content scripts do not mount new widgets and the background rejects employer messages with `extension_paused`. The toolbar action shows an `OFF` badge. Re-enable it in the popup and refresh the page to mount the widget again.
+
+For each explicit user click while the extension is enabled:
 
 1. Build `PlatformIdentity` from the current page.
 2. Call `/resolve`.
@@ -520,6 +528,16 @@ Automatic exact-name matches have no table and no stored flag. They are derived 
 `employer_searches` and `employer_search_results` are removed. D1 is not used as a query-response cache.
 
 No-match observations and refresh cooldowns need no cleanup job: resolution/authorization ignores them after their configured boundary, and later successful observations replace the relevant refresh metadata. The timestamps are not official accreditation facts.
+
+### Scheduled R2 open-data projection
+
+The Worker scheduled handler is not an API route. Its daily Cron invocation checks whether at least 72 hours have elapsed since the last successful publication; when due, it writes the following objects to the `OPEN_DATA_BUCKET` R2 binding:
+
+- immutable `snapshots/YYYY-MM-DD/employers.csv` and `metadata.json` objects;
+- immutable `schema/employers-v1.json`;
+- mutable `catalog.json`, updated only after the dated files succeed.
+
+The CSV is NZBN-ordered and contains only the allowlisted public projection: employer/trading names, NZBN, accreditation expiry and derived snapshot status, verification provenance, and official-import enrichment fields. It excludes normalised search data, refresh controls, platform identities, client hashes, confirmations, no-match observations, and waitlist records. Publication stops on validation, output-size, or excessive row-count-change failures. This operational path does not change extension resolution semantics.
 
 ## 10. Trust and provenance
 
