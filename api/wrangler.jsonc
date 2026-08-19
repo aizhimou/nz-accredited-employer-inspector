@@ -27,7 +27,7 @@
     }
   ],
   "triggers": {
-    "crons": ["15 16 * * *"]
+    "crons": ["15 15 * * *"]
   },
   "ratelimits": [
     {

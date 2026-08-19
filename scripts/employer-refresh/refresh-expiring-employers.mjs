@@ -420,6 +420,26 @@ async function storePositiveResult(d1, employer, claimedAt, verifiedAt, retryAt)
   }
 }
 
+async function storeUnchangedPositiveResult(d1, nzbn, claimedAt, verifiedAt, retryAt) {
+  const result = await d1.query(
+    `UPDATE employers
+        SET last_verified_at = ?2,
+            last_verified_source = 'inz_live_lookup',
+            last_refresh_attempt_at = ?2,
+            last_refresh_outcome = 'positive',
+            refresh_not_before = ?3
+      WHERE nzbn = ?1
+        AND last_refresh_outcome = 'pending'
+        AND last_refresh_attempt_at = ?4`,
+    [nzbn, verifiedAt, retryAt, claimedAt],
+  );
+  if (result.changes < 1) {
+    throw new Error(
+      "The refresh claim changed before the unchanged positive result could be stored.",
+    );
+  }
+}
+
 async function storeNoResult(d1, nzbn, claimedAt, checkedAt, retryAt) {
   const result = await d1.query(
     `UPDATE employers
@@ -474,18 +494,24 @@ export async function refreshEmployer(
   }
 
   const expiryDate = getExpiryDate(inzResult.employer.expiryDateOfAccreditation);
+  const previousExpiryDate = getExpiryDate(candidate.expiryDateOfAccreditation);
   const currentAucklandDate = getAucklandDate(completedAt * 1_000);
   const cooldownSeconds =
     expiryDate !== null && expiryDate < currentAucklandDate
       ? config.refreshNoResultCooldownSeconds
       : config.refreshAttemptCooldownSeconds;
-  await storePositiveResult(
-    d1,
-    inzResult.employer,
-    claimedAt,
-    completedAt,
-    completedAt + cooldownSeconds,
-  );
+  const retryAt = completedAt + cooldownSeconds;
+  if (previousExpiryDate === expiryDate) {
+    await storeUnchangedPositiveResult(d1, candidate.nzbn, claimedAt, completedAt, retryAt);
+  } else {
+    await storePositiveResult(
+      d1,
+      inzResult.employer,
+      claimedAt,
+      completedAt,
+      retryAt,
+    );
+  }
   return {
     kind: "positive",
     employer: inzResult.employer,
@@ -506,8 +532,8 @@ export async function run() {
   const d1 = new D1Client(config);
   const startedAt = Date.now();
   const aucklandToday = getAucklandDate(startedAt);
-  const cutoffInclusiveDate = addCalendarDays(aucklandToday, 7);
-  const cutoffExclusiveDate = addCalendarDays(aucklandToday, 8);
+  const cutoffInclusiveDate = addCalendarDays(aucklandToday, 3);
+  const cutoffExclusiveDate = addCalendarDays(aucklandToday, 4);
 
   console.log(`Loading employers expiring on or before ${cutoffInclusiveDate} (Auckland)...`);
   let employers = await fetchEligibleEmployers(

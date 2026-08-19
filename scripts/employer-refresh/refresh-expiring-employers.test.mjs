@@ -176,6 +176,52 @@ test("claims and stores a positive refresh outcome", async () => {
   assert.equal(queries[1].params[8], Date.parse("2026-08-18T00:00:00Z") / 1_000);
 });
 
+test("stores only verification metadata when the expiry date is unchanged", async () => {
+  const queries = [];
+  const d1 = {
+    async query(sql, params) {
+      queries.push({ sql, params });
+      return {
+        rows: [],
+        changes: sql.includes("last_refresh_outcome = 'positive'") ? 3 : 1,
+      };
+    },
+  };
+  const times = [Date.parse("2026-08-18T00:00:00Z"), Date.parse("2026-08-18T00:00:02Z")];
+  const outcome = await refreshEmployer(
+    d1,
+    {
+      nzbn: "9429034641101",
+      employerName: "CATCH DESIGN LIMITED",
+      expiryDateOfAccreditation: "2027-02-17T00:00:00",
+    },
+    "2026-08-26",
+    {
+      refreshAttemptCooldownSeconds: 900,
+      refreshNoResultCooldownSeconds: 86_400,
+      inzTimeoutMilliseconds: 5_000,
+    },
+    {
+      now: () => times.shift(),
+      fetchFn: async () => Response.json(createInzResponse()),
+    },
+  );
+
+  assert.equal(outcome.kind, "positive");
+  assert.equal(outcome.previousExpiryDate, "2027-02-17T00:00:00");
+  assert.equal(queries.length, 2);
+  assert.match(queries[0].sql, /last_refresh_outcome = 'pending'/u);
+  assert.match(queries[1].sql, /last_refresh_outcome = 'positive'/u);
+  assert.match(queries[1].sql, /last_verified_at/u);
+  assert.doesNotMatch(queries[1].sql, /employer_name/u);
+  assert.doesNotMatch(queries[1].sql, /normalized_employer_name/u);
+  assert.doesNotMatch(queries[1].sql, /trading_name/u);
+  assert.doesNotMatch(queries[1].sql, /expiry_date_of_accreditation/u);
+  assert.equal(queries[1].params[0], "9429034641101");
+  assert.equal(queries[1].params[1], Math.floor(Date.parse("2026-08-18T00:00:02Z") / 1_000));
+  assert.equal(queries[1].params[3], Math.floor(Date.parse("2026-08-18T00:00:00Z") / 1_000));
+});
+
 test("claims and stores a no-result refresh outcome without replacing official fields", async () => {
   const queries = [];
   const d1 = {
