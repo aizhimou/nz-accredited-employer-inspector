@@ -195,6 +195,15 @@ export async function searchEmployerCandidates(
   return { query, candidates: candidates.map(toPublicEmployer) };
 }
 
+export async function getEmployerByNzbn(
+  db: D1Database,
+  nzbn: string,
+  nowMilliseconds = Date.now(),
+): Promise<AccreditedEmployer | null> {
+  const employer = await findEmployer(db, nzbn, nowMilliseconds);
+  return employer === null ? null : toPublicEmployer(employer);
+}
+
 async function findEmployer(
   db: D1Database,
   nzbn: string,

@@ -39,6 +39,11 @@
       "name": "SUBMISSION_RATE_LIMITER",
       "namespace_id": "26080402",
       "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "PUBLIC_API_RATE_LIMITER",
+      "namespace_id": "26080403",
+      "simple": { "limit": 10, "period": 10 }
     }
   ],
   "observability": {
@@ -52,6 +57,10 @@
       "routes": [
         {
           "pattern": "nzaei.zemo.bio/api/v1/*",
+          "zone_name": "zemo.bio"
+        },
+        {
+          "pattern": "nzaei.zemo.bio/api/public/v1/*",
           "zone_name": "zemo.bio"
         },
         {
@@ -94,6 +103,11 @@
           "name": "SUBMISSION_RATE_LIMITER",
           "namespace_id": "26080402",
           "simple": { "limit": 10, "period": 60 }
+        },
+        {
+          "name": "PUBLIC_API_RATE_LIMITER",
+          "namespace_id": "26080403",
+          "simple": { "limit": 10, "period": 10 }
         }
       ],
       "observability": {

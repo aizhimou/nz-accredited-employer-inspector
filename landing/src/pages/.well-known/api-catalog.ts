@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 
 const API_BASE_URL = "https://nzaei.zemo.bio/api";
+const PUBLIC_API_BASE_URL = "https://nzaei.zemo.bio/api/public/v1";
 const CONTRACT_URL =
   "https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md";
 
@@ -25,6 +26,23 @@ export const GET: APIRoute = ({ site }) => {
         status: [{ href: `${API_BASE_URL}/health`, type: "application/json" }],
         "service-meta": [
           { href: new URL("/llms-full.txt", base).href, type: "text/markdown" },
+        ],
+      },
+      {
+        anchor: PUBLIC_API_BASE_URL,
+        "service-desc": [
+          {
+            href: new URL("/api/public/openapi.json", base).href,
+            type: "application/vnd.oai.openapi+json;version=3.1",
+          },
+        ],
+        "service-doc": [{ href: new URL("/public-api/", base).href, type: "text/html" }],
+        author: [{ href: "https://zemo.bio/", type: "text/html" }],
+        "privacy-policy": [
+          { href: new URL("/privacy/", base).href, type: "text/html" },
+        ],
+        "service-meta": [
+          { href: new URL("/public-api.md", base).href, type: "text/markdown" },
         ],
       },
     ],

@@ -1,8 +1,12 @@
 import { handleRequest } from "./http";
 import { publishOpenDataSnapshot } from "./open-data";
+import { handlePublicApiRequest, isPublicApiRequest } from "./public-api";
 
 export default {
-  async fetch(request, env, _ctx): Promise<Response> {
+  async fetch(request, env, ctx): Promise<Response> {
+    if (isPublicApiRequest(request)) {
+      return handlePublicApiRequest(request, env, ctx);
+    }
     return handleRequest(request, env);
   },
   async scheduled(controller, env, _ctx): Promise<void> {

@@ -21,6 +21,8 @@ export const GET: APIRoute = ({ site }) => {
 - [Accredited employer insights as Markdown](${link("/insights.md")}): Machine-readable aggregate counts and interpretation notes.
 - [Open data](${link("/open-data/")}): Dated downloadable snapshots, original MBIE source files, field definitions, provenance, reuse status, and limitations.
 - [Open data as Markdown](${link("/open-data.md")}): Machine-readable snapshot publication method and field guide.
+- [Public API](${link("/public-api/")}): Read-only NZBN lookup and employer-name search for integrations.
+- [Public API as Markdown](${link("/public-api.md")}): Machine-readable public API guide with limits and response conventions.
 - [Changelog](${link("/changelog/")}): Public release ledger with dates and user-visible improvements.
 - [Changelog as Markdown](${link("/changelog.md")}): Machine-readable product release history.
 - [Privacy policy](${link("/privacy/")}): Public Chrome extension privacy policy covering data collection, use, sharing, retention, security, and deletion requests.
@@ -29,8 +31,9 @@ export const GET: APIRoute = ({ site }) => {
 
 ## API discovery
 
-- [API catalog](${link("/.well-known/api-catalog")}): RFC 9727 linkset for the public extension API.
+- [API catalog](${link("/.well-known/api-catalog")}): RFC 9727 linkset for the extension and read-only public APIs.
 - [OpenAPI description](${link("/api/openapi.json")}): Machine-readable OpenAPI 3.1 contract.
+- [Public OpenAPI description](${link("/api/public/openapi.json")}): Machine-readable OpenAPI 3.1 contract for the unauthenticated read-only API.
 - [API health](https://nzaei.zemo.bio/api/health): Current service health and version.
 
 ## Project source

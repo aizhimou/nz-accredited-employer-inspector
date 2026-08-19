@@ -15,8 +15,36 @@ The extension-facing architecture, orchestration, complete API contract, fields,
 - `POST /v1/employers/refresh`
 - `POST /v1/employers/associate`
 - `POST /v1/waitlist`
+- `GET /public/v1/employers/{nzbn}`
+- `GET /public/v1/employers/search?q={query}&limit={1..10}`
 
 Employer requests require an `X-Client-ID` UUID header. The landing-page waitlist endpoint does not.
+
+## Public API
+
+The public API is a separate, read-only contract for automation and system integrations. It accepts only `GET`, `HEAD`, and `OPTIONS`; it does not require `X-Client-ID` or authentication, and it does not expose platform identities, community associations, refresh controls, or any write operation.
+
+- Production base URL: `https://nzaei.zemo.bio/api/public/v1`
+- OpenAPI document: `https://nzaei.zemo.bio/api/public/openapi.json`
+- Rate limit: 10 requests per 10 seconds per `CF-Connecting-IP` at a Cloudflare location. A rejected request returns `429` with `Retry-After: 10`.
+- Successful responses are cacheable for 60 seconds in clients and 5 minutes at the edge. Use the dated R2 CSV snapshots for bulk imports instead of crawling the API.
+
+Exact lookup example:
+
+```bash
+curl 'https://nzaei.zemo.bio/api/public/v1/employers/9429034908822'
+```
+
+Search example:
+
+```bash
+curl --get \
+  --data-urlencode 'q=One New Zealand' \
+  --data-urlencode 'limit=5' \
+  'https://nzaei.zemo.bio/api/public/v1/employers/search'
+```
+
+Success responses use a `data` envelope; search responses add `meta.query` and `meta.count`. Errors use an `error` envelope with a stable machine-readable `code` and include `meta.requestId`. Every response also carries `X-Request-ID`.
 
 The temporary `extension_waitlist` table stores normalized, unique email addresses for one Chrome Web Store release notification. The landing page discloses this narrow purpose; `notified_at` can be set when the message is sent and the table can be removed after the release.
 

@@ -28,6 +28,7 @@ const primaryNavigation = [
   { href: "/how-results-work/", label: "How results work", current: Astro.url.pathname.startsWith("/how-results-work") },
   { href: "/insights/", label: "Insights", current: Astro.url.pathname.startsWith("/insights") },
   { href: "/open-data/", label: "Open data", current: Astro.url.pathname.startsWith("/open-data") },
+  { href: "/public-api/", label: "Public API", current: Astro.url.pathname.startsWith("/public-api") },
   { href: "/changelog/", label: "Changelog", current: Astro.url.pathname.startsWith("/changelog") },
 ];
 const productStructuredData = {
@@ -328,6 +329,7 @@ const structuredData = pageKind === "privacy"
           <a href="/how-results-work/">How results work</a>
           <a href="/insights/">Insights</a>
           <a href="/open-data/">Open data</a>
+          <a href="/public-api/">Public API</a>
           <a href="/changelog/">Changelog</a>
           <a href="/privacy/">Privacy policy</a>
           <a href={markdownAlternate}>Read as Markdown</a>

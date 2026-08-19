@@ -15,6 +15,9 @@ export const GET: APIRoute = () => {
 - Author source profile: https://github.com/aizhimou
 - Repository: https://github.com/aizhimou/nz-accredited-employer-inspector
 - Production API: https://nzaei.zemo.bio/api
+- Public read-only API: https://nzaei.zemo.bio/api/public/v1
+- Public API guide: https://nzaei.zemo.bio/public-api/
+- Public OpenAPI: https://nzaei.zemo.bio/api/public/openapi.json
 - Chrome Web Store: https://chromewebstore.google.com/detail/nz-accredited-employer-in/gjcifpaoplkboeefndngnglhjhldkbbg
 - Privacy policy: https://nzaei.zemo.bio/privacy/
 - Privacy policy as Markdown: https://nzaei.zemo.bio/privacy.md
@@ -109,6 +112,15 @@ All POST routes require JSON. Employer routes require an X-Client-ID UUID header
 OpenAPI: /api/openapi.json
 API catalog: /.well-known/api-catalog
 Canonical API contract: https://github.com/aizhimou/nz-accredited-employer-inspector/blob/main/docs/extension-api-ssot.md
+
+## Public read-only API
+
+The separate public API is unauthenticated and accepts GET, HEAD, and OPTIONS only. It exposes no platform identities, association data, refresh controls, extension client identifiers, or write operations.
+
+- GET /api/public/v1/employers/{nzbn} — exact 13-digit NZBN lookup
+- GET /api/public/v1/employers/search?q={query}&limit={1..10} — bounded FTS employer/trading-name search
+
+Successful lookup responses use a data envelope. Search responses add meta.query and meta.count; error responses include error.code, error.message, and meta.requestId. Every response has X-Request-ID. The per-IP best-effort rate limit is 10 requests per 10 seconds at a Cloudflare location; 429 responses include Retry-After: 10. Successful responses are cacheable for 60 seconds in clients and 5 minutes at the edge. Use dated R2 CSV snapshots for bulk imports.
 
 ## Open data downloads
 

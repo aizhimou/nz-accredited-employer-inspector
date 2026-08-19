@@ -5,18 +5,21 @@ const paths = [
   "/how-results-work/",
   "/insights/",
   "/open-data/",
+  "/public-api/",
   "/changelog/",
   "/privacy/",
   "/index.md",
   "/how-results-work.md",
   "/insights.md",
   "/open-data.md",
+  "/public-api.md",
   "/changelog.md",
   "/privacy.md",
   "/llms.txt",
   "/llms-full.txt",
   "/.well-known/api-catalog",
   "/api/openapi.json",
+  "/api/public/openapi.json",
 ];
 
 export const GET: APIRoute = ({ site }) => {

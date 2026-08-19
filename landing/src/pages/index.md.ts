@@ -67,6 +67,7 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [Privacy policy](/privacy/)
 - [Accredited employer insights](/insights/)
 - [Open data downloads](/open-data/)
+- [Public API guide](/public-api/)
 - [Changelog](/changelog/)
 - [Built by Zemo Ai](https://zemo.bio/)
 
@@ -77,10 +78,12 @@ Read [How the results work](/how-results-work/) for a plain-language explanation
 - [/how-results-work.md](/how-results-work.md): result interpretation rules and notice dictionary
 - [/insights.md](/insights.md): aggregate regional, sector, and expiry-date insights
 - [/open-data.md](/open-data.md): snapshot publication method, field dictionary, reuse status, and limitations
+- [/public-api.md](/public-api.md): read-only API guide, limits, and response convention
 - [/changelog.md](/changelog.md): dated product release history
 - [/privacy.md](/privacy.md): privacy policy without presentation markup
 - [/.well-known/api-catalog](/.well-known/api-catalog): RFC 9727 API catalog
 - [/api/openapi.json](/api/openapi.json): OpenAPI 3.1 description
+- [/api/public/openapi.json](/api/public/openapi.json): read-only public OpenAPI 3.1 description
 - [/sitemap.xml](/sitemap.xml): crawl map
 
 ## Disclaimer

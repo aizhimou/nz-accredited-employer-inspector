@@ -1,5 +1,5 @@
 import { env } from "cloudflare:workers";
-import { createExecutionContext } from "cloudflare:test";
+import { createExecutionContext, waitOnExecutionContext } from "cloudflare:test";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import worker from "../src";
 import { CLIENT_ID, createInzResponse } from "./fixtures";
@@ -26,13 +26,17 @@ function denyRateLimit(): RateLimit {
 }
 
 function createTestEnv(
-  overrides: Partial<Pick<Env, "CLIENT_RATE_LIMITER" | "SUBMISSION_RATE_LIMITER">> = {},
+  overrides: Partial<Pick<
+    Env,
+    "CLIENT_RATE_LIMITER" | "SUBMISSION_RATE_LIMITER" | "PUBLIC_API_RATE_LIMITER"
+  >> = {},
 ): Env {
   return {
     DB: env.DB,
     OPEN_DATA_BUCKET: env.OPEN_DATA_BUCKET,
     CLIENT_RATE_LIMITER: overrides.CLIENT_RATE_LIMITER ?? allowRateLimit(),
     SUBMISSION_RATE_LIMITER: overrides.SUBMISSION_RATE_LIMITER ?? allowRateLimit(),
+    PUBLIC_API_RATE_LIMITER: overrides.PUBLIC_API_RATE_LIMITER ?? allowRateLimit(),
     ENVIRONMENT: "development",
     SERVICE_VERSION: "0.8.0",
     POSITIVE_TTL_SECONDS: 2592000,
@@ -56,6 +60,13 @@ function postRequest(
 
 async function call(path: string, body: unknown, clientId = CLIENT_ID, testEnv = createTestEnv()) {
   return worker.fetch(postRequest(path, body, clientId), testEnv, createExecutionContext());
+}
+
+function publicRequest(path: string, method = "GET"): Request<unknown, IncomingRequestCfProperties> {
+  return new IncomingRequest(`https://api.example.test/api/public/v1${path}`, {
+    method,
+    headers: { "CF-Connecting-IP": "203.0.113.25" },
+  });
 }
 
 function ingestBody(employers: Parameters<typeof createInzResponse>[0] = [{
@@ -217,6 +228,116 @@ describe("HTTP routing and controls", () => {
     const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM extension_waitlist")
       .first<{ count: number }>();
     expect(count?.count).toBe(0);
+  });
+});
+
+describe("public API", () => {
+  it("returns a cacheable read-only employer lookup without a client identifier", async () => {
+    await call("/v1/employers/ingest", ingestBody([{
+      employerName: "PUBLIC API EXAMPLE LIMITED",
+      tradingName: "Public API Example",
+      nzbn: "9429000000123",
+      expiryDateOfAccreditation: "2028-01-01T00:00:00",
+    }]));
+    const limiter = allowRateLimit();
+    const response = await worker.fetch(
+      publicRequest("/employers/9429000000123"),
+      createTestEnv({ PUBLIC_API_RATE_LIMITER: limiter }),
+      createExecutionContext(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("public, max-age=60, s-maxage=300");
+    expect(response.headers.get("X-Request-ID")).toMatch(/^[0-9a-f-]{36}$/u);
+    expect(limiter.limit).toHaveBeenCalledWith({ key: "203.0.113.25:public-api-v1" });
+    expect(await response.json()).toEqual({
+      data: {
+        employerName: "PUBLIC API EXAMPLE LIMITED",
+        tradingName: "Public API Example",
+        nzbn: "9429000000123",
+        expiryDateOfAccreditation: "2028-01-01T00:00:00",
+        lastVerifiedAt: expect.stringMatching(/Z$/u),
+        accreditationStatus: "accredited",
+      },
+    });
+  });
+
+  it("searches public records with a bounded query and result limit", async () => {
+    await call("/v1/employers/ingest", ingestBody([{
+      employerName: "PUBLIC SEARCH FIRST LIMITED",
+      tradingName: "Public Search",
+      nzbn: "9429000000456",
+      expiryDateOfAccreditation: "2028-01-01T00:00:00",
+    }, {
+      employerName: "PUBLIC SEARCH SECOND LIMITED",
+      tradingName: "Public Search Two",
+      nzbn: "9429000000789",
+      expiryDateOfAccreditation: "2028-01-01T00:00:00",
+    }]));
+
+    const response = await worker.fetch(
+      publicRequest("/employers/search?q=Public%20Search&limit=1"),
+      createTestEnv(),
+      createExecutionContext(),
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      data: [{ nzbn: "9429000000456" }],
+      meta: { query: "Public Search", count: 1 },
+    });
+  });
+
+  it("rejects writes and invalid public API input", async () => {
+    const testEnv = createTestEnv();
+    const write = await worker.fetch(
+      publicRequest("/employers/9429000000123", "POST"),
+      testEnv,
+      createExecutionContext(),
+    );
+    expect(write.status).toBe(405);
+    expect(write.headers.get("Allow")).toBe("GET, HEAD, OPTIONS");
+
+    const invalidSearch = await worker.fetch(
+      publicRequest("/employers/search?q=ab&limit=11"),
+      testEnv,
+      createExecutionContext(),
+    );
+    expect(invalidSearch.status).toBe(400);
+    expect(await invalidSearch.json()).toMatchObject({
+      error: { code: "invalid_parameter" },
+      meta: { requestId: expect.any(String) },
+    });
+
+    const missing = await worker.fetch(
+      publicRequest("/employers/9429000000999"),
+      testEnv,
+      createExecutionContext(),
+    );
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toMatchObject({ error: { code: "employer_not_found" } });
+  });
+
+  it("enforces the public per-IP rate limit and supports HEAD", async () => {
+    const limited = await worker.fetch(
+      publicRequest("/employers/search?q=Public"),
+      createTestEnv({ PUBLIC_API_RATE_LIMITER: denyRateLimit() }),
+      createExecutionContext(),
+    );
+    expect(limited.status).toBe(429);
+    expect(limited.headers.get("Retry-After")).toBe("10");
+    expect(await limited.json()).toMatchObject({ error: { code: "rate_limit_exceeded" } });
+
+    const context = createExecutionContext();
+    const head = await worker.fetch(
+      publicRequest("/employers/search?q=Public", "HEAD"),
+      createTestEnv(),
+      context,
+    );
+    await waitOnExecutionContext(context);
+    expect(head.status).toBe(200);
+    expect(head.body).toBeNull();
+    expect(head.headers.get("Cache-Control")).toBe("public, max-age=60, s-maxage=300");
   });
 });
 

@@ -1,0 +1,118 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const title = "Public API | NZ Accredited Employer Inspector";
+const description = "Read-only accredited-employer lookups and name search for automation and system integrations.";
+const baseUrl = "https://nzaei.zemo.bio/api/public/v1";
+const openApiUrl = "https://nzaei.zemo.bio/api/public/openapi.json";
+---
+
+<BaseLayout title={title} description={description} pageKind="guide" markdownAlternate="/public-api.md">
+  <section class="hero" aria-labelledby="api-title">
+    <div class="shell hero-grid">
+      <div>
+        <p class="eyebrow">Public API · v1</p>
+        <h1 id="api-title">Small, read-only employer lookups.</h1>
+      </div>
+      <div class="hero-copy">
+        <p>Use the API for a single NZBN lookup or a bounded employer-name search. No account or API key is required.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" href={openApiUrl}>OpenAPI 3.1 ↗</a>
+          <a class="button button-secondary" href="/open-data/">Bulk snapshots</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="endpoints-title">
+    <div class="shell">
+      <div class="section-heading">
+        <p class="eyebrow">Endpoints</p>
+        <h2 id="endpoints-title">Two routes. No writes.</h2>
+      </div>
+      <div class="endpoint-grid">
+        <article>
+          <p class="method">GET · HEAD</p>
+          <h3>Find by NZBN</h3>
+          <code>{baseUrl}/employers/&#123;nzbn&#125;</code>
+          <p>Returns one public employer record for an exact 13-digit New Zealand Business Number.</p>
+        </article>
+        <article>
+          <p class="method">GET · HEAD</p>
+          <h3>Search by name</h3>
+          <code>{baseUrl}/employers/search?q=&#123;query&#125;&amp;limit=&#123;1..10&#125;</code>
+          <p>Searches legal and trading names. Every keyword must match; results are capped at 10.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section examples" aria-labelledby="examples-title">
+    <div class="shell example-grid">
+      <div class="section-heading">
+        <p class="eyebrow">Quick start</p>
+        <h2 id="examples-title">Use standard HTTP.</h2>
+        <p>No authentication header and no request body are needed.</p>
+      </div>
+      <pre><code>curl --get \
+  --data-urlencode 'q=One New Zealand' \
+  --data-urlencode 'limit=5' \
+  '{baseUrl}/employers/search'</code></pre>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="behaviour-title">
+    <div class="shell rules-grid">
+      <div class="section-heading">
+        <p class="eyebrow">Operating rules</p>
+        <h2 id="behaviour-title">Built for polite integrations.</h2>
+      </div>
+      <dl>
+        <div><dt>Rate limit</dt><dd>10 requests per 10 seconds per IP address at a Cloudflare location. A rejected request returns <code>429</code> and <code>Retry-After: 10</code>.</dd></div>
+        <div><dt>Response contract</dt><dd>Successful responses use <code>data</code>. Search adds <code>meta.query</code> and <code>meta.count</code>. Errors include a stable <code>error.code</code> and <code>meta.requestId</code>.</dd></div>
+        <div><dt>Caching</dt><dd>Successful results are cacheable for 60 seconds in clients and 5 minutes at the edge.</dd></div>
+        <div><dt>Bulk data</dt><dd>For imports or full-dataset work, use the dated, checksummed <a href="/open-data/">CSV snapshots</a> rather than paginating or crawling the API.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section limitations" aria-labelledby="limitations-title">
+    <div class="shell narrow">
+      <p class="eyebrow">Data boundaries</p>
+      <h2 id="limitations-title">Public facts, carefully framed.</h2>
+      <p>The API excludes platform identities, community associations, installation identifiers, refresh controls, and all write operations. Records are dated observations, not a live or complete official register. Verify important decisions with Immigration New Zealand or the employer.</p>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero { padding-block: clamp(5rem, 10vw, 9rem); border-bottom: 1px solid var(--line); background: linear-gradient(145deg, var(--cloud), var(--mist)); }
+  .hero-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(25rem, 0.85fr); align-items: center; gap: clamp(3rem, 6vw, 7rem); }
+  .example-grid, .rules-grid { display: grid; grid-template-columns: 1fr 1fr; align-items: end; gap: clamp(3rem, 9vw, 9rem); }
+  .hero h1 { max-width: 17ch; }
+  .hero-copy, .section-heading, .narrow { display: grid; gap: 1.2rem; }
+  .hero-copy { max-width: 35rem; justify-self: end; }
+  .hero-copy > p, .section-heading > p:last-child, .narrow > p:last-child { color: var(--slate); font-size: var(--text-lg); }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+  .section { padding-block: clamp(4.5rem, 8vw, 7rem); }
+  .section-heading { max-width: 42rem; }
+  .endpoint-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-top: 3rem; }
+  .endpoint-grid article { display: grid; gap: 1rem; padding: 1.5rem; border: 1px solid var(--line); border-radius: 0.9rem; background: white; }
+  .endpoint-grid h3 { font-size: var(--text-xl); }
+  .endpoint-grid code { overflow-x: auto; color: var(--pounamu-dark); font-size: var(--text-sm); white-space: nowrap; }
+  .endpoint-grid p:last-child { color: var(--slate); }
+  .method { color: var(--pounamu); font-family: var(--font-utility); font-size: var(--text-micro); font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+  .examples { background: var(--harbour-deep); color: white; }
+  .examples .eyebrow { color: #8ed3bd; }
+  .examples .section-heading > p:last-child { color: #c9ddd8; }
+  .example-grid { grid-template-columns: minmax(16rem, 0.7fr) minmax(0, 1.3fr); align-items: center; gap: clamp(2.5rem, 5vw, 6rem); }
+  pre { margin: 0; padding: 1.5rem; border: 1px solid #365b5c; border-radius: 0.8rem; background: #092f34; color: #e7f5f0; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .rules-grid { align-items: start; }
+  dl { margin: 0; border-top: 1px solid var(--line); }
+  dl div { display: grid; grid-template-columns: 9rem 1fr; gap: 1.5rem; padding-block: 1.25rem; border-bottom: 1px solid var(--line); }
+  dt { color: var(--pounamu-dark); font-family: var(--font-utility); font-size: var(--text-micro); font-weight: 750; letter-spacing: 0.06em; text-transform: uppercase; }
+  dd { margin: 0; color: var(--slate); }
+  .limitations { background: var(--mist); }
+  .narrow { max-width: 50rem; }
+  @media (max-width: 760px) { .hero-grid, .example-grid, .rules-grid, .endpoint-grid { grid-template-columns: 1fr; } .hero-copy { justify-self: start; } dl div { grid-template-columns: 1fr; gap: 0.45rem; } }
+</style>
