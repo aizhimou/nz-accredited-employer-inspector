@@ -4,7 +4,7 @@ import linkedInLogo from "../assets/LI-Logo.png";
 import seekLogo from "../assets/Seek_Limited-logo.svg";
 import {
   openDataCatalogUrl,
-  originalOpenDataFile,
+  originalOpenDataFiles,
 } from "../data/open-data";
 
 const repositoryUrl = "https://github.com/aizhimou/nz-accredited-employer-inspector";
@@ -304,13 +304,22 @@ const agentResources = [
         >
           <li class="snapshot-entry snapshot-placeholder">The first generated snapshot will appear here after publication.</li>
         </ol>
-        <div class="original-release">
-          <span>Original source · As received</span>
-          <div>
-            <strong>MBIE OIA release · 27 Jul 2026</strong>
-            <small>{originalOpenDataFile.rowCount.toLocaleString("en-NZ")} records · XLSX · {(originalOpenDataFile.byteSize / (1024 * 1024)).toFixed(1)} MB</small>
-          </div>
-          <a href={originalOpenDataFile.downloadUrl}>Download XLSX</a>
+        <div
+          class="original-release-list"
+          data-open-data-original-list
+          data-variant="compact"
+          data-catalog-url={openDataCatalogUrl}
+        >
+          {originalOpenDataFiles.map((file) => (
+            <div class="original-release">
+              <span>Original source · As received</span>
+              <div>
+                <strong>{file.title}</strong>
+                <small>{file.row_count === null ? "—" : file.row_count.toLocaleString("en-NZ")} records · XLSX · {(file.byte_size / (1024 * 1024)).toFixed(1)} MB</small>
+              </div>
+              <a href={file.download_url}>Download XLSX</a>
+            </div>
+          ))}
         </div>
       </div>
     </div>
@@ -1220,6 +1229,9 @@ const agentResources = [
   }
 
   .snapshot-placeholder { color: var(--slate); font-size: var(--text-sm); }
+
+  .original-release-list { display: grid; }
+  .original-release-list .original-release + .original-release { border-top: 1px solid var(--line-light); }
 
   .original-release {
     display: grid;

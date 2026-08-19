@@ -20,7 +20,10 @@ The project publishes static, immutable files for direct download. It does not p
 
 - [Snapshot catalog](${dataBaseUrl}/catalog.json)
 - [Employer snapshot schema v1](${dataBaseUrl}/schema/employers-v1.json)
+- [Original MBIE OIA workbook dated 2 June 2025](${dataBaseUrl}/original/2025-06-02/mbie-accredited-employers.xlsx)
 - [Original MBIE OIA workbook dated 27 July 2026](${dataBaseUrl}/original/2026-07-27/mbie-accredited-employers.xlsx)
+
+The catalog lists every file uploaded under the public bucket's original/ directory, so future releases appear without a code change.
 
 Generated employer-record snapshots are normally published every three days. Each CSV has a dated path, a matching metadata file, a row count, a schema version, and a SHA-256 checksum. Published snapshot files are not overwritten.
 

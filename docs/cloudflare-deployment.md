@@ -39,13 +39,18 @@ npx wrangler r2 bucket cors set nz-accredited-employer-public-data \
 
 In the bucket's **Settings**, connect the custom domain `data.nzaei.zemo.bio`. The domain must be in the same Cloudflare account and its public access must be enabled. Do not enable the temporary `r2.dev` URL for production use.
 
-Upload the original MBIE workbook once, preserving the immutable dated key used by the catalog:
+Upload every original MBIE workbook under the immutable `original/` prefix. The Worker lists that directory on each scheduled run and publishes every file in the catalog, so future uploads appear without a code change:
 
 ```bash
 npx wrangler r2 object put \
   nz-accredited-employer-public-data/original/2026-07-27/mbie-accredited-employers.xlsx \
   --file "../data/original-data/List of Accredited Employers as at 27 July 2026.xlsx"
+npx wrangler r2 object put \
+  nz-accredited-employer-public-data/original/2025-06-02/mbie-accredited-employers.xlsx \
+  --file "../data/original-data/List of Accredited Employers as at 2 June 2025.xlsx"
 ```
+
+Row counts, checksums, and titles for already-analysed files are supplied by the Worker's seed metadata keyed by snapshot date. A file without seed metadata still appears in the catalog with its size and a filename-derived title; add a seed entry in `api/src/open-data.ts` when you want its row count and checksum published too.
 
 The scheduled Worker creates generated CSVs, per-version metadata, the schema, and `catalog.json`. The bucket is public only for object reads; Worker writes use the in-process R2 binding.
 

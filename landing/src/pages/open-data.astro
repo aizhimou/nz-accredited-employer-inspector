@@ -3,7 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import {
   openDataCatalogUrl,
   openDataSchemaUrl,
-  originalOpenDataFile,
+  originalOpenDataFiles,
 } from "../data/open-data";
 
 const title = "Open Data | NZ Accredited Employer Inspector";
@@ -80,19 +80,34 @@ const fields = [
           </ol>
         </div>
 
-        <article class="original-file">
-          <div class="file-stamp">
-            <span>Original source</span>
-            <strong>As received</strong>
+        <div class="original-files">
+          <div class="original-files-heading">
+            <div>
+              <span>Original source files</span>
+              <strong>As received from MBIE</strong>
+            </div>
+            <p class="original-files-status" data-open-data-original-status aria-live="polite">Loading the original file register…</p>
           </div>
-          <div class="original-file-copy">
-            <p class="file-source">{originalOpenDataFile.source}</p>
-            <h3>{originalOpenDataFile.title}</h3>
-            <p>{number.format(originalOpenDataFile.rowCount)} rows · {number.format(originalOpenDataFile.nzbnCount)} with NZBN · XLSX · {(originalOpenDataFile.byteSize / (1024 * 1024)).toFixed(1)} MB</p>
-            <code>SHA-256 {originalOpenDataFile.sha256}</code>
+          <div
+            class="originals-list"
+            data-open-data-original-list
+            data-variant="card"
+            data-catalog-url={openDataCatalogUrl}
+          >
+            {originalOpenDataFiles.map((file) => (
+              <article class="original-file">
+                <div class="file-stamp"><span>Original source</span><strong>As received</strong></div>
+                <div class="original-file-copy">
+                  <p class="file-source">{file.source}</p>
+                  <h3>{file.title}</h3>
+                  <p>{file.row_count === null ? "—" : number.format(file.row_count)} rows · {file.nzbn_count === null ? "NZBN count not recorded" : file.nzbn_count === 0 ? "no NZBN column" : `${number.format(file.nzbn_count)} with NZBN`} · XLSX · {(file.byte_size / (1024 * 1024)).toFixed(1)} MB</p>
+                  {file.sha256 !== null && <code>SHA-256 {file.sha256}</code>}
+                </div>
+                <a class="button button-secondary" href={file.download_url}>Download original XLSX</a>
+              </article>
+            ))}
           </div>
-          <a class="button button-secondary" href={originalOpenDataFile.downloadUrl}>Download original XLSX</a>
-        </article>
+        </div>
       </div>
     </section>
 
@@ -232,7 +247,15 @@ const fields = [
   .snapshot-list :global(.snapshot-entry-actions a) { color: var(--pounamu-dark); font-size: var(--text-sm); font-weight: 750; white-space: nowrap; }
   .snapshot-placeholder { color: var(--slate); font-size: var(--text-sm); }
 
-  .original-file { display: grid; grid-template-columns: 0.45fr 1.4fr auto; align-items: center; gap: 2rem; margin-top: 1.25rem; padding: 1.5rem; border: 1px solid #e5c878; border-radius: 0.9rem; background: #fffaf0; }
+  .original-files { margin-top: 2.5rem; }
+  .original-files-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; }
+  .original-files-heading div { display: grid; }
+  .original-files-heading span { color: var(--pounamu-dark); font-family: var(--font-utility); font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .original-files-heading strong { color: var(--harbour); font-size: var(--text-lg); }
+  .original-files-status { margin: 0; color: var(--slate); font-size: var(--text-sm); }
+  .originals-list { display: grid; gap: 1rem; margin-top: 1.25rem; }
+  .originals-list .original-file { margin-top: 0; }
+  .original-file { display: grid; grid-template-columns: 0.45fr 1.4fr auto; align-items: center; gap: 2rem; padding: 1.5rem; border: 1px solid #e5c878; border-radius: 0.9rem; background: #fffaf0; }
   .file-stamp { display: grid; align-content: center; min-height: 6rem; padding: 1rem; border: 1px solid #bf8f20; color: #7f5b0b; font-family: var(--font-utility); text-align: center; text-transform: uppercase; transform: rotate(-1deg); }
   .file-stamp span { font-size: var(--text-micro); letter-spacing: 0.08em; }
   .file-stamp strong { font-size: var(--text-sm); }
