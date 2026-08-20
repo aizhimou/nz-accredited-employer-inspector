@@ -33,7 +33,7 @@ Use the toolbar popup to pause or resume the Inspector. When paused, it does not
 
 | Path | Purpose |
 | --- | --- |
-| [`extension/`](./extension) | WXT Manifest V3 Chrome extension (currently `0.9.0`). |
+| [`extension/`](./extension) | WXT Manifest V3 Chrome extension (currently `1.0.0`). |
 | [`api/`](./api) | Cloudflare Worker, D1 schema/importer, Worker API, and scheduled R2 open-data publication (currently service `0.8.0`). |
 | [`landing/`](./landing) | Astro product site, public API description, privacy policy, changelog, insights, and open-data pages. |
 | [`scripts/employer-refresh/`](./scripts/employer-refresh) | Operator-run sequential refresh for employers nearing expiry; it calls INZ and D1 directly, outside the public API. |

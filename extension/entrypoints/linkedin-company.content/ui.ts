@@ -23,6 +23,8 @@ interface WidgetOptions {
 const OFFICIAL_LIST_URL =
   "https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/";
 
+const HOW_RESULTS_URL = "https://nzaei.zemo.bio/how-results-work/#read-a-result";
+
 function createElement<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className?: string,
@@ -125,6 +127,14 @@ async function sendSearchMessage(message: SearchEmployersMessage): Promise<Emplo
 function createOfficialLink(): HTMLAnchorElement {
   const link = createElement("a", "official-link", "Check the official INZ list ↗");
   link.href = OFFICIAL_LIST_URL;
+  link.target = "_blank";
+  link.rel = "noopener noreferrer";
+  return link;
+}
+
+function createHowResultsLink(): HTMLAnchorElement {
+  const link = createElement("a", "how-results-link", "What do these results mean?");
+  link.href = HOW_RESULTS_URL;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
   return link;
@@ -309,7 +319,7 @@ export function mountCompanyWidget(
     const header = createElement("header", "panel-header");
     const heading = createElement("div", "panel-heading-group");
     heading.append(
-      createElement("span", "panel-kicker", "NZ accredited employer"),
+      createElement("span", "panel-kicker", "Lookup name"),
       createElement("strong", "panel-title", response.identity.displayName),
     );
     header.append(
@@ -377,11 +387,6 @@ export function mountCompanyWidget(
           "span",
           "provenance-value",
           `No published match · Checked ${formatObservationAt(noMatch.checkedAt)}`,
-        ),
-        createElement(
-          "span",
-          "provenance-warning",
-          `A live lookup will be available after ${formatObservationAt(noMatch.expiresAt)}.`,
         ),
       );
       panel.append(provenance);
@@ -567,16 +572,7 @@ export function mountCompanyWidget(
     panel.append(candidateResults);
 
     const footer = createElement("footer", "panel-footer");
-    footer.append(
-      createElement(
-        "span",
-        "footer-note",
-        exactNameMatch
-          ? "Official accreditation data · Automatic name match"
-          : "Official accreditation data · Community association",
-      ),
-      createOfficialLink(),
-    );
+    footer.append(createHowResultsLink(), createOfficialLink());
     panel.append(footer);
 
     hasResult = true;

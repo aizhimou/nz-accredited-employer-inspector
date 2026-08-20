@@ -225,6 +225,23 @@
   text-transform: uppercase;
 }
 
+.how-results-link {
+  color: var(--nz-blue);
+  font-size: var(--nz-text-xs);
+  font-weight: 650;
+  line-height: 1.2;
+  text-decoration: none;
+}
+
+.how-results-link:hover {
+  text-decoration: underline;
+}
+
+.how-results-link:focus-visible {
+  outline: 3px solid rgb(10 102 194 / 24%);
+  outline-offset: 2px;
+}
+
 .warning {
   margin: 12px 16px 0;
   padding: 9px 10px;
