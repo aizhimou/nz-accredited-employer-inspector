@@ -37,7 +37,7 @@ LinkedIn may render the company header after `document_idle`. The content script
 1. `Check NZ accreditation`: no network call has happened.
 2. `Checking INZ…`: background orchestration is active.
 3. `Confirm employer match`: D1 or live INZ returned official employer candidates, but no platform association can be assumed.
-4. `Accredited in NZ` / `Accreditation expired`: the selected employer's official expiry evaluation. Selection may be a stored platform association or a unique exact official/trading-name match.
+4. `Accredited in NZ` / `Accreditation expired`: the selected employer's official expiry evaluation. Selection may be a stored platform association or a unique exact employer-name match (trading name only when no employer name matches).
 5. `No published INZ match`: recognised live INZ `400 No Results`; the exact platform identity/query observation is reused for the configured negative TTL and its check/expiry times are shown.
 6. `Live verification needs review`: an NZBN refresh returned no published result; the old row is only dated context. A recent attempt shows when another refresh becomes available.
 7. `Try again`: API, INZ, or extension background failure.

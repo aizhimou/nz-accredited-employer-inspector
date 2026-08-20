@@ -142,12 +142,26 @@ async function findExactNameCandidates(
     .bind(/^\d{13}$/u.test(normalized) ? normalized : "", normalized)
     .all<EmployerRow>();
 
-  const exactNameRows = rows.results.filter((row) =>
-    normalizeName(row.employer_name) === normalized ||
-    (row.trading_name !== null && normalizeName(row.trading_name) === normalized)
+  // An employer-name match is stronger evidence than a trading-name match.
+  // Auto-match when exactly one distinct NZBN matches the employer name, even
+  // if other NZBNs also carry the name as a trading name. Only when no
+  // employer name matches, fall back to a single distinct NZBN trading-name
+  // match.
+  const employerNameRows = rows.results.filter(
+    (row) => normalizeName(row.employer_name) === normalized,
   );
-  const exactNameNzbns = new Set(exactNameRows.map((row) => row.nzbn));
-  const exactNameRow = exactNameNzbns.size === 1 ? exactNameRows[0] ?? null : null;
+  const employerNameNzbns = new Set(employerNameRows.map((row) => row.nzbn));
+  const tradingNameRows = rows.results.filter(
+    (row) => row.trading_name !== null && normalizeName(row.trading_name) === normalized,
+  );
+  const tradingNameNzbns = new Set(tradingNameRows.map((row) => row.nzbn));
+
+  let exactNameRow: EmployerRow | null = null;
+  if (employerNameNzbns.size === 1) {
+    exactNameRow = employerNameRows[0] ?? null;
+  } else if (employerNameNzbns.size === 0 && tradingNameNzbns.size === 1) {
+    exactNameRow = tradingNameRows[0] ?? null;
+  }
   const candidates = rows.results
     .slice(0, MAX_RETURNED_CANDIDATES)
     .map((row) => rowToEmployer(row, nowMilliseconds));

@@ -842,6 +842,42 @@ describe("canonical employers and resolution", () => {
     expect(body.candidates).toHaveLength(2);
   });
 
+  it("auto-selects a unique employer-name match even when the name is also the trading name of another NZBN", async () => {
+    await call("/v1/employers/ingest", ingestBody([
+      {
+        employerName: "Auckland Council",
+        tradingName: "Auckland Council",
+        nzbn: "9429000034753",
+        expiryDateOfAccreditation: "2028-06-08T00:00:00",
+      },
+      {
+        employerName: "Project-X Management Limited",
+        tradingName: "Auckland Council",
+        nzbn: "9429050234929",
+        expiryDateOfAccreditation: "2026-10-14T00:00:00",
+      },
+    ]));
+
+    const response = await call("/v1/employers/resolve", {
+      identity: {
+        ...linkedinIdentity,
+        externalKey: "company:auckland-council",
+        displayName: "Auckland Council",
+        publicUrl: "https://www.linkedin.com/company/auckland-council/",
+      },
+    });
+    expect(await response.json()).toMatchObject({
+      state: "associated",
+      matchMethod: "exact_employer_name",
+      selectedEmployer: {
+        employerName: "Auckland Council",
+        tradingName: "Auckland Council",
+        nzbn: "9429000034753",
+      },
+      association: null,
+    });
+  });
+
   it("requires INZ totalResults to be one for an immediate live exact match", async () => {
     const exactEmployer = [{
       employerName: "ONE NEW ZEALAND",
