@@ -288,6 +288,17 @@ const structuredData = pageKind === "privacy"
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImageUrl} />
     <meta name="twitter:image:alt" content="NZ Accredited Employer Inspector checking an employer before a job application" />
+    <!-- Privacy-friendly analytics by Plausible -->
+    <script async is:inline src="https://plausible.asimov.top/js/pa-JzeixigPQXOrOeaMqtUc5.js"></script>
+    <script is:inline>
+      window.plausible = window.plausible || function () {
+        (plausible.q = plausible.q || []).push(arguments);
+      };
+      plausible.init = plausible.init || function (options) {
+        plausible.o = options || {};
+      };
+      plausible.init();
+    </script>
     <script is:inline type="application/ld+json" set:html={JSON.stringify(structuredData)}></script>
     <title>{title}</title>
   </head>
